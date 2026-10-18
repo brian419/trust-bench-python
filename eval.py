@@ -14,9 +14,17 @@ passed_count = 0
 failed_count = 0
 accuracy_percentage = 0
 
+
+def compare_answers(expected: str, response: str) -> bool:
+    if expected.lower().strip() == response.lower().strip():
+        return True
+    else:
+        return False
+
+
 for item in data:
-    # print(item["id"])
-    if (item["expected"].lower().strip() == item["response"].lower().strip()):
+    answers_match = compare_answers(item["expected"], item["response"])
+    if answers_match == True:
         print("Test ID:", item["id"], ";", "PASS: The answers match!")
         passed_count += 1
     else: 
@@ -39,6 +47,7 @@ if (passed_count + failed_count > 0):
     print("Accuracy:", round(accuracy_percentage, 2))
 else:
     print("Accuracy: N/A")
+
 
 
 ## what we have done so far:
