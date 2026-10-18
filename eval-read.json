@@ -1,0 +1,20 @@
+[
+    {
+        "id": "test_001",
+        "question": "What is the capital of France?",
+        "expected": "Paris",
+        "response": "  PARIS  "
+    },
+    {
+        "id": "test_002",
+        "question": "What is 15 multiplied by 4?",
+        "expected": "60",
+        "response": "45"
+    },
+    {
+        "id": "test_003",
+        "question": "What is the capital of Japan?",
+        "expected": "Tokyo",
+        "response": "tokyo"
+    }
+]
