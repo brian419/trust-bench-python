@@ -2,7 +2,7 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestone 1 complete; Milestone 2A next. Milestones 2–5 are plans, not implemented capabilities.
+**Current status:** Milestones 1 and 2 complete. Milestones 3–5 are plans, not implemented capabilities.
 
 ## Guiding principles
 
@@ -17,9 +17,9 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 | Milestone | Goal | Status |
 | --- | --- | --- |
 | 1 | Basic evaluation and normalization | **Complete (manual verification)** |
-| 2A | Reusable Python functions | **Next** |
-| 2B | Automated unit tests with pytest | Planned |
-| 2C | Input validation and error handling | Planned |
+| 2A | Reusable Python functions | **Complete** |
+| 2B | Automated unit tests with pytest | **Complete** |
+| 2C | Input validation and error handling | **Complete** |
 | 3 | Run evaluations against a real AI model | Planned |
 | 4 | Responsible AI evaluation methods | Planned |
 | 5 | Reproducibility, comparison, and reporting | Planned |
@@ -28,7 +28,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ## Milestone 1: Basic evaluation and normalization
 
-**Status: Complete.** The working prototype lives in `eval.py` and reads `eval-read.json`.
+**Status: Complete.** The original prototype has since been extended. The current `eval.py` reads `eval-read-valid.json` by default and accepts an optional file path.
 
 ### Implemented
 
@@ -48,12 +48,12 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 - The three-case sample produces 2 passes, 1 failure, and 66.67 accuracy.
 - A valid empty JSON array produces 0 passes, 0 failures, and `Accuracy: N/A`.
 
-### Current limitations
+### Scope limitations
 
 - Recorded responses only. The program does **not** call an AI model.
 - Matching remains exact after normalization: `Paris` and `The capital is Paris.` do not match.
-- A blank or malformed JSON file currently raises a `JSONDecodeError`; other invalid structures can also raise exceptions.
-- No automated tests, validation framework, evaluation database, or model comparison yet.
+- The current evaluator handles missing files, malformed JSON, and invalid dataset structure with errors and a nonzero exit status.
+- No evaluation database, live AI model integration, or model comparisons yet.
 
 **Acceptance:** Existing functionality and the above manually verified behaviors are preserved on the stable branch.
 
@@ -65,15 +65,15 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ### Milestone 2A: Reusable Python functions
 
-**Status: Next.** Focus on Python function definitions, parameters, return values, and separation of concerns.
+**Status: Complete.** Reusable functions separate comparison and accuracy calculations from CLI input/output.
 
 #### Assignment
 
-- [ ] Create `compare_answers(expected, response)`, returning a Boolean.
-- [ ] Move the existing whitespace/case normalization into that function.
-- [ ] Call the function from the current evaluation loop rather than duplicating comparison logic.
-- [ ] Preserve individual test messages, totals, rounded percentage, and `N/A` for empty arrays.
-- [ ] Manually test equal, case-different, whitespace-different, and unequal answer pairs.
+- [x] Create `compare_answers(expected, response)`, returning a Boolean.
+- [x] Move the existing whitespace/case normalization into that function.
+- [x] Call the function from the current evaluation loop rather than duplicating comparison logic.
+- [x] Preserve individual test messages, totals, rounded percentage, and `N/A` for empty arrays.
+- [x] Manually test equal, case-different, whitespace-different, and unequal answer pairs.
 
 #### Acceptance criteria
 
@@ -87,16 +87,16 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ### Milestone 2B: Automated unit tests with pytest
 
-**Status: Planned.** Learn what a unit test verifies and how to isolate code so it can be tested without manually editing JSON inputs.
+**Status: Complete.** Automated pytest tests cover answer matching and accuracy computation without running the CLI on import.
 
 #### Assignment
 
-- [ ] Install `pytest` in a project-specific virtual environment and document the setup.
-- [ ] Add a `tests/` directory with tests for `compare_answers`.
-- [ ] Verify exact matches, case differences, leading/trailing whitespace, and nonmatches.
-- [ ] Test the empty-dataset behavior and accuracy calculation, refactoring into additional functions only when it improves testability.
-- [ ] Ensure importing functions for testing does not unintentionally execute the entire CLI script.
-- [ ] Run `python3 -m pytest` and document successful results.
+- [x] Install `pytest` in a project-specific virtual environment and document the setup.
+- [x] Add a `tests/` directory with tests for `compare_answers`.
+- [x] Verify exact matches, case differences, leading/trailing whitespace, and nonmatches.
+- [x] Test the empty-dataset behavior and accuracy calculation, refactoring into additional functions only when it improves testability.
+- [x] Ensure importing functions for testing does not unintentionally execute the entire CLI script.
+- [x] Run `python3 -m pytest` and document successful results.
 
 #### Acceptance criteria
 
@@ -108,16 +108,16 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ### Milestone 2C: Input validation and error handling
 
-**Status: Planned.** Learn `try/except`, input contracts, informative error messages, and testing failure paths.
+**Status: Complete.** Input validation and clean CLI errors are implemented and tested.
 
 #### Assignment
 
-- [ ] Handle a missing `eval-read.json` file gracefully.
-- [ ] Handle blank and malformed JSON without displaying an unhandled traceback during normal CLI use.
-- [ ] Reject a non-list top-level JSON value with a useful message.
-- [ ] Check that each case has the required fields (`id`, `expected`, `response`) with appropriate types.
-- [ ] Decide and document the policy for an empty array versus an invalid dataset.
-- [ ] Add pytest cases covering both valid inputs and these failures.
+- [x] Handle a missing `eval-read.json` file gracefully.
+- [x] Handle blank and malformed JSON without displaying an unhandled traceback during normal CLI use.
+- [x] Reject a non-list top-level JSON value with a useful message.
+- [x] Check that each case has the required fields (`id`, `expected`, `response`) with appropriate types.
+- [x] Decide and document the policy for an empty array versus an invalid dataset.
+- [x] Add pytest cases covering both valid inputs and these failures.
 
 #### Acceptance criteria
 
@@ -196,6 +196,13 @@ A reader can inspect a report, understand what was tested, trace scores to indiv
 4. Update this file and the README when a milestone is genuinely completed.
 5. Keep Git commits focused and include meaningful descriptions.
 
+### Completed Milestone 2 evidence
+
+- `compare_answers`, `calculate_accuracy`, and `validate_dataset` are importable and tested.
+- The CLI accepts custom paths, produces clear input errors, and stops before scoring invalid datasets.
+- `python3 -m pytest -v` runs 27 automated unit and CLI tests (26 originally completed, plus the CLI empty-array test).
+- The default sample still produces 2 passes, 1 failure, and 66.67 accuracy.
+
 ### Near-term next step
 
-**Start Milestone 2A only:** write and test `compare_answers(expected, response)` yourself, then replace the inline comparison in `eval.py` with a call to that function. Do not implement Milestones 2B or 2C until 2A is understood and verified.
+Review and merge `feature/milestone-2` into `main` when ready. Begin Milestone 3 as a separate, deliberately scoped task; live model integration is not implemented.

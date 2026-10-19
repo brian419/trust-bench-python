@@ -8,7 +8,7 @@ The current implementation is a command-line prototype. It evaluates **pre-recor
 
 ## Current status
 
-**Milestone 1: Complete** | **Milestone 2: Planned**
+**Milestone 1: Complete** | **Milestone 2: Complete (27 automated tests)**
 
 Implemented:
 
@@ -18,13 +18,18 @@ Implemented:
 - Count passing and failing test cases.
 - Calculate the percentage of tests passed, rounded to two decimal places.
 - Report `Accuracy: N/A` when the JSON list contains no test cases.
+- Use reusable `compare_answers`, `calculate_accuracy`, and `validate_dataset` functions.
+- Validate that the JSON input is a list of objects with string fields `id`, `question`, `expected`, and `response`.
+- Report all dataset validation errors before scoring; exit with status 1 for invalid input, missing files, or malformed JSON.
+- Accept an optional dataset filename as a command-line argument.
+- Run 27 automated unit and CLI integration tests with `pytest`.
 
 **Scope limitation:** The current score measures *normalized exact-match accuracy* on the supplied dataset. It does not assess semantic equivalence, factual correctness of open-ended answers, hallucination rates, bias, safety, or model performance in general.
 
 ## Requirements
 
 - Python 3 (developed with Python 3.12.3)
-- No external Python dependencies for Milestone 1
+- No third-party runtime dependencies; `pytest` is required only for running the automated tests.
 
 ## Getting started
 
@@ -35,7 +40,7 @@ git clone https://github.com/brian419/trust-bench-python.git
 cd trust-bench-python
 ```
 
-Create an `eval-read.json` file in the project root if one is not already present:
+The repository includes `eval-read-valid.json`, which is used by default. Its contents are:
 
 ```json
 [
@@ -60,7 +65,7 @@ Create an `eval-read.json` file in the project root if one is not already presen
 ]
 ```
 
-Run the evaluator from the project root:
+Run the evaluator from the project root (using the included default dataset):
 
 ```bash
 python3 eval.py
@@ -85,11 +90,35 @@ Failed 0 tests
 Accuracy: N/A
 ```
 
-> **Note:** A completely blank file is not valid JSON and currently raises a `JSONDecodeError`. Input validation and clearer error messages are planned improvements.
+A completely blank or malformed JSON file is rejected with a readable error message and nonzero exit status rather than an unhandled traceback. Invalid dataset structures are rejected before scoring.
+
+To evaluate another dataset, supply its path:
+
+```bash
+python3 eval.py path/to/dataset.json
+```
+
+The repository includes two intentional failure examples:
+
+- `eval-read-invalid.json`: valid JSON with invalid test-case structure.
+- `eval-read-malformed.json`: invalid JSON syntax.
+
+You can try them with `python3 eval.py <filename>` to inspect the errors. These commands intentionally exit with status 1.
+
+### Running the automated tests
+
+Install the development test dependency in your Python environment:
+
+```bash
+python3 -m pip install pytest
+python3 -m pytest -v
+```
+
+The current suite contains **27 tests**, including CLI integration tests that create their own temporary input files.
 
 ## Input format
 
-The program currently expects `eval-read.json` to contain a JSON array of test case objects with these fields:
+The program expects a JSON array of test-case objects containing the following required **string** fields:
 
 | Field | Meaning |
 | --- | --- |
@@ -102,9 +131,9 @@ The evaluator compares `expected` and `response` after applying Python's `lower(
 
 ## Development roadmap
 
-The following items are **planned, not implemented**:
+Milestone 2 is implemented. The remaining milestones are planned:
 
-- **Milestone 2: Testable architecture.** Extract reusable comparison functions, introduce automated unit tests with `pytest`, and improve handling of missing or malformed input.
+- **Milestone 2: Testable architecture (complete).** Reusable functions, `pytest` coverage, dataset validation, and controlled CLI errors.
 - **Milestone 3: Model integration.** Add a configurable interface to run tests against an actual language model while recording responses and execution details.
 - **Milestone 4: Evaluation methods.** Explore more rigorous assessments of factual grounding, answer consistency, and controlled prompt-injection scenarios, including cases requiring human review.
 - **Milestone 5: Reproducibility and reporting.** Compare evaluation runs and generate structured reports with methods, outcomes, and limitations.

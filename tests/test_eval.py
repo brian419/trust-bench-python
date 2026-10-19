@@ -2,7 +2,11 @@ import pytest
 import subprocess
 import sys
 import json
+from pathlib import Path
 from eval import compare_answers, calculate_accuracy, validate_dataset
+
+
+EVAL_SCRIPT = Path(__file__).resolve().parents[1] / "eval.py"
 
 
 def test_identical_answers():
@@ -21,19 +25,19 @@ def test_whitespace_normalization():
 # calculate_accuracy
 
 def test_all_passed():
-    assert round(calculate_accuracy(3,0),2) == 100.00
+    assert round(calculate_accuracy(3, 0), 2) == 100.00
 
 def test_all_failed():
-    assert round(calculate_accuracy(0,3),2) == 0.00
+    assert round(calculate_accuracy(0, 3), 2) == 0.00
 
 def test_half_passed():
-    assert round(calculate_accuracy(1,1),2) == 50.00
+    assert round(calculate_accuracy(1, 1), 2) == 50.00
 
 def test_mixed_result():
-    assert round(calculate_accuracy(2,1),2) == 66.67
+    assert round(calculate_accuracy(2, 1), 2) == 66.67
 
 def test_no_tests():
-    assert calculate_accuracy(0,0) is None
+    assert calculate_accuracy(0, 0) is None
 
 
 # validation test
@@ -144,7 +148,7 @@ def test_cli_valid_dataset(tmp_path):
     valid_file.write_text(json.dumps(data))
 
     result = subprocess.run(
-        [sys.executable, "eval.py", str(valid_file)],
+        [sys.executable, str(EVAL_SCRIPT), str(valid_file)],
         capture_output=True,
         text=True
     )
@@ -167,7 +171,7 @@ def test_cli_invalid_dataset(tmp_path):
     invalid_file.write_text(json.dumps(data))
 
     result = subprocess.run(
-        [sys.executable, "eval.py", str(invalid_file)],
+        [sys.executable, str(EVAL_SCRIPT), str(invalid_file)],
         capture_output=True,
         text=True
     )
@@ -186,7 +190,7 @@ def test_cli_malformed_dataset(tmp_path):
     )
 
     result = subprocess.run(
-        [sys.executable, "eval.py", str(malformed_file)],
+        [sys.executable, str(EVAL_SCRIPT), str(malformed_file)],
         capture_output=True,
         text=True
     )
@@ -199,10 +203,26 @@ def test_cli_missing_file(tmp_path):
     missing_file = tmp_path / "missing.json"
 
     result = subprocess.run(
-        [sys.executable, "eval.py", str(missing_file)],
+        [sys.executable, str(EVAL_SCRIPT), str(missing_file)],
         capture_output=True,
         text=True
     )
 
     assert result.returncode == 1
     assert "No such file or directory" in result.stdout
+
+
+def test_cli_empty_dataset(tmp_path):
+    empty_file = tmp_path / "empty.json"
+    empty_file.write_text("[]")
+
+    result = subprocess.run(
+        [sys.executable, str(EVAL_SCRIPT), str(empty_file)],
+        capture_output=True,
+        text=True
+    )
+
+    assert result.returncode == 0
+    assert "Passed 0 tests" in result.stdout
+    assert "Failed 0 tests" in result.stdout
+    assert "Accuracy: N/A" in result.stdout

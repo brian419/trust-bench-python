@@ -2,13 +2,10 @@ import json
 import sys
 
 def compare_answers(expected: str, response: str) -> bool:
-    if expected.lower().strip() == response.lower().strip():
-        return True
-    else:
-        return False
+    return expected.lower().strip() == response.lower().strip()
 
 
-def calculate_accuracy(passed_count: int, failed_count: int):
+def calculate_accuracy(passed_count: int, failed_count: int) -> float | None:
     if passed_count + failed_count == 0:
         return None
     accuracy_percentage = ((passed_count) / (passed_count + failed_count)) * 100
