@@ -8,6 +8,14 @@ def compare_answers(expected: str, response: str) -> bool:
         return False
 
 
+def calculate_accuracy(passed_count: int, failed_count: int):
+    if passed_count + failed_count == 0:
+        return None
+    accuracy_percentage = ((passed_count) / (passed_count + failed_count)) * 100
+
+    return accuracy_percentage
+
+
 if __name__ == "__main__":
 
     with open("eval-read.json", "r") as file:
@@ -15,7 +23,6 @@ if __name__ == "__main__":
 
     passed_count = 0
     failed_count = 0
-    accuracy_percentage = 0
         
     for item in data:
         answers_match = compare_answers(item["expected"], item["response"])
@@ -36,8 +43,9 @@ if __name__ == "__main__":
     else:
         print("Failed", failed_count, "tests")
 
-    if (passed_count + failed_count > 0):
-        accuracy_percentage = ((passed_count) / (passed_count + failed_count)) * 100
-        print("Accuracy:", round(accuracy_percentage, 2))
-    else:
+    accuracy = calculate_accuracy(passed_count, failed_count)
+
+    if (accuracy is None):
         print("Accuracy: N/A")
+    else:
+        print("Accuracy:", round(accuracy, 2))
