@@ -1,0 +1,12 @@
+[
+    {
+        "id": "test_001",
+        "question": "What is the capital of France? Answer with only the English city name.",
+        "expected": "Paris"
+    },
+    {
+        "id": "test_002",
+        "question": "What is 6 multiplied by 2? Answer with only the number.",
+        "expected": "12"
+    }
+]

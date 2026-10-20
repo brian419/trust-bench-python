@@ -226,3 +226,35 @@ def test_cli_empty_dataset(tmp_path):
     assert "Passed 0 tests" in result.stdout
     assert "Failed 0 tests" in result.stdout
     assert "Accuracy: N/A" in result.stdout
+
+
+def test_valid_live_dataset():
+    data = [{
+        "id": "test_001",
+        "question": "What is the capital of France?",
+        "expected": "Paris"
+    }]
+
+    assert validate_dataset(data, require_response=False) == []
+
+def test_offline_dataset_requires_response():
+    data = [{
+            "id": "test_001",
+            "question": "What is the capital of France?",
+            "expected": "Paris"
+        }]
+
+    assert validate_dataset(data) == [
+        "Error: Test case #1: Missing required field 'response'."
+    ]
+
+
+def test_live_dataset_missing_expected():
+    data = [{
+        "id": "test_001",
+        "question": "What is the capital of France?"
+    }]
+
+    assert validate_dataset(data, require_response=False) == [
+        "Error: Test case #1: Missing required field 'expected'."
+    ]

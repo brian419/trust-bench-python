@@ -13,7 +13,7 @@ def calculate_accuracy(passed_count: int, failed_count: int) -> float | None:
     return accuracy_percentage
 
 
-def validate_dataset(data: object) -> list[str]:
+def validate_dataset(data: object, require_response: bool = True) -> list[str]:
     validation_errors = []
 
     if not isinstance(data, list):
@@ -38,12 +38,13 @@ def validate_dataset(data: object) -> list[str]:
             validation_errors.append(f"Error: Test case #{case_number}: Missing required field 'expected'.")
         elif not isinstance(item["expected"], str):
             validation_errors.append(f"Error: Test case #{case_number}: Field 'expected' must be a string.")
-    
-        if "response" not in item:
-            validation_errors.append(f"Error: Test case #{case_number}: Missing required field 'response'.")
-        elif not isinstance(item["response"], str):
-            validation_errors.append(f"Error: Test case #{case_number}: Field 'response' must be a string.")
-    
+
+        if require_response:    
+            if "response" not in item:
+                validation_errors.append(f"Error: Test case #{case_number}: Missing required field 'response'.")
+            elif not isinstance(item["response"], str):
+                validation_errors.append(f"Error: Test case #{case_number}: Field 'response' must be a string.")
+        
     return validation_errors
 
 
