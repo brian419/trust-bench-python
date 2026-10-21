@@ -167,22 +167,77 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ## Milestone 4: Responsible AI evaluation methods
 
-**Status: Planned.** Develop narrow, defensible tests rather than claiming comprehensive AI safety coverage.
+**Status: Planned; scoped development plan prepared on `feature/milestone-4`.** Build defensible, reproducible tests for specific failure modes of model-generated responses. The starting baseline is Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47 passing automated tests**. Planning does not imply any Milestone 4 feature is implemented.
 
-### Proposed work
+**Working approach:** Progress through 4A–4E sequentially, with small learning exercises, targeted tests, and review of outputs before advancing. Preserve `eval.py`, existing `eval_live.py` behavior, JSON reports, and all baseline tests. Favor free local execution, offline fixtures, and mocked calls; no paid API accounts or substantial new dependencies required. Keep dataset and scoring definitions explicit rather than adding vague "responsible AI" scores.
 
-- [ ] Build a small, documented factual-grounding dataset using known reference material.
-- [ ] Introduce assessment methods beyond exact string matching, while explicitly documenting evaluator error.
-- [ ] Explore controlled prompt-injection resilience cases that are safe to reproduce.
-- [ ] Investigate consistency across repeated runs and categorize model failures.
-- [ ] Identify cases requiring human judgment and record review criteria.
-- [ ] Investigate bias and privacy testing only where the dataset and methodology support meaningful claims.
+### Milestone 4A: Reference-grounded factual evaluation
 
-### Completion evidence
+**Goal:** Introduce a small curated evaluation set where answers are checked against clearly identified reference facts, not merely assumed correct.
 
-For each metric, document: what is tested, how a result is scored, examples of false positives/negatives, sample size, and limitations. Do not label a simple pass rate as “AI safety” or “hallucination rate” without validated measurement.
+- [ ] Design an initial 8–12-case dataset with a stable ID, question, reference answer, source citation/URL or other auditable reference, and short verification note for each case.
+- [ ] Prefer narrow, independently checkable facts; avoid dynamic or disputed facts requiring regular refreshes.
+- [ ] Document source dates and ambiguous-answer handling, and validate any added fields without weakening the existing offline/live schemas.
+- [ ] Run a local baseline against `gemma3:1b`; retain raw outputs and report which cases are exact matches versus those needing human review.
+- [ ] Add tests for the new dataset format/validation, including malformed reference metadata.
+
+**Acceptance:** A reader can trace every expected answer to a reference, reproduce the local run, and distinguish reference support from the limitations of simple exact matching.
+
+### Milestone 4B: Evaluation beyond exact matching
+
+**Goal:** Make legitimate paraphrases and incorrect assertions distinguishable without claiming to solve general semantic evaluation.
+
+- [ ] Create labeled examples of exact matches, acceptable alternatives, semantically correct paraphrases, incomplete answers, and incorrect or unsupported claims.
+- [ ] Define a narrowly specified alternative scorer (e.g., accepted answer variants or a transparent rule-based method), **alongside** the original normalized exact-match baseline.
+- [ ] Represent uncertain outcomes as `REVIEW` / unscored when automated assessment is not sufficiently justified; document false positives and negatives.
+- [ ] Test scorer boundaries, preserve original `compare_answers` behavior, and compare outcomes with the exact-match baseline on the small labeled set.
+
+**Acceptance:** The scoring rules, permitted answer variants, and disagreement cases are inspectable. No unsupported "hallucination rate" or generalized semantic-accuracy claims.
+
+### Milestone 4C: Response consistency and failure classification
+
+**Goal:** Investigate variability across repeated local generations and organize observed errors.
+
+- [ ] Choose a small fixed prompt set and repeat runs under documented conditions; record run count, prompts, model, and any available inference settings.
+- [ ] Keep requests sequential and bounded for the 8 GB development machine; do not require costly compute.
+- [ ] Classify examples by specific categories such as correct, incorrect, unsupported, ambiguous, formatting-only mismatch, or request error.
+- [ ] Summarize disagreement counts and representative outputs, without treating small-sample variability as a statistically definitive reliability metric.
+- [ ] Test classification helpers independently of live Ollama access.
+
+**Acceptance:** A short reproducible experiment and saved evidence show where answers vary, with a clear separation between model behavior and evaluator limitations.
+
+### Milestone 4D: Controlled prompt-injection resilience
+
+**Goal:** Explore instruction-boundary failures in safe, self-contained experiments.
+
+- [ ] Prepare a few synthetic scenarios containing trusted task instructions and untrusted quoted or document-like content.
+- [ ] Label the intended response and the untrusted text's attempted behavioral redirection; do not use real secrets, external exfiltration, or harmful payloads.
+- [ ] Define observable success/failure/review criteria and run a bounded local evaluation.
+- [ ] Document both successful resistance and failures, including where exact matching or manual review changes interpretation.
+- [ ] Add test fixtures for scenario structure and scoring.
+
+**Acceptance:** A reader can reproduce safe test cases and understand precisely what behavior was tested, without claims of comprehensive prompt-injection safety.
+
+### Milestone 4E: Review, synthesis, and documentation
+
+**Goal:** Make Milestone 4 evidence understandable and ready to share without overstating results.
+
+- [ ] Summarize dataset size, method, reference quality, labeled examples, and major failure modes; use existing local JSON reports where useful.
+- [ ] Explain known evaluator errors, manual review decisions, compute constraints, and threats to validity.
+- [ ] Update `README.md` and this milestone plan only for features actually implemented.
+- [ ] Run the full pytest suite, verify preserved Milestones 1–3 behavior, and manually reproduce at least one representative experiment.
+- [ ] Commit/push changes to `feature/milestone-4`; review before eventual merge into `main`.
+
+**Acceptance:** Every reported conclusion is traceable to specific prompts, reference material, scoring criteria, and saved or documented evidence.
+
+### Deferred work and scope boundaries
+
+- Avoid broad claims about fairness, bias, privacy, safety, or factuality based solely on tiny datasets. If rigorous bias/privacy methodology would substantially expand scope, record it as future research instead of marking it complete.
+- Advanced cross-model comparisons, dataset/version hashing, configurable report comparisons, and statistical uncertainty reporting remain primarily **Milestone 5** work.
+- No new hosted provider integration, paid API, model training/fine-tuning, large orchestration framework, or unrelated application refactor is required for Milestone 4.
 
 **Background reading:** [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework), [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/).
+
 
 ---
 
@@ -229,4 +284,4 @@ A reader can compare multiple runs using documented model/dataset/scoring versio
 
 ### Near-term next step
 
-Milestone 3 is complete and merged into `main` (commit `18f4ded3`, October 21, 2026). Start Milestone 4 on a new feature branch with narrowly scoped, reproducible responsible AI evaluation exercises. Advanced cross-run comparison and additional reproducibility metadata remain planned for Milestone 5.
+Milestone 4's scoped 4A–4E plan has been prepared on `feature/milestone-4`; no Milestone 4 functionality is implemented yet. Begin with **4A: reference-grounded factual evaluation** and validate each stage before proceeding. Milestone 3 remains complete on `main`; advanced cross-run reporting remains planned for Milestone 5.
