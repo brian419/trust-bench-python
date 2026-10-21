@@ -4,6 +4,7 @@ import time
 import uuid
 from eval import validate_dataset, compare_answers, calculate_accuracy
 from reference_validator import validate_reference_dataset
+from answer_scorer import score_answer
 from ollama_client import generate_response
 from urllib.error import HTTPError, URLError
 from datetime import datetime, timezone
@@ -12,7 +13,7 @@ from pathlib import Path
 
 def main(filename="eval-read-live.json"):
 
-    try:    
+    try:
         with open(filename, "r") as file:
             data = json.load(file)
 
@@ -42,11 +43,7 @@ def main(filename="eval-read-live.json"):
 
     print("Run timestamp:", run_timestamp)
 
-    metadata = {
-        "model": model,
-        "dataset": filename,
-        "timestamp": run_timestamp
-    }
+    metadata = {"model": model, "dataset": filename, "timestamp": run_timestamp}
 
     print("Run metadata:", metadata)
 
@@ -61,11 +58,8 @@ def main(filename="eval-read-live.json"):
         request_start = time.perf_counter()
         result = None
 
-        try:    
-            generated = generate_response(
-                item["question"],
-                model
-            )
+        try:
+            generated = generate_response(item["question"], model)
 
         except HTTPError as e:
             print("Result: ERROR")
@@ -78,7 +72,7 @@ def main(filename="eval-read-live.json"):
                 "expected": item["expected"],
                 "generated": None,
                 "status": "ERROR",
-                "error": f"HTTP error: {e.code}"
+                "error": f"HTTP error: {e.code}",
             }
 
             results.append(result)
@@ -90,7 +84,7 @@ def main(filename="eval-read-live.json"):
 
             if isinstance(e.reason, TimeoutError):
                 error_message = "Request timed out"
-            else:        
+            else:
                 error_message = f"Network error: {e.reason}"
 
             print(error_message)
@@ -120,7 +114,7 @@ def main(filename="eval-read-live.json"):
                 "expected": item["expected"],
                 "generated": None,
                 "status": "ERROR",
-                "error": "Request timed out"
+                "error": "Request timed out",
             }
 
             results.append(result)
@@ -133,7 +127,6 @@ def main(filename="eval-read-live.json"):
 
             if result is not None:
                 result["duration_seconds"] = round(request_duration, 3)
-
 
         print("Expected:", item["expected"])
         print("Generated:", generated)
@@ -153,7 +146,7 @@ def main(filename="eval-read-live.json"):
             "expected": item["expected"],
             "generated": generated,
             "status": "PASS" if answers_match else "FAIL",
-            "duration_seconds": round(request_duration, 3)
+            "duration_seconds": round(request_duration, 3),
         }
 
         results.append(result)
@@ -164,28 +157,37 @@ def main(filename="eval-read-live.json"):
         if "reference" in item:
             result["reference"] = item["reference"]
 
+        if filename == "eval-read-reference.json":
+            if result["status"] == "ERROR":
+                result["alternative_scoring"] = {
+                    "status": "ERROR",
+                    "reason": "Model request failed",
+                }
+            else:
+                result["alternative_scoring"] = score_answer(
+                    item["expected"],
+                    result["generated"],
+                    item.get("accepted_answers", []),
+                )
+
     accuracy = calculate_accuracy(passed_count, failed_count)
 
     summary = {
         "passed": passed_count,
         "failed": failed_count,
         "errors": error_count,
-        "accuracy": accuracy
+        "accuracy": accuracy,
     }
 
-    report = {
-        "metadata": metadata,
-        "summary": summary,
-        "results": results
-    }
+    report = {"metadata": metadata, "summary": summary, "results": results}
 
     reports_dir = Path("reports")
     report_filename = f"evaluation-{uuid.uuid4().hex}.json"
     report_path = reports_dir / report_filename
 
     try:
-        reports_dir.mkdir(parents=True, exist_ok= True)
-        
+        reports_dir.mkdir(parents=True, exist_ok=True)
+
         with report_path.open("x", encoding="utf-8") as file:
             json.dump(report, file, indent=4)
 
@@ -206,6 +208,7 @@ def main(filename="eval-read-live.json"):
 
     print("Report:", report)
     return report
+
 
 if __name__ == "__main__":
     main()

@@ -512,3 +512,55 @@ def test_reference_metadata_preserved_on_error(tmp_path, monkeypatch):
     assert result["generated"] is None
     assert result["reference"] == data[0]["reference"]
     assert report["summary"]["errors"] == 1
+
+
+def test_live_alternative_scoring(tmp_path, monkeypatch):
+    data = [
+        {
+            "id": "fact_001",
+            "question": "What city is also called NYC?",
+            "expected": "New York City",
+            "accepted_answers": ["NYC"],
+            "reference": {"url": "https://example.com", "verified_date": "2026-10-21"},
+        }
+    ]
+
+    (tmp_path / "eval-read-reference.json").write_text(json.dumps(data))
+    monkeypatch.chdir(tmp_path)
+
+    with patch("eval_live.generate_response", return_value="NYC"):
+        report = main("eval-read-reference.json")
+
+    result = report["results"][0]
+
+    assert result["status"] == "FAIL"
+    assert result["alternative_scoring"]["status"] == "PASS"
+    assert result["alternative_scoring"]["reason"] == "Accepted alternative"
+    assert report["summary"]["accuracy"] == 0.0
+
+
+def test_alternative_scoring_on_request_error(tmp_path, monkeypatch):
+    data = [
+        {
+            "id": "fact_001",
+            "question": "What city is called NYC?",
+            "expected": "New York City",
+            "accepted_answers": ["NYC"],
+            "reference": {"url": "https://example.com", "verified_date": "2026-10-21"},
+        }
+    ]
+
+    (tmp_path / "eval-read-reference.json").write_text(json.dumps(data))
+    monkeypatch.chdir(tmp_path)
+
+    with patch(
+        "eval_live.generate_response", side_effect=URLError("Connection refused")
+    ):
+        report = main("eval-read-reference.json")
+
+    result = report["results"][0]
+
+    assert result["status"] == "ERROR"
+    assert result["alternative_scoring"]["status"] == "ERROR"
+    assert result["reference"] == data[0]["reference"]
+    assert report["summary"]["errors"] == 1

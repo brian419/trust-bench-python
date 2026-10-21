@@ -1,0 +1,12 @@
+# Automatically detect text files and normalize them in Git.
+* text=auto
+
+# Always use LF line endings for source and documentation files.
+*.py   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.sh   text eol=lf
+*.toml text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.txt  text eol=lf

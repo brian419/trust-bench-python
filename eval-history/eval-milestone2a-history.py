@@ -18,13 +18,13 @@ if __name__ == "__main__":
     failed_count = 0
     accuracy_percentage = 0
 
-        
+
     for item in data:
         answers_match = compare_answers(item["expected"], item["response"])
         if answers_match == True:
             print("Test ID:", item["id"], ";", "PASS: The answers match!")
             passed_count += 1
-        else: 
+        else:
             print("Test ID:", item["id"], ";", "FAIL: The answers don't match!")
             failed_count += 1
 

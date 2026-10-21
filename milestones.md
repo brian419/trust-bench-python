@@ -2,7 +2,7 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestones 1, 2, and 3 implemented, tested (47 automated tests), and merged into `main` on October 21, 2026. Milestone 4A implemented and locally tested on `feature/milestone-4` (53 passing tests); not yet merged. Milestones 4B–4E and 5 remain planned.
+**Current status:** Milestones 1, 2, and 3 implemented, tested (47 automated tests), and merged into `main` on October 21, 2026. Milestones 4A and 4B implemented and locally tested on `feature/milestone-4` (67 passing tests); not yet merged. Milestones 4C–4E and 5 remain planned.
 
 ## Guiding principles
 
@@ -21,7 +21,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 | 2B | Automated unit tests with pytest | **Complete** |
 | 2C | Input validation and error handling | **Complete** |
 | 3 | Run evaluations against a local AI model and save basic JSON reports | **Complete (47 tests total)** |
-| 4 | Responsible AI evaluation methods | In progress: 4A implemented/tested on feature branch; 4B–4E planned |
+| 4 | Responsible AI evaluation methods | In progress: 4A–4B implemented/tested on feature branch; 4C–4E planned |
 | 5 | Reproducibility, comparison, and reporting | Planned |
 
 ---
@@ -167,7 +167,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ## Milestone 4: Responsible AI evaluation methods
 
-**Status: In progress on `feature/milestone-4`.** Milestone 4A is implemented and locally tested (53 passing tests), building on Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47-test baseline**. Work remains on the feature branch pending review/merge; 4B–4E are planned.
+**Status: In progress on `feature/milestone-4`.** Milestones 4A and 4B are implemented and locally tested (67 passing tests), building on Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47-test baseline**. Work remains on the feature branch pending review/merge; 4C–4E are planned.
 
 **Working approach:** Progress through 4A–4E sequentially, with small learning exercises, targeted tests, and review of outputs before advancing. Preserve `eval.py`, existing `eval_live.py` behavior, JSON reports, and all baseline tests. Favor free local execution, offline fixtures, and mocked calls; no paid API accounts or substantial new dependencies required. Keep dataset and scoring definitions explicit rather than adding vague "responsible AI" scores.
 
@@ -192,14 +192,24 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ### Milestone 4B: Evaluation beyond exact matching
 
-**Goal:** Make legitimate paraphrases and incorrect assertions distinguishable without claiming to solve general semantic evaluation.
+**Status: Implementation and local validation complete on `feature/milestone-4` (October 21, 2026); commit/merge status not yet confirmed.**
 
-- [ ] Create labeled examples of exact matches, acceptable alternatives, semantically correct paraphrases, incomplete answers, and incorrect or unsupported claims.
-- [ ] Define a narrowly specified alternative scorer (e.g., accepted answer variants or a transparent rule-based method), **alongside** the original normalized exact-match baseline.
-- [ ] Represent uncertain outcomes as `REVIEW` / unscored when automated assessment is not sufficiently justified; document false positives and negatives.
-- [ ] Test scorer boundaries, preserve original `compare_answers` behavior, and compare outcomes with the exact-match baseline on the small labeled set.
+**Goal:** Recognize explicitly accepted answer alternatives without pretending to solve general semantic evaluation or weakening the existing exact-match baseline.
 
-**Acceptance:** The scoring rules, permitted answer variants, and disagreement cases are inspectable. No unsupported "hallucination rate" or generalized semantic-accuracy claims.
+- [x] Created `answer_scorer.py` with `score_answer()`: exact or accepted-alternative match becomes `PASS`; unmatched responses become `REVIEW` for human judgment.
+- [x] Created `scoring-examples.json` with eight labeled cases: exact matches, accepted alternatives, a correct unrecognized paraphrase, and incorrect responses.
+- [x] Added `compare_scorers.py`, which reports baseline versus alternative-scorer outcomes alongside human labels without requiring Ollama.
+- [x] Added `alternative_scoring` to reference-dataset live JSON result entries while preserving the original `status`, exact-match `summary.accuracy`, and default live/offline evaluation behavior.
+- [x] Validated optional `accepted_answers` as a list of nonblank strings, with tests for malformed inputs.
+- [x] Tested the alternative-match integration and request-error behavior, maintaining the original regression suite: **67 tests passed**.
+
+**Observed fixture comparison:** 8 labeled cases. Exact matching automatically accepted 2; the alternative scorer accepted 4 and marked 4 for manual review. Two additionally accepted responses (`NYC`, `eight`) were labeled correct. Review cases included three labeled incorrect answers and one labeled correct paraphrase. No incorrect example was automatically accepted in this fixture.
+
+**Reproduction:** `python3 compare_scorers.py` runs the prerecorded comparison; `python3 -m pytest -v` runs all 67 tests without Ollama. To run the reference-dataset inference, start local Ollama with `gemma3:1b` and execute `python3 -c "from eval_live import main; main('eval-read-reference.json')"`. Note that the existing ten-case reference file currently has no explicit accepted-answer variants.
+
+**Limitations:** `REVIEW` does not distinguish wrong answers from correct paraphrases without human judgment. Accepted variants are hand-authored and can introduce false positives if curated incorrectly. The eight examples are not an independent representative benchmark, and the comparison tool does not save comparison reports to disk. No generalized semantic or hallucination metric is claimed. Exact-match `summary.accuracy` remains unchanged; 4B acceptance is reported separately.
+
+**Acceptance evidence:** Scoring rules and human labels are inspectable; baseline and alternative decisions are reproducible; model request errors remain errors; the 53-test 4A baseline and all prior functionality are preserved.
 
 ### Milestone 4C: Response consistency and failure classification
 
@@ -291,4 +301,4 @@ A reader can compare multiple runs using documented model/dataset/scoring versio
 
 ### Near-term next step
 
-Milestone 4A is implemented and tested on `feature/milestone-4` (53 passing tests). Review and commit/push the 4A code and documentation, then begin **4B: evaluation beyond exact matching**. Milestone 3 remains complete on `main` (47-test baseline); advanced cross-run reporting remains planned for Milestone 5.
+Milestones 4A and 4B are implemented and tested on `feature/milestone-4` (67 passing tests). Review and commit/push the 4B code and documentation, then begin **4C: response consistency and failure classification**. Milestone 3 remains complete on `main` (47-test baseline); advanced cross-run reporting remains planned for Milestone 5.

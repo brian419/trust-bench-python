@@ -19,7 +19,7 @@ for item in data:
     if (item["expected"].lower().strip() == item["response"].lower().strip()):
         print("Test ID:", item["id"], ";", "PASS: The answers match!")
         passed_count += 1
-    else: 
+    else:
         print("Test ID:", item["id"], ";", "FAIL: The answers don't match!")
         failed_count += 1
 
@@ -46,7 +46,7 @@ else:
 # Compares the expected response with the actual response.
 # Records which tests passed and failed.
 # Prints the overall accuracy percentage.
-# Answer normalization; 
+# Answer normalization;
 
 
 ## what we need to do now:

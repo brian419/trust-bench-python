@@ -45,6 +45,20 @@ def validate_reference_dataset(data: object) -> list[str]:
         else:
             errors.append("ERROR: The field 'reference' must be a dictionary.")
 
+        if "accepted_answers" in item:
+            alternatives = item["accepted_answers"]
+
+            if not isinstance(alternatives, list):
+                errors.append("ERROR: 'accepted_answers' must be a list.")
+
+            elif any(
+                not isinstance(answer, str) or not answer.strip()
+                for answer in alternatives
+            ):
+                errors.append(
+                    "ERROR: 'accepted_answers' must contain nonempty strings."
+                )
+
     return errors
 
 

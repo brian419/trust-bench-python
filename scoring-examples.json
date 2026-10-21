@@ -1,0 +1,63 @@
+[
+    {
+        "id": "score_001",
+        "expected": "Paris",
+        "generated": " paris ",
+        "accepted_answers": [],
+        "human_label": "PASS"
+    },
+    {
+        "id": "score_002",
+        "expected": "New York City",
+        "generated": "NYC",
+        "accepted_answers": [
+            "NYC",
+            "New York"
+        ],
+        "human_label": "PASS"
+    },
+    {
+        "id": "score_003",
+        "expected": "8",
+        "generated": "eight",
+        "accepted_answers": [
+            "eight"
+        ],
+        "human_label": "PASS"
+    },
+    {
+        "id": "score_004",
+        "expected": "Paris",
+        "generated": "London",
+        "accepted_answers": [],
+        "human_label": "FAIL"
+    },
+    {
+        "id": "score_005",
+        "expected": "Paris",
+        "generated": "The capital is Paris.",
+        "accepted_answers": [],
+        "human_label": "PASS"
+    },
+    {
+        "id": "score_006",
+        "expected": "Jupiter",
+        "generated": "Jupiter",
+        "accepted_answers": [],
+        "human_label": "PASS"
+    },
+    {
+        "id": "score_007",
+        "expected": "kilogram",
+        "generated": "gram",
+        "accepted_answers": [],
+        "human_label": "FAIL"
+    },
+    {
+        "id": "score_008",
+        "expected": "Guido van Rossum",
+        "generated": "Guido van Bronbeke",
+        "accepted_answers": [],
+        "human_label": "FAIL"
+    }
+]

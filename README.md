@@ -8,9 +8,9 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–3: Complete on `main` (47 tests). Milestone 4A: Implemented and tested on `feature/milestone-4` (53 tests).**
+**Milestones 1–3: Complete on `main` (47 tests). Milestones 4A and 4B: Implemented and tested on `feature/milestone-4` (67 tests).**
 
-Milestone 3 was merged into the default `main` branch on October 21, 2026. The reference-grounded work described below is currently on `feature/milestone-4`, not yet merged into `main`. Milestones 4B–4E and 5 remain planned. For the 4A workflow, check out that branch after cloning.
+Milestone 3 was merged into the default `main` branch on October 21, 2026. The reference-grounded work described below is currently on `feature/milestone-4`, not yet merged into `main`. Milestones 4C–4E and 5 remain planned. For the Milestone 4 workflows, check out that branch after cloning.
 
 Implemented:
 
@@ -115,7 +115,7 @@ python3 -m pip install pytest
 python3 -m pytest -v
 ```
 
-The `main` baseline contains **47 tests**. The `feature/milestone-4` branch currently contains **53 passing tests**, including reference validation and reference-report regression tests, in addition to offline CLI tests, mocked Ollama requests, error handling, request-timing regression tests, and JSON report persistence tests. Model calls are mocked in the automated tests, so no Ollama server is needed to run them.
+The `main` baseline contains **47 tests**. The `feature/milestone-4` branch currently contains **67 passing tests**, including reference validation, alternative-answer scoring, and report regression tests, in addition to offline CLI tests, mocked Ollama requests, error handling, request-timing regression tests, and JSON report persistence tests. Model calls are mocked in the automated tests, so no Ollama server is needed to run them.
 
 ## Offline input format
 
@@ -202,12 +202,36 @@ This invokes reference validation before inference, preserves the default `pytho
 
 **Interpretation and limitations:** This is a tiny, deliberately simple dataset and the percentage is not an estimate of general model factuality or safety. Comparisons only lowercase and strip surrounding whitespace, so valid paraphrases can fail. Reference URLs are recorded for auditability, not retrieved or supplied to the model as context: this is reference-*based scoring*, **not retrieval-augmented generation or proof of source-grounded model answers**. The validator checks metadata format, not source accuracy or content, and the `verified_date` field is a supplied claim rather than a machine-verified timestamp. Full source-content review, broader answer handling, repeated-run consistency analysis, and stronger reproducibility metadata remain future work.
 
+## Evaluation beyond exact matching (Milestone 4B, feature branch)
+
+**Status: Implemented and locally tested on `feature/milestone-4`; not yet merged into `main`.**
+
+`answer_scorer.py` adds `score_answer(expected, generated, accepted_answers=None)` alongside the original `compare_answers()` function. It returns `PASS` for a normalized exact match or an explicitly listed accepted alternative, and `REVIEW` when neither matches. `REVIEW` is not a claim that an answer is wrong: it can represent either an incorrect answer or a correct but unrecognized paraphrase. It does not perform semantic inference, fact-checking, or automatic determination of `FAIL` for unmatched text.
+
+`scoring-examples.json` provides eight prerecorded, human-labeled cases. From the repository root, compare scorers without Ollama:
+
+```bash
+python3 compare_scorers.py
+```
+
+**Observed eight-example comparison:** normalized exact matching automatically accepted **2/8**; accepted-alternative scoring accepted **4/8** and sent **4/8** for review. The two additional accepted examples were `NYC` for `New York City` and `eight` for `8`. Of the four review cases, three have human `FAIL` labels and one is a human `PASS` (`The capital is Paris.`). No incorrect example was automatically accepted in this limited fixture. These figures measure acceptance/review behavior on a curated fixture, **not general model accuracy or semantic-scoring performance**.
+
+For local reference-dataset inference, continue to use:
+
+```bash
+python3 -c "from eval_live import main; main('eval-read-reference.json')"
+```
+
+In reference-dataset JSON reports, `results[*].status` and `summary.accuracy` retain their original exact-match meanings. A separate `results[*].alternative_scoring` field contains `status` (`PASS`, `REVIEW`, or `ERROR`) and a reason. Optional per-case `accepted_answers` must be a list of nonblank strings; malformed values are rejected before inference. Model request failures remain `ERROR` under both scoring methods. The default `python3 eval_live.py` workflow and offline `eval.py` behavior are preserved. The reference dataset currently contains no curated accepted alternatives, so the comparison fixture is the clearest demonstration of alternative matching.
+
+**Limitations:** Accepted variants must be written by a human; an incorrect response that accidentally appears on an accepted list would pass. The `REVIEW` outcome requires subsequent human judgment and is not automatically resolved. The comparison tool prints and returns in-memory results but does not yet persist a separate comparison report. The eight labeled examples were constructed for demonstration and should not be presented as an independent benchmark. The full test suite passed **67 tests** without requiring Ollama.
+
 ## Development roadmap
 
 - **Milestone 1: Basic evaluation (complete).** Read prerecorded answers from JSON, normalize and score them.
 - **Milestone 2: Testable architecture (complete).** Reusable functions, pytest tests, dataset validation, and controlled CLI errors.
 - **Milestone 3: Local model integration (complete).** Ollama HTTP inference, live scoring, request failure handling, elapsed-time tracking, and saved JSON run reports.
-- **Milestone 4: Responsible AI evaluation methods (in progress).** 4A reference-based factual evaluation is implemented and tested on the feature branch; 4B–4E remain planned for alternative scoring, consistency, controlled prompt-injection scenarios, and synthesis.
+- **Milestone 4: Responsible AI evaluation methods (in progress).** 4A reference-based evaluation and 4B accepted-alternative scoring are implemented and tested on the feature branch; 4C–4E remain planned for consistency, controlled prompt-injection scenarios, and synthesis.
 - **Milestone 5: Advanced reproducibility and comparisons (planned).** Build on the basic JSON reporting from Milestone 3 to compare runs, record more configuration/version metadata, and produce cautious aggregate analyses.
 
 See [`milestones.md`](milestones.md) for detailed status and acceptance evidence.

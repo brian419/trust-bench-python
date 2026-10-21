@@ -1,4 +1,5 @@
 from reference_validator import validate_reference_dataset
+import pytest
 
 
 def test_valid_reference_dataset():
@@ -51,3 +52,20 @@ def test_missing_expected_answer():
     errors = validate_reference_dataset(data)
 
     assert "Error: Test case #1: Missing required field 'expected'." in errors
+
+
+@pytest.mark.parametrize("alternatives", ["NYC", 123, ["NYC", 5], [""], [None]])
+def test_invalid_accepted_answers(alternatives):
+    data = [
+        {
+            "id": "fact_001",
+            "question": "What city is called NYC?",
+            "expected": "New York City",
+            "reference": {"url": "https://example.com", "verified_date": "2026-10-21"},
+            "accepted_answers": alternatives,
+        }
+    ]
+
+    errors = validate_reference_dataset(data)
+
+    assert any("accepted_answers" in error for error in errors)
