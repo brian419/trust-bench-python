@@ -8,9 +8,9 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1, 2, and 3: Complete (47 automated tests)**
+**Milestones 1–3: Complete on `main` (47 tests). Milestone 4A: Implemented and tested on `feature/milestone-4` (53 tests).**
 
-Milestone 3 was merged into the default `main` branch on October 21, 2026. The instructions below work directly from a fresh clone of `main`; Milestones 4 and 5 are planned, not yet implemented.
+Milestone 3 was merged into the default `main` branch on October 21, 2026. The reference-grounded work described below is currently on `feature/milestone-4`, not yet merged into `main`. Milestones 4B–4E and 5 remain planned. For the 4A workflow, check out that branch after cloning.
 
 Implemented:
 
@@ -115,7 +115,7 @@ python3 -m pip install pytest
 python3 -m pytest -v
 ```
 
-The current suite contains **47 tests**, including offline CLI tests, mocked Ollama requests, error-handling tests, request-timing regression tests, and JSON report persistence tests. Model calls are mocked in the automated tests, so no Ollama server is needed to run them.
+The `main` baseline contains **47 tests**. The `feature/milestone-4` branch currently contains **53 passing tests**, including reference validation and reference-report regression tests, in addition to offline CLI tests, mocked Ollama requests, error handling, request-timing regression tests, and JSON report persistence tests. Model calls are mocked in the automated tests, so no Ollama server is needed to run them.
 
 ## Offline input format
 
@@ -147,7 +147,7 @@ Live evaluation makes HTTP requests to a locally running model. It does not use 
    python3 eval_live.py
    ```
 
-The client sends non-streaming requests to `http://localhost:11434/api/generate` using the model name `gemma3:1b`. The current script uses the fixed dataset file `eval-read-live.json` and fixed model name in its source; **live model selection and arbitrary dataset paths are not yet CLI options**. Ollama runs the model locally, but model download and local execution still consume bandwidth, disk space, and computer resources.
+The client sends non-streaming requests to `http://localhost:11434/api/generate` using the model name `gemma3:1b`. The script defaults to `eval-read-live.json` and uses a fixed model name in source. On `feature/milestone-4`, Python callers can supply `main("eval-read-reference.json")` to evaluate the new reference dataset; **live model selection and arbitrary dataset paths are not yet CLI options**. Ollama runs the model locally, but model download and local execution still consume bandwidth, disk space, and computer resources.
 
 ### Live dataset format
 
@@ -178,18 +178,36 @@ A report includes:
 
 - `metadata`: model name, dataset filename, and UTC ISO 8601 run timestamp.
 - `summary`: counts of passed, failed, and errored requests, plus `accuracy` (a percentage, or JSON `null` if no requests were scored).
-- `results`: test ID, question, expected answer, generated response, status, and `duration_seconds`; error cases contain `generated: null` and an `error` message.
+- `results`: test ID, question, expected answer, generated response, status, and `duration_seconds`; error cases contain `generated: null` and an `error` message. On `feature/milestone-4`, reference-dataset results also retain `reference` metadata for PASS, FAIL, and ERROR cases.
 
 A `PASS` or `FAIL` counts toward the accuracy denominator; an `ERROR` (HTTP, connection, or timeout failure) does not. An evaluation with no scored answers reports `Accuracy: N/A`. Request durations measure elapsed time for each model request, not total CLI runtime. Output can vary between runs even for the same prompts.
 
 Report filenames use unique identifiers, so earlier reports are preserved. A directory/file-system problem while saving produces an error message and exits with code 1. The current implementation does not compare reports across runs or track all model configuration parameters or dataset revisions; those are future improvements.
+
+## Reference-grounded factual evaluation (Milestone 4A, feature branch)
+
+**Status: Implemented and locally tested on `feature/milestone-4`; not yet merged into `main`.**
+
+The `eval-read-reference.json` dataset contains **10 short, stable factual questions**, each with `id`, `question`, `expected`, and `reference` (`url` and `verified_date`). The accompanying `reference_validator.py` reuses live-dataset validation and checks that reference fields exist, have the expected types, are nonblank, and include a valid `YYYY-MM-DD` verification date. This **does not** fetch URLs or independently prove that a source supports its answer.
+
+Run the reference dataset locally from the repository root (with Ollama and `gemma3:1b` available):
+
+```bash
+python3 -c "from eval_live import main; main('eval-read-reference.json')"
+```
+
+This invokes reference validation before inference, preserves the default `python3 eval_live.py` behavior for the original live dataset, and copies reference metadata into saved results, including request-error results. Run `python3 -m pytest -v` to check the feature branch without Ollama.
+
+**Observed local baseline (October 21, 2026):** 10 attempted questions, 8 PASS, 2 FAIL, 0 request errors, **80% normalized exact-match accuracy**. In one saved run, `fact_007` expected `Thymine` but generated `A`, and `fact_009` expected `kilogram` but generated `Gram`. Other observed runs produced differing wrong answers on some cases. Example local report: `reports/evaluation-2ecae329e17d458ba51bce8a457c4ab8.json` (reports are Git-ignored, so this file is not part of a fresh clone). The feature branch passed **53 automated tests**, including checks that reference metadata is retained after successful responses and mocked connection errors.
+
+**Interpretation and limitations:** This is a tiny, deliberately simple dataset and the percentage is not an estimate of general model factuality or safety. Comparisons only lowercase and strip surrounding whitespace, so valid paraphrases can fail. Reference URLs are recorded for auditability, not retrieved or supplied to the model as context: this is reference-*based scoring*, **not retrieval-augmented generation or proof of source-grounded model answers**. The validator checks metadata format, not source accuracy or content, and the `verified_date` field is a supplied claim rather than a machine-verified timestamp. Full source-content review, broader answer handling, repeated-run consistency analysis, and stronger reproducibility metadata remain future work.
 
 ## Development roadmap
 
 - **Milestone 1: Basic evaluation (complete).** Read prerecorded answers from JSON, normalize and score them.
 - **Milestone 2: Testable architecture (complete).** Reusable functions, pytest tests, dataset validation, and controlled CLI errors.
 - **Milestone 3: Local model integration (complete).** Ollama HTTP inference, live scoring, request failure handling, elapsed-time tracking, and saved JSON run reports.
-- **Milestone 4: Responsible AI evaluation methods (planned).** Explore factual grounding, consistency, controlled prompt-injection scenarios, and cases requiring human review.
+- **Milestone 4: Responsible AI evaluation methods (in progress).** 4A reference-based factual evaluation is implemented and tested on the feature branch; 4B–4E remain planned for alternative scoring, consistency, controlled prompt-injection scenarios, and synthesis.
 - **Milestone 5: Advanced reproducibility and comparisons (planned).** Build on the basic JSON reporting from Milestone 3 to compare runs, record more configuration/version metadata, and produce cautious aggregate analyses.
 
 See [`milestones.md`](milestones.md) for detailed status and acceptance evidence.

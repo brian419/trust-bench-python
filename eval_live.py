@@ -3,14 +3,14 @@ import json
 import time
 import uuid
 from eval import validate_dataset, compare_answers, calculate_accuracy
+from reference_validator import validate_reference_dataset
 from ollama_client import generate_response
 from urllib.error import HTTPError, URLError
 from datetime import datetime, timezone
 from pathlib import Path
 
 
-def main():
-    filename = "eval-read-live.json"
+def main(filename="eval-read-live.json"):
 
     try:    
         with open(filename, "r") as file:
@@ -24,7 +24,10 @@ def main():
         print("Error:", e)
         sys.exit(1)
 
-    validation_errors = validate_dataset(data, require_response=False)
+    if filename == "eval-read-reference.json":
+        validation_errors = validate_reference_dataset(data)
+    else:
+        validation_errors = validate_dataset(data, require_response=False)
 
     if validation_errors:
         for error in validation_errors:
@@ -156,6 +159,10 @@ def main():
         results.append(result)
 
     print("Collected results:", results)
+
+    for item, result in zip(data, results):
+        if "reference" in item:
+            result["reference"] = item["reference"]
 
     accuracy = calculate_accuracy(passed_count, failed_count)
 

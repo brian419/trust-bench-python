@@ -4,18 +4,15 @@ from unittest.mock import patch
 from urllib.error import HTTPError, URLError
 from eval_live import main
 
+
 def test_live_evaluation_all_pass(tmp_path, monkeypatch, capsys):
     data = [
         {
             "id": "test_001",
             "question": "What is the capital of France?",
-            "expected": "Paris"
+            "expected": "Paris",
         },
-        {
-            "id": "test_002",
-            "question": "What is 6 multiplied by 2?",
-            "expected": "12"
-        }
+        {"id": "test_002", "question": "What is 6 multiplied by 2?", "expected": "12"},
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
@@ -23,7 +20,9 @@ def test_live_evaluation_all_pass(tmp_path, monkeypatch, capsys):
 
     monkeypatch.chdir(tmp_path)
 
-    with patch("eval_live.generate_response", side_effect=["Paris", "12"]) as mock_generate:
+    with patch(
+        "eval_live.generate_response", side_effect=["Paris", "12"]
+    ) as mock_generate:
         report = main()
 
     results = report["results"]
@@ -44,7 +43,7 @@ def test_live_evaluation_all_pass(tmp_path, monkeypatch, capsys):
 
     assert results[1]["id"] == "test_002"
     assert results[1]["generated"] == "12"
-    assert results[1]["status"] == "PASS"  
+    assert results[1]["status"] == "PASS"
 
     assert report["metadata"]["model"] == "gemma3:1b"
     assert report["metadata"]["dataset"] == "eval-read-live.json"
@@ -75,13 +74,9 @@ def test_live_evaluation_mixed_results(tmp_path, monkeypatch, capsys):
         {
             "id": "test_001",
             "question": "What is the capital of France?",
-            "expected": "Paris"
+            "expected": "Paris",
         },
-        {
-            "id": "test_002",
-            "question": "What is 6 multiplied by 2?",
-            "expected": "12"
-        }
+        {"id": "test_002", "question": "What is 6 multiplied by 2?", "expected": "12"},
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
@@ -89,7 +84,9 @@ def test_live_evaluation_mixed_results(tmp_path, monkeypatch, capsys):
 
     monkeypatch.chdir(tmp_path)
 
-    with patch("eval_live.generate_response", side_effect=["London", "12"]) as mock_generate:
+    with patch(
+        "eval_live.generate_response", side_effect=["London", "12"]
+    ) as mock_generate:
         report = main()
 
     results = report["results"]
@@ -111,7 +108,7 @@ def test_live_evaluation_mixed_results(tmp_path, monkeypatch, capsys):
 
     assert results[1]["id"] == "test_002"
     assert results[1]["generated"] == "12"
-    assert results[1]["status"] == "PASS"  
+    assert results[1]["status"] == "PASS"
 
 
 def test_live_evaluation_connection_error(tmp_path, monkeypatch, capsys):
@@ -119,13 +116,9 @@ def test_live_evaluation_connection_error(tmp_path, monkeypatch, capsys):
         {
             "id": "test_001",
             "question": "What is the capital of France?",
-            "expected": "Paris"
+            "expected": "Paris",
         },
-        {
-            "id": "test_002",
-            "question": "What is 6 multiplied by 2?",
-            "expected": "12"
-        }
+        {"id": "test_002", "question": "What is 6 multiplied by 2?", "expected": "12"},
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
@@ -135,10 +128,10 @@ def test_live_evaluation_connection_error(tmp_path, monkeypatch, capsys):
 
     with patch(
         "eval_live.generate_response",
-        side_effect=[URLError("Connection refused"), "12"]
+        side_effect=[URLError("Connection refused"), "12"],
     ) as mock_generate:
         report = main()
-        
+
     results = report["results"]
 
     output = capsys.readouterr().out
@@ -172,13 +165,9 @@ def test_live_evaluation_all_errors(tmp_path, monkeypatch, capsys):
         {
             "id": "test_001",
             "question": "What is the capital of France?",
-            "expected": "Paris"
+            "expected": "Paris",
         },
-        {
-            "id": "test_002",
-            "question": "What is 6 multiplied by 2?",
-            "expected": "12"
-        }
+        {"id": "test_002", "question": "What is 6 multiplied by 2?", "expected": "12"},
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
@@ -188,10 +177,7 @@ def test_live_evaluation_all_errors(tmp_path, monkeypatch, capsys):
 
     with patch(
         "eval_live.generate_response",
-        side_effect=[
-            URLError("Connection refused"),
-            URLError("Connection refused")
-        ]
+        side_effect=[URLError("Connection refused"), URLError("Connection refused")],
     ) as mock_generate:
         main()
 
@@ -206,10 +192,7 @@ def test_live_evaluation_all_errors(tmp_path, monkeypatch, capsys):
 
 
 def test_live_evaluation_invalid_dataset(tmp_path, monkeypatch, capsys):
-    data = [{
-        "id": "test_001",
-        "question": "What is the capital of France?"
-    }]
+    data = [{"id": "test_001", "question": "What is the capital of France?"}]
 
     dataset_file = tmp_path / "eval-read-live.json"
     dataset_file.write_text(json.dumps(data))
@@ -232,13 +215,9 @@ def test_live_evaluation_http_error(tmp_path, monkeypatch, capsys):
         {
             "id": "test_001",
             "question": "What is the capital of France?",
-            "expected": "Paris"
+            "expected": "Paris",
         },
-        {
-            "id": "test_002",
-            "question": "What is 6 multiplied by 2?",
-            "expected": "12"
-        }
+        {"id": "test_002", "question": "What is 6 multiplied by 2?", "expected": "12"},
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
@@ -251,15 +230,14 @@ def test_live_evaluation_http_error(tmp_path, monkeypatch, capsys):
         code=404,
         msg="Not Found",
         hdrs=None,
-        fp=None
+        fp=None,
     )
 
     with patch(
-        "eval_live.generate_response",
-        side_effect=[fake_error, "12"]
+        "eval_live.generate_response", side_effect=[fake_error, "12"]
     ) as mock_generate:
         report = main()
-        
+
     results = report["results"]
 
     output = capsys.readouterr().out
@@ -292,13 +270,9 @@ def test_live_evaluation_timeout(tmp_path, monkeypatch, capsys):
         {
             "id": "test_001",
             "question": "What is the capital of France?",
-            "expected": "Paris"
+            "expected": "Paris",
         },
-        {
-            "id": "test_002",
-            "question": "What is 6 multiplied by 2?",
-            "expected": "12"
-        }
+        {"id": "test_002", "question": "What is 6 multiplied by 2?", "expected": "12"},
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
@@ -307,11 +281,10 @@ def test_live_evaluation_timeout(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
 
     with patch(
-        "eval_live.generate_response",
-        side_effect=[TimeoutError("Timed out"), "12"]
+        "eval_live.generate_response", side_effect=[TimeoutError("Timed out"), "12"]
     ) as mock_generate:
         report = main()
-        
+
     results = report["results"]
 
     output = capsys.readouterr().out
@@ -356,9 +329,7 @@ def test_live_evaluation_missing_file(tmp_path, monkeypatch, capsys):
 def test_live_evaluation_malformed_json(tmp_path, monkeypatch, capsys):
     dataset_file = tmp_path / "eval-read-live.json"
 
-    dataset_file.write_text(
-        '{"id": "test_001" "question": "Hello"}'
-    )
+    dataset_file.write_text('{"id": "test_001" "question": "Hello"}')
 
     monkeypatch.chdir(tmp_path)
 
@@ -378,13 +349,9 @@ def test_live_evaluation_wrapped_timeout(tmp_path, monkeypatch, capsys):
         {
             "id": "test_001",
             "question": "What is the capital of France?",
-            "expected": "Paris"
+            "expected": "Paris",
         },
-        {
-            "id": "test_002",
-            "question": "What is 6 multiplied by 2?",
-            "expected": "12"
-        }
+        {"id": "test_002", "question": "What is 6 multiplied by 2?", "expected": "12"},
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
@@ -395,11 +362,10 @@ def test_live_evaluation_wrapped_timeout(tmp_path, monkeypatch, capsys):
     wrapped_timeout = URLError(TimeoutError("timed out"))
 
     with patch(
-        "eval_live.generate_response",
-        side_effect=[wrapped_timeout, "12"]
+        "eval_live.generate_response", side_effect=[wrapped_timeout, "12"]
     ) as mock_generate:
         report = main()
-        
+
     results = report["results"]
 
     output = capsys.readouterr().out
@@ -432,7 +398,7 @@ def test_multiple_reports_preserved(tmp_path, monkeypatch):
         {
             "id": "test_001",
             "question": "What is the capital of France?",
-            "expected": "Paris"
+            "expected": "Paris",
         }
     ]
 
@@ -461,7 +427,7 @@ def test_multiple_reports_preserved(tmp_path, monkeypatch):
 def test_request_durations_not_overwritten(tmp_path, monkeypatch):
     data = [
         {"id": "test_001", "question": "First?", "expected": "A"},
-        {"id": "test_002", "question": "Second?", "expected": "B"}
+        {"id": "test_002", "question": "Second?", "expected": "B"},
     ]
 
     (tmp_path / "eval-read-live.json").write_text(json.dumps(data))
@@ -480,7 +446,7 @@ def test_report_save_failure(tmp_path, monkeypatch, capsys):
         {
             "id": "test_001",
             "question": "What is the capital of France?",
-            "expected": "Paris"
+            "expected": "Paris",
         }
     ]
 
@@ -496,3 +462,53 @@ def test_report_save_failure(tmp_path, monkeypatch, capsys):
 
     assert error.value.code == 1
     assert "Error saving report:" in output
+
+
+def test_reference_metadata_preserved(tmp_path, monkeypatch):
+    data = [
+        {
+            "id": "fact_001",
+            "question": "What is the chemical symbol for gold?",
+            "expected": "Au",
+            "reference": {"url": "https://example.com", "verified_date": "2026-10-21"},
+        }
+    ]
+
+    dataset_file = tmp_path / "eval-read-reference.json"
+    dataset_file.write_text(json.dumps(data))
+
+    monkeypatch.chdir(tmp_path)
+
+    with patch("eval_live.generate_response", return_value="Au"):
+        report = main("eval-read-reference.json")
+
+    assert report["results"][0]["status"] == "PASS"
+    assert report["results"][0]["reference"] == data[0]["reference"]
+
+
+def test_reference_metadata_preserved_on_error(tmp_path, monkeypatch):
+    data = [
+        {
+            "id": "fact_001",
+            "question": "What is the chemical symbol for gold?",
+            "expected": "Au",
+            "reference": {"url": "https://example.com", "verified_date": "2026-10-21"},
+        }
+    ]
+
+    dataset_file = tmp_path / "eval-read-reference.json"
+    dataset_file.write_text(json.dumps(data))
+
+    monkeypatch.chdir(tmp_path)
+
+    with patch(
+        "eval_live.generate_response", side_effect=URLError("Connection refused")
+    ):
+        report = main("eval-read-reference.json")
+
+    result = report["results"][0]
+
+    assert result["status"] == "ERROR"
+    assert result["generated"] is None
+    assert result["reference"] == data[0]["reference"]
+    assert report["summary"]["errors"] == 1

@@ -1,0 +1,92 @@
+[
+    {
+        "id": "fact_001",
+        "question": "What is the chemical symbol for gold? Answer with only the symbol.",
+        "expected": "Au",
+        "reference": {
+            "url": "https://periodic-table.rsc.org/element/79/Gold",
+            "verified_date": "2026-10-21"
+        }
+    },
+    {
+        "id": "fact_002",
+        "question": "What is the capital of Japan? Answer with only the city name.",
+        "expected": "Tokyo",
+        "reference": {
+            "url": "https://www.japan.go.jp/japan/index.html",
+            "verified_date": "2026-10-21"
+        }
+    },
+    {
+        "id": "fact_003",
+        "question": "How many bits are in one byte? Answer with only the number.",
+        "expected": "8",
+        "reference": {
+            "url": "https://www.ibm.com/docs/en/3592-rackmount?topic=references-glossary",
+            "verified_date": "2026-10-21"
+        }
+    },
+    {
+        "id": "fact_004",
+        "question": "Which planet is known as the Red Planet? Answer with only the planet name.",
+        "expected": "Mars",
+        "reference": {
+            "url": "https://science.nasa.gov/mars/facts/",
+            "verified_date": "2026-10-21"
+        }
+    },
+    {
+        "id": "fact_005",
+        "question": "What molecule carries genetic information in most organisms? Answer with only its three-letter abbreviation.",
+        "expected": "DNA",
+        "reference": {
+            "url": "https://www.genome.gov/about-genomics/fact-sheets/Deoxyribonucleic-Acid-Fact-Sheet",
+            "verified_date": "2026-10-21"
+        }
+    },
+    {
+        "id": "fact_006",
+        "question": "What is the largest planet in our solar system? Answer with only the planet name.",
+        "expected": "Jupiter",
+        "reference": {
+            "url": "https://science.nasa.gov/jupiter/jupiter-facts/",
+            "verified_date": "2026-10-21"
+        }
+    },
+    {
+        "id": "fact_007",
+        "question": "Which DNA base pairs with adenine? Answer with only the base name.",
+        "expected": "Thymine",
+        "reference": {
+            "url": "https://www.genome.gov/genetics-glossary/Double-Helix",
+            "verified_date": "2026-10-21"
+        }
+    },
+    {
+        "id": "fact_008",
+        "question": "What is the SI base unit of length? Answer with only the unit name in American English.",
+        "expected": "meter",
+        "reference": {
+            "url": "https://www.nist.gov/pml/owm/si-units-length",
+            "verified_date": "2026-10-21"
+        }
+    },
+    {
+        "id": "fact_009",
+        "question": "What is the SI base unit of mass? Answer with only the unit name.",
+        "expected": "kilogram",
+        "reference": {
+            "url": "https://www.nist.gov/si-redefinition/definitions-si-base-units",
+            "verified_date": "2026-10-21"
+        }
+    },
+    {
+        "id": "fact_010",
+        "question": "Who created the Python programming language? Answer with only the person's full name.",
+        "expected": "Guido van Rossum",
+        "reference": {
+            "url": "https://docs.python.org/3.12/license.html",
+            "verified_date": "2026-10-21"
+        }
+    }
+]

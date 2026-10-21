@@ -2,7 +2,7 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestones 1, 2, and 3 implemented, tested (47 automated tests), and merged into `main` on October 21, 2026. Milestones 4 and 5 remain planned.
+**Current status:** Milestones 1, 2, and 3 implemented, tested (47 automated tests), and merged into `main` on October 21, 2026. Milestone 4A implemented and locally tested on `feature/milestone-4` (53 passing tests); not yet merged. Milestones 4B–4E and 5 remain planned.
 
 ## Guiding principles
 
@@ -21,7 +21,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 | 2B | Automated unit tests with pytest | **Complete** |
 | 2C | Input validation and error handling | **Complete** |
 | 3 | Run evaluations against a local AI model and save basic JSON reports | **Complete (47 tests total)** |
-| 4 | Responsible AI evaluation methods | Planned |
+| 4 | Responsible AI evaluation methods | In progress: 4A implemented/tested on feature branch; 4B–4E planned |
 | 5 | Reproducibility, comparison, and reporting | Planned |
 
 ---
@@ -167,21 +167,28 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ## Milestone 4: Responsible AI evaluation methods
 
-**Status: Planned; scoped development plan prepared on `feature/milestone-4`.** Build defensible, reproducible tests for specific failure modes of model-generated responses. The starting baseline is Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47 passing automated tests**. Planning does not imply any Milestone 4 feature is implemented.
+**Status: In progress on `feature/milestone-4`.** Milestone 4A is implemented and locally tested (53 passing tests), building on Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47-test baseline**. Work remains on the feature branch pending review/merge; 4B–4E are planned.
 
 **Working approach:** Progress through 4A–4E sequentially, with small learning exercises, targeted tests, and review of outputs before advancing. Preserve `eval.py`, existing `eval_live.py` behavior, JSON reports, and all baseline tests. Favor free local execution, offline fixtures, and mocked calls; no paid API accounts or substantial new dependencies required. Keep dataset and scoring definitions explicit rather than adding vague "responsible AI" scores.
 
 ### Milestone 4A: Reference-grounded factual evaluation
 
-**Goal:** Introduce a small curated evaluation set where answers are checked against clearly identified reference facts, not merely assumed correct.
+**Status: Implementation and local validation complete on `feature/milestone-4` (October 21, 2026); commit/merge status not yet confirmed.**
 
-- [ ] Design an initial 8–12-case dataset with a stable ID, question, reference answer, source citation/URL or other auditable reference, and short verification note for each case.
-- [ ] Prefer narrow, independently checkable facts; avoid dynamic or disputed facts requiring regular refreshes.
-- [ ] Document source dates and ambiguous-answer handling, and validate any added fields without weakening the existing offline/live schemas.
-- [ ] Run a local baseline against `gemma3:1b`; retain raw outputs and report which cases are exact matches versus those needing human review.
-- [ ] Add tests for the new dataset format/validation, including malformed reference metadata.
+**Goal:** Introduce a small curated evaluation set with auditable references for each expected factual answer. References serve as human-review evidence, not retrieved model context.
 
-**Acceptance:** A reader can trace every expected answer to a reference, reproduce the local run, and distinguish reference support from the limitations of simple exact matching.
+- [x] Created 10 factual cases in `eval-read-reference.json`, each with stable `id`, `question`, `expected`, and `reference` containing `url` and `verified_date`.
+- [x] Chose narrow, mostly stable facts across chemistry, geography, computing, astronomy, biology, and measurement.
+- [x] Implemented `validate_reference_dataset()` in `reference_validator.py`; reuses `validate_dataset(..., require_response=False)` and validates the reference object, nonblank URL/date strings, and strict calendar-date formatting.
+- [x] Allowed `eval_live.main(filename="eval-read-live.json")` to accept the reference dataset while preserving the original default and legacy schema; the reference filename selects reference-specific validation.
+- [x] Preserved per-case `reference` metadata in the JSON results for PASS, FAIL, and ERROR cases.
+- [x] Ran local `gemma3:1b` baseline on the ten cases, saved raw outputs and categorized mismatches, and verified **53 passing pytest tests** including successful/error-path reference reporting.
+
+**Local evidence:** `python3 -c "from eval_live import main; main('eval-read-reference.json')"`. One October 21 run saved `reports/evaluation-2ecae329e17d458ba51bce8a457c4ab8.json`: **8 PASS, 2 FAIL, 0 ERROR, 80.0 normalized exact-match accuracy**. `fact_007`: `Thymine` expected, `A` generated. `fact_009`: `kilogram` expected, `Gram` generated. Other observed runs showed response variation. Reports are ignored by Git and are not included in a fresh checkout unless explicitly shared.
+
+**Limitations:** Structural validation does not fetch or verify the URL's factual content; `verified_date` is dataset metadata, not automatically established by the program. Source citations are stored but not passed to Ollama as retrieval context. Normalized exact matching does not accept equivalent paraphrases or detect unsupported explanations, and ten cases cannot establish a general model reliability score. Source-content verification, review of ambiguous equivalent responses, and stronger reproduction metadata remain open improvements or later milestone work.
+
+**Acceptance evidence:** Each case includes an auditable URL/date, local scoring is reproducible with the documented command and installed model, results retain references (even on request error), and the report clearly separates exact matches, incorrect outputs, and request failures.
 
 ### Milestone 4B: Evaluation beyond exact matching
 
@@ -284,4 +291,4 @@ A reader can compare multiple runs using documented model/dataset/scoring versio
 
 ### Near-term next step
 
-Milestone 4's scoped 4A–4E plan has been prepared on `feature/milestone-4`; no Milestone 4 functionality is implemented yet. Begin with **4A: reference-grounded factual evaluation** and validate each stage before proceeding. Milestone 3 remains complete on `main`; advanced cross-run reporting remains planned for Milestone 5.
+Milestone 4A is implemented and tested on `feature/milestone-4` (53 passing tests). Review and commit/push the 4A code and documentation, then begin **4B: evaluation beyond exact matching**. Milestone 3 remains complete on `main` (47-test baseline); advanced cross-run reporting remains planned for Milestone 5.
