@@ -2,7 +2,7 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestones 1, 2, and 3 implemented, tested (47 automated tests), and merged into `main` on October 21, 2026. Milestones 4A and 4B implemented and locally tested on `feature/milestone-4` (67 passing tests); not yet merged. Milestones 4C–4E and 5 remain planned.
+**Current status:** Milestones 1, 2, and 3 implemented, tested (47 automated tests), and merged into `main` on October 21, 2026. Milestones 4A and 4B and stage 4C-1 implemented and tested on `feature/milestone-4` (70 passing tests); not yet merged. Stages 4C-2 through 4C-5, Milestones 4D–4E, and Milestone 5 remain planned.
 
 ## Guiding principles
 
@@ -21,7 +21,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 | 2B | Automated unit tests with pytest | **Complete** |
 | 2C | Input validation and error handling | **Complete** |
 | 3 | Run evaluations against a local AI model and save basic JSON reports | **Complete (47 tests total)** |
-| 4 | Responsible AI evaluation methods | In progress: 4A–4B implemented/tested on feature branch; 4C–4E planned |
+| 4 | Responsible AI evaluation methods | In progress: 4A–4B and stage 4C-1 implemented/tested on feature branch; remaining 4C stages and 4D–4E planned |
 | 5 | Reproducibility, comparison, and reporting | Planned |
 
 ---
@@ -167,7 +167,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ## Milestone 4: Responsible AI evaluation methods
 
-**Status: In progress on `feature/milestone-4`.** Milestones 4A and 4B are implemented and locally tested (67 passing tests), building on Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47-test baseline**. Work remains on the feature branch pending review/merge; 4C–4E are planned.
+**Status: In progress on `feature/milestone-4`.** Milestones 4A and 4B and stage 4C-1 are implemented and locally tested (70 passing tests), building on Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47-test baseline**. Work remains on the feature branch pending review/merge; stages 4C-2 through 4C-5 and Milestones 4D–4E are planned.
 
 **Working approach:** Progress through 4A–4E sequentially, with small learning exercises, targeted tests, and review of outputs before advancing. Preserve `eval.py`, existing `eval_live.py` behavior, JSON reports, and all baseline tests. Favor free local execution, offline fixtures, and mocked calls; no paid API accounts or substantial new dependencies required. Keep dataset and scoring definitions explicit rather than adding vague "responsible AI" scores.
 
@@ -214,6 +214,23 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 ### Milestone 4C: Response consistency and failure classification
 
 **Goal:** Investigate variability across repeated local generations and organize observed errors.
+
+**Progress (October 21, 2026):** Stage 4C-1 completed, tested, and pushed to `feature/milestone-4` in commit `fdf3095`. Stages 4C-2 through 4C-5 remain planned.
+
+#### Stage 4C-1: Offline response consistency analysis
+
+**Status: Complete.**
+
+- [x] Created `consistency_analyzer.py` with `analyze_consistency(responses)`.
+- [x] Normalized responses using `.lower().strip()`, consistent with the existing exact-match evaluator.
+- [x] Used Python's standard-library `Counter` to count distinct normalized responses.
+- [x] Reported total responses, unique responses, disagreement count, and consistency.
+- [x] Defined disagreement count as the total number of responses minus the frequency of the most common normalized response.
+- [x] Handled empty input with zero counts and `consistent: None`.
+- [x] Added three automated tests in `tests/test_consistency_analyzer.py`.
+- [x] Verified LF line endings and a full suite of 70 passing tests.
+
+**Limitations:** This helper measures observed response agreement, not correctness, truthfulness, or model reliability. It does not make Ollama requests, classify failures, or save reports. Small samples cannot establish statistically reliable behavior.
 
 - [ ] Choose a small fixed prompt set and repeat runs under documented conditions; record run count, prompts, model, and any available inference settings.
 - [ ] Keep requests sequential and bounded for the 8 GB development machine; do not require costly compute.
@@ -301,4 +318,4 @@ A reader can compare multiple runs using documented model/dataset/scoring versio
 
 ### Near-term next step
 
-Milestones 4A and 4B are implemented and tested on `feature/milestone-4` (67 passing tests). Review and commit/push the 4B code and documentation, then begin **4C: response consistency and failure classification**. Milestone 3 remains complete on `main` (47-test baseline); advanced cross-run reporting remains planned for Milestone 5.
+Milestones 4A and 4B and stage 4C-1 are implemented and tested on `feature/milestone-4` (70 passing tests). Stage 4C-1 was pushed in commit `fdf3095`; next, implement **4C-2: bounded, sequential repeated local Ollama inference** with mocked tests before live runs. Milestone 3 remains complete on `main` (47-test baseline); advanced cross-run reporting remains planned for Milestone 5.

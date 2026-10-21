@@ -8,9 +8,9 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–3: Complete on `main` (47 tests). Milestones 4A and 4B: Implemented and tested on `feature/milestone-4` (67 tests).**
+**Milestones 1–3: Complete on `main` (47 tests). Milestones 4A and 4B and stage 4C-1: Implemented and tested on `feature/milestone-4` (70 tests).**
 
-Milestone 3 was merged into the default `main` branch on October 21, 2026. The reference-grounded work described below is currently on `feature/milestone-4`, not yet merged into `main`. Milestones 4C–4E and 5 remain planned. For the Milestone 4 workflows, check out that branch after cloning.
+Milestone 3 was merged into the default `main` branch on October 21, 2026. Milestone 4 work described below is currently on `feature/milestone-4`, not yet merged into `main`. Stage 4C-1 is complete; stages 4C-2 through 4C-5, Milestones 4D–4E, and Milestone 5 remain planned. For Milestone 4 workflows, check out that branch after cloning.
 
 Implemented:
 
@@ -23,6 +23,7 @@ Implemented:
 - Capture UTC run timestamps, model and dataset names, raw generated responses, and per-request elapsed seconds.
 - Save a structured JSON report for each live run to `reports/evaluation-<unique-id>.json` without overwriting previous reports.
 - Handle invalid input and report-save failures with clear errors; test the evaluator and mocked model client with `pytest`.
+- Analyze agreement across prerecorded responses with the offline `consistency_analyzer.py` helper (stage 4C-1 on the feature branch).
 
 **Scoring limitation:** “Accuracy” means *normalized exact-match rate among successfully scored responses in the provided dataset*. It is not a general measure of model accuracy, semantic equivalence, factuality, hallucinations, bias, safety, or reliability. Model request errors are counted separately and excluded from the accuracy denominator.
 
@@ -115,7 +116,7 @@ python3 -m pip install pytest
 python3 -m pytest -v
 ```
 
-The `main` baseline contains **47 tests**. The `feature/milestone-4` branch currently contains **67 passing tests**, including reference validation, alternative-answer scoring, and report regression tests, in addition to offline CLI tests, mocked Ollama requests, error handling, request-timing regression tests, and JSON report persistence tests. Model calls are mocked in the automated tests, so no Ollama server is needed to run them.
+The `main` baseline contains **47 tests**. The `feature/milestone-4` branch currently contains **70 passing tests**, including three consistency-analyzer tests, reference validation, alternative-answer scoring, and report regression tests, in addition to offline CLI tests, mocked Ollama requests, error handling, request-timing regression tests, and JSON report persistence tests. Model calls are mocked in the automated tests, so no Ollama server is needed to run them.
 
 ## Offline input format
 
@@ -226,12 +227,52 @@ In reference-dataset JSON reports, `results[*].status` and `summary.accuracy` re
 
 **Limitations:** Accepted variants must be written by a human; an incorrect response that accidentally appears on an accepted list would pass. The `REVIEW` outcome requires subsequent human judgment and is not automatically resolved. The comparison tool prints and returns in-memory results but does not yet persist a separate comparison report. The eight labeled examples were constructed for demonstration and should not be presented as an independent benchmark. The full test suite passed **67 tests** without requiring Ollama.
 
+## Response consistency analysis (Milestone 4C, in progress)
+
+**Stage 4C-1 implemented and tested on `feature/milestone-4`.**
+
+`consistency_analyzer.py` provides `analyze_consistency(responses)`, an offline helper for identifying variation between repeated text responses.
+
+The helper normalizes responses using lowercase conversion and surrounding-whitespace removal, counts distinct normalized answers, and calculates disagreement relative to the most frequently occurring response.
+
+Example:
+
+```python
+from consistency_analyzer import analyze_consistency
+
+result = analyze_consistency(["kilogram", "gram", "kilogram"])
+print(result)
+```
+
+Expected output:
+
+```python
+{
+    "total_responses": 3,
+    "unique_responses": 2,
+    "disagreement_count": 1,
+    "consistent": False,
+}
+```
+
+For empty input, `consistent` is `None`.
+
+Run the tests with:
+
+```bash
+python3 -m pytest tests/test_consistency_analyzer.py -v
+```
+
+**Validation:** Three consistency tests passed, with 70 passing tests across the project.
+
+**Limitations:** Consistency does not imply factual correctness. The disagreement count is not a statistical reliability estimate. Repeated Ollama inference, failure classification, and experiment reporting remain planned.
+
 ## Development roadmap
 
 - **Milestone 1: Basic evaluation (complete).** Read prerecorded answers from JSON, normalize and score them.
 - **Milestone 2: Testable architecture (complete).** Reusable functions, pytest tests, dataset validation, and controlled CLI errors.
 - **Milestone 3: Local model integration (complete).** Ollama HTTP inference, live scoring, request failure handling, elapsed-time tracking, and saved JSON run reports.
-- **Milestone 4: Responsible AI evaluation methods (in progress).** 4A reference-based evaluation and 4B accepted-alternative scoring are implemented and tested on the feature branch; 4C–4E remain planned for consistency, controlled prompt-injection scenarios, and synthesis.
+- **Milestone 4: Responsible AI evaluation methods (in progress).** 4A reference-based evaluation, 4B accepted-alternative scoring, and 4C-1 offline consistency analysis are implemented and tested on the feature branch; the remaining 4C stages and 4D–4E are planned.
 - **Milestone 5: Advanced reproducibility and comparisons (planned).** Build on the basic JSON reporting from Milestone 3 to compare runs, record more configuration/version metadata, and produce cautious aggregate analyses.
 
 See [`milestones.md`](milestones.md) for detailed status and acceptance evidence.
