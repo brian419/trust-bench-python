@@ -10,6 +10,8 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 **Milestones 1, 2, and 3: Complete (47 automated tests)**
 
+Milestone 3 was merged into the default `main` branch on October 21, 2026. The instructions below work directly from a fresh clone of `main`; Milestones 4 and 5 are planned, not yet implemented.
+
 Implemented:
 
 - Run the original offline evaluator (`eval.py`) on prerecorded responses, including an optional dataset path.
