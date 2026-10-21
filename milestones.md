@@ -2,7 +2,7 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestones 1, 2, and 3 implemented and tested (47 automated tests). Milestones 4 and 5 remain planned.
+**Current status:** Milestones 1, 2, and 3 implemented, tested (47 automated tests), and merged into `main` on October 21, 2026. Milestones 4 and 5 remain planned.
 
 ## Guiding principles
 
@@ -229,4 +229,4 @@ A reader can compare multiple runs using documented model/dataset/scoring versio
 
 ### Near-term next step
 
-Review the Milestone 3 changes on `feature/milestone-3`, commit and push them, then merge into `main` when ready. Begin Milestone 4 as a separately scoped set of responsible AI evaluation exercises; advanced run comparisons remain in Milestone 5.
+Milestone 3 is complete and merged into `main` (commit `18f4ded3`, October 21, 2026). Start Milestone 4 on a new feature branch with narrowly scoped, reproducible responsible AI evaluation exercises. Advanced cross-run comparison and additional reproducibility metadata remain planned for Milestone 5.
