@@ -4,32 +4,31 @@
 
 TrustBench is an early-stage evaluation tool designed to grow from basic answer comparisons into a framework for investigating the correctness, consistency, and failure modes of AI-generated responses.
 
-The current implementation is a command-line prototype. It evaluates **pre-recorded responses stored in JSON**, rather than calling an AI model directly. The project is being built incrementally to explore software testing practices and, eventually, more rigorous approaches to evaluating AI systems.
+The command-line project supports both **offline evaluation of prerecorded JSON responses** and **live evaluation of a local language model through Ollama**. Development is incremental, emphasizing testable Python code and transparent measurement.
 
 ## Current status
 
-**Milestone 1: Complete** | **Milestone 2: Complete (27 automated tests)**
+**Milestones 1, 2, and 3: Complete (47 automated tests)**
 
 Implemented:
 
-- Load a list of test cases from a local JSON file.
-- Compare expected and recorded responses using case-insensitive matching with leading and trailing whitespace removed.
-- Report a pass or fail result for each test case, identified by its ID.
-- Count passing and failing test cases.
-- Calculate the percentage of tests passed, rounded to two decimal places.
-- Report `Accuracy: N/A` when the JSON list contains no test cases.
-- Use reusable `compare_answers`, `calculate_accuracy`, and `validate_dataset` functions.
-- Validate that the JSON input is a list of objects with string fields `id`, `question`, `expected`, and `response`.
-- Report all dataset validation errors before scoring; exit with status 1 for invalid input, missing files, or malformed JSON.
-- Accept an optional dataset filename as a command-line argument.
-- Run 27 automated unit and CLI integration tests with `pytest`.
+- Run the original offline evaluator (`eval.py`) on prerecorded responses, including an optional dataset path.
+- Run `eval_live.py` against a local Ollama model (`gemma3:1b`) using Python's standard-library HTTP client.
+- Validate offline and live datasets before evaluation; the live dataset does not require a prerecorded `response` field.
+- Compare answers using case-insensitive, leading/trailing-whitespace-normalized exact matching.
+- Record per-case `PASS`, `FAIL`, or `ERROR`, distinguishing model/API failures from incorrect answers.
+- Handle HTTP, connection, and timeout failures without counting them as scored failures; report `Accuracy: N/A` if no responses were scored.
+- Capture UTC run timestamps, model and dataset names, raw generated responses, and per-request elapsed seconds.
+- Save a structured JSON report for each live run to `reports/evaluation-<unique-id>.json` without overwriting previous reports.
+- Handle invalid input and report-save failures with clear errors; test the evaluator and mocked model client with `pytest`.
 
-**Scope limitation:** The current score measures *normalized exact-match accuracy* on the supplied dataset. It does not assess semantic equivalence, factual correctness of open-ended answers, hallucination rates, bias, safety, or model performance in general.
+**Scoring limitation:** “Accuracy” means *normalized exact-match rate among successfully scored responses in the provided dataset*. It is not a general measure of model accuracy, semantic equivalence, factuality, hallucinations, bias, safety, or reliability. Model request errors are counted separately and excluded from the accuracy denominator.
 
 ## Requirements
 
 - Python 3 (developed with Python 3.12.3)
-- No third-party runtime dependencies; `pytest` is required only for running the automated tests.
+- No third-party Python runtime dependencies. `pytest` is needed only to run tests.
+- For **live** evaluation only: [Ollama](https://ollama.com/) running locally with the `gemma3:1b` model available. This workflow does not require paid API access or an API key.
 
 ## Getting started
 
@@ -114,31 +113,84 @@ python3 -m pip install pytest
 python3 -m pytest -v
 ```
 
-The current suite contains **27 tests**, including CLI integration tests that create their own temporary input files.
+The current suite contains **47 tests**, including offline CLI tests, mocked Ollama requests, error-handling tests, request-timing regression tests, and JSON report persistence tests. Model calls are mocked in the automated tests, so no Ollama server is needed to run them.
 
-## Input format
+## Offline input format
 
-The program expects a JSON array of test-case objects containing the following required **string** fields:
+`eval.py` expects a JSON array of test-case objects containing the following required **string** fields:
 
 | Field | Meaning |
 | --- | --- |
 | `id` | Identifier shown in the evaluation output |
-| `question` | Prompt or question associated with the test (stored for context; not currently evaluated) |
+| `question` | Prompt or question stored as context in offline evaluation |
 | `expected` | Reference answer |
 | `response` | Recorded response being evaluated |
 
 The evaluator compares `expected` and `response` after applying Python's `lower()` and `strip()` string methods to both values. As a result, `"Paris"` matches `"  PARIS  "`, but `"Paris"` does not match `"The capital is Paris."`.
 
+## Live evaluation with Ollama (Milestone 3)
+
+Live evaluation makes HTTP requests to a locally running model. It does not use a paid hosted AI API.
+
+1. Install [Ollama](https://ollama.com/) for your operating system and start its local service.
+2. Download the model once (this download requires internet access):
+
+   ```bash
+   ollama pull gemma3:1b
+   ```
+
+3. From the repository root, run:
+
+   ```bash
+   python3 eval_live.py
+   ```
+
+The client sends non-streaming requests to `http://localhost:11434/api/generate` using the model name `gemma3:1b`. The current script uses the fixed dataset file `eval-read-live.json` and fixed model name in its source; **live model selection and arbitrary dataset paths are not yet CLI options**. Ollama runs the model locally, but model download and local execution still consume bandwidth, disk space, and computer resources.
+
+### Live dataset format
+
+The live dataset is a JSON array with string fields `id`, `question`, and `expected`. Unlike offline fixtures, live cases **do not need `response`**: the model supplies its answer during the run.
+
+```json
+[
+  {
+    "id": "test_001",
+    "question": "What is the capital of France? Answer with only the English city name.",
+    "expected": "Paris"
+  },
+  {
+    "id": "test_002",
+    "question": "What is 6 multiplied by 2? Answer with only the number.",
+    "expected": "12"
+  }
+]
+```
+
+Each generated answer is compared to `expected` using the same `lower().strip()` comparison as offline mode. For example, `" Paris"` matches `"Paris"`, but a longer explanatory sentence usually does not.
+
+### Live results and JSON reports
+
+Each live run prints per-case results and writes **one new** report under `reports/`. The folder is excluded from Git using `.gitignore`; reports stay local unless you explicitly share them.
+
+A report includes:
+
+- `metadata`: model name, dataset filename, and UTC ISO 8601 run timestamp.
+- `summary`: counts of passed, failed, and errored requests, plus `accuracy` (a percentage, or JSON `null` if no requests were scored).
+- `results`: test ID, question, expected answer, generated response, status, and `duration_seconds`; error cases contain `generated: null` and an `error` message.
+
+A `PASS` or `FAIL` counts toward the accuracy denominator; an `ERROR` (HTTP, connection, or timeout failure) does not. An evaluation with no scored answers reports `Accuracy: N/A`. Request durations measure elapsed time for each model request, not total CLI runtime. Output can vary between runs even for the same prompts.
+
+Report filenames use unique identifiers, so earlier reports are preserved. A directory/file-system problem while saving produces an error message and exits with code 1. The current implementation does not compare reports across runs or track all model configuration parameters or dataset revisions; those are future improvements.
+
 ## Development roadmap
 
-Milestone 2 is implemented. The remaining milestones are planned:
+- **Milestone 1: Basic evaluation (complete).** Read prerecorded answers from JSON, normalize and score them.
+- **Milestone 2: Testable architecture (complete).** Reusable functions, pytest tests, dataset validation, and controlled CLI errors.
+- **Milestone 3: Local model integration (complete).** Ollama HTTP inference, live scoring, request failure handling, elapsed-time tracking, and saved JSON run reports.
+- **Milestone 4: Responsible AI evaluation methods (planned).** Explore factual grounding, consistency, controlled prompt-injection scenarios, and cases requiring human review.
+- **Milestone 5: Advanced reproducibility and comparisons (planned).** Build on the basic JSON reporting from Milestone 3 to compare runs, record more configuration/version metadata, and produce cautious aggregate analyses.
 
-- **Milestone 2: Testable architecture (complete).** Reusable functions, `pytest` coverage, dataset validation, and controlled CLI errors.
-- **Milestone 3: Model integration.** Add a configurable interface to run tests against an actual language model while recording responses and execution details.
-- **Milestone 4: Evaluation methods.** Explore more rigorous assessments of factual grounding, answer consistency, and controlled prompt-injection scenarios, including cases requiring human review.
-- **Milestone 5: Reproducibility and reporting.** Compare evaluation runs and generate structured reports with methods, outcomes, and limitations.
-
-The scope of later milestones may change as the project develops.
+See [`milestones.md`](milestones.md) for detailed status and acceptance evidence.
 
 ## Evaluation principles
 

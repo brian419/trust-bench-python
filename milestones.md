@@ -2,13 +2,13 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestones 1 and 2 complete. Milestones 3–5 are plans, not implemented capabilities.
+**Current status:** Milestones 1, 2, and 3 implemented and tested (47 automated tests). Milestones 4 and 5 remain planned.
 
 ## Guiding principles
 
 - **Write and understand the implementation.** Use official documentation, experiments, and code review to learn; do not treat generated code as evidence of independently acquired skills.
 - **Preserve functionality.** Keep the working Milestone 1 output and behavior when refactoring, unless a behavior change is explicitly required and tested.
-- **Be precise about metrics.** The current “accuracy” is normalized exact-match rate on a small sample of prerecorded answers, not a measurement of a model's overall accuracy, factuality, safety, or fairness.
+- **Be precise about metrics.** “Accuracy” is normalized exact-match rate among scored responses in the provided test dataset, not a measurement of a model's general accuracy, factuality, safety, or fairness. Live HTTP/network/timeout errors are counted separately and excluded from the denominator.
 - **Build reproducibly.** Document inputs, dependencies, assumptions, expected results, and known limitations.
 - **Mark work complete only after testing.** Do not represent planned work as implemented in the README or on a resume.
 
@@ -20,7 +20,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 | 2A | Reusable Python functions | **Complete** |
 | 2B | Automated unit tests with pytest | **Complete** |
 | 2C | Input validation and error handling | **Complete** |
-| 3 | Run evaluations against a real AI model | Planned |
+| 3 | Run evaluations against a local AI model and save basic JSON reports | **Complete (47 tests total)** |
 | 4 | Responsible AI evaluation methods | Planned |
 | 5 | Reproducibility, comparison, and reporting | Planned |
 
@@ -50,10 +50,10 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ### Scope limitations
 
-- Recorded responses only. The program does **not** call an AI model.
+- Milestone 1 itself evaluated prerecorded responses only; Milestone 3 later added a separate live evaluator (`eval_live.py`).
 - Matching remains exact after normalization: `Paris` and `The capital is Paris.` do not match.
 - The current evaluator handles missing files, malformed JSON, and invalid dataset structure with errors and a nonzero exit status.
-- No evaluation database, live AI model integration, or model comparisons yet.
+- The original `eval.py` remains offline-only; model comparisons and an evaluation database are not implemented.
 
 **Acceptance:** Existing functionality and the above manually verified behaviors are preserved on the stable branch.
 
@@ -131,20 +131,37 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ## Milestone 3: Real AI model integration
 
-**Status: Planned.** Replace prerecorded-only input with an optional way to collect actual model responses, while **retaining** the ability to evaluate saved responses offline.
+**Status: Complete (implementation and local validation, October 21, 2026).** Added live evaluation against a **local Ollama model** while retaining offline evaluation of prerecorded fixtures.
 
-### Proposed work
+### Implemented
 
-- [ ] Learn HTTP requests, API authentication, timeouts, retries, and rate limits.
-- [ ] Implement one configurable model connector before generalizing to multiple providers.
-- [ ] Keep credentials out of Git and logs.
-- [ ] Store responses with the test ID, provider/model identifier, prompt configuration, execution time, and relevant settings.
-- [ ] Support offline fixtures or mocks so development does not require paid API usage.
-- [ ] Distinguish API failures from genuine model evaluation failures.
+- [x] Learned and used local HTTP POST requests, JSON request/response payloads, and a request timeout using Python's standard library (`urllib.request`).
+- [x] Built `ollama_client.py` with `generate_response(prompt, model)` targeting Ollama's local `/api/generate` endpoint with `stream: false`.
+- [x] Used the locally available `gemma3:1b` model without paid hosted API requests or credentials.
+- [x] Added `eval_live.py`, with live dataset validation (`id`, `question`, `expected`; a prerecorded `response` is not required).
+- [x] Reused `compare_answers` and `calculate_accuracy`, keeping `eval.py` usable for prerecorded answers.
+- [x] Distinguished `PASS`/`FAIL` from `ERROR`, handling HTTP errors, network failures, and timeouts (including timeouts wrapped in `URLError`).
+- [x] Kept API/network errors out of the accuracy denominator; represented accuracy as `None`/JSON `null` when no cases were scored.
+- [x] Recorded model identifier, dataset filename, UTC timestamp, per-case prompt/expected/generated answers/status, error details where applicable, and per-request elapsed seconds.
+- [x] Saved a new uniquely named JSON file for each run under ignored `reports/`, preserving previous reports.
+- [x] Added filesystem/report-save failure handling and automated tests using mocked model calls.
+- [x] Verified repeated real local runs and a complete suite of **47 passing pytest tests**.
 
 ### Completion evidence
 
-Demonstrate a small real-model run, repeat it from documented instructions, and show the saved raw responses and execution metadata. Record any financial or free-tier limitations.
+- Commands: `ollama pull gemma3:1b` (first-time setup), then `python3 eval_live.py` from the repository root while Ollama is running; run `python3 -m pytest -v` for tests without requiring Ollama.
+- Live sample: two simple prompts requesting `Paris` and `12`, both passing in observed runs. The evaluator records raw replies (including harmless surrounding whitespace) as well as scores.
+- The reports contain `metadata`, `summary`, and `results`; durations were checked against terminal output and guarded by a deterministic regression test.
+- Automated tests exercise HTTP, connection, and timeout failures, dataset errors, saved report contents, multiple report preservation, and report-saving failures.
+- No paid API charges are required for the documented Ollama workflow. Model download and local CPU/RAM usage still apply.
+
+### Current limitations / deferred work
+
+- Live evaluation is currently configured in source for `gemma3:1b` and `eval-read-live.json`; it does **not** yet expose a general-purpose model selection or live dataset CLI argument.
+- The connector uses a 120-second request timeout but does not implement retries, exponential backoff, hosted-provider authentication, or rate-limit policies. Those were learning topics in the initial plan, not completed features.
+- The current report records model name and timing but not model weights hash, decoding settings, prompt templates, or dataset version hash.
+- No multi-model comparisons, semantic scoring, factuality/safety metrics, or aggregated evaluation database yet.
+- Saved reports are currently written directly; partial output cleanup on a mid-write failure is not implemented.
 
 ---
 
@@ -171,20 +188,20 @@ For each metric, document: what is tested, how a result is scored, examples of f
 
 ## Milestone 5: Reproducibility and reporting
 
-**Status: Planned.** Make results inspectable and comparisons scientifically cautious.
+**Status: Planned (advanced features).** Basic per-run JSON reports already exist from Milestone 3; cross-run comparisons and stronger reproducibility metadata remain future work.
 
 ### Proposed work
 
-- [ ] Save structured run results (for example JSON/CSV, with SQLite only if useful).
+- [x] Save basic structured JSON run results (**implemented in Milestone 3**; CSV/SQLite remain optional future work).
 - [ ] Compare runs against the same versioned test suite and evaluation rules.
 - [ ] Summarize pass rates by category and retain examples of failures.
-- [ ] Record model versions/configurations, test dataset version, scoring rules, and run timestamps.
+- [ ] Expand existing model-name/dataset-name/timestamp metadata to include model versions/configuration, dataset revision, and explicit scoring-rule version.
 - [ ] Include sample sizes and uncertainty or limitations where appropriate.
 - [ ] Publish a concise evaluation report, with clear instructions to reproduce it.
 
 ### Completion evidence
 
-A reader can inspect a report, understand what was tested, trace scores to individual cases, and repeat the procedure without relying on undocumented manual steps.
+A reader can compare multiple runs using documented model/dataset/scoring versions, inspect individual cases and categories, understand the uncertainty and limitations, and reproduce the comparison without undocumented manual steps.
 
 ---
 
@@ -203,6 +220,13 @@ A reader can inspect a report, understand what was tested, trace scores to indiv
 - `python3 -m pytest -v` runs 27 automated unit and CLI tests (26 originally completed, plus the CLI empty-array test).
 - The default sample still produces 2 passes, 1 failure, and 66.67 accuracy.
 
+### Completed Milestone 3 evidence
+
+- `ollama_client.py` calls local Ollama, and `eval_live.py` evaluates model-generated answers without changing offline `eval.py` behavior.
+- PASS/FAIL/ERROR outcomes, request durations, UTC timestamps, and raw generated responses are recorded in unique JSON reports.
+- `tests/test_eval_live.py` and `tests/test_ollama_client.py` cover success paths, mocked request errors, timing, report persistence, and failure handling.
+- **47 tests passed** on October 21, 2026; multiple local Ollama runs and JSON reports were also manually validated.
+
 ### Near-term next step
 
-Review and merge `feature/milestone-2` into `main` when ready. Begin Milestone 3 as a separate, deliberately scoped task; live model integration is not implemented.
+Review the Milestone 3 changes on `feature/milestone-3`, commit and push them, then merge into `main` when ready. Begin Milestone 4 as a separately scoped set of responsible AI evaluation exercises; advanced run comparisons remain in Milestone 5.
