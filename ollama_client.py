@@ -1,7 +1,12 @@
 import json
 from urllib.request import Request, urlopen
 
-def generate_response(prompt: str, model: str) -> str:
+def generate_response(
+        prompt: str,
+        model: str,
+        options: dict | None = None,
+    ) -> str:
+
     url = "http://localhost:11434/api/generate"
 
     data = {
@@ -9,6 +14,9 @@ def generate_response(prompt: str, model: str) -> str:
         "prompt": prompt,
         "stream": False
     }
+
+    if options is not None:
+        data["options"] = options
 
     json_data = json.dumps(data).encode("utf-8")
 

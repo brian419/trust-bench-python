@@ -79,3 +79,36 @@ def test_generate_response_timeout():
                 "What is the capital of France? Answer with only the English city name.",
                 "gemma3:1b"
             )
+
+
+def test_generate_response_with_options():
+    options = {"temperature": 0.7, "seed": 42}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return False
+
+        def read(self, *args):
+            return b'{"response": "Paris"}'
+
+    with patch(
+        "ollama_client.urlopen",
+        return_value=FakeResponse(),
+    ) as mock_urlopen:
+        generated = generate_response(
+            "What is the capital of France?",
+            "gemma3:1b",
+            options=options,
+        )
+
+    request = mock_urlopen.call_args.args[0]
+    payload = json.loads(request.data.decode("utf-8"))
+
+    assert generated == "Paris"
+    assert payload["model"] == "gemma3:1b"
+    assert payload["prompt"] == "What is the capital of France?"
+    assert payload["stream"] is False
+    assert payload["options"] == options
