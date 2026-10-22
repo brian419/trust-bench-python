@@ -33,6 +33,8 @@ def test_generate_response():
     assert sent_data["prompt"] == "What is the capital of France? Answer with only the English city name."
     assert sent_data["stream"] is False
 
+    assert "options" not in sent_data
+
 
 def test_generate_response_connection_error():
     with patch(
