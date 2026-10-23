@@ -8,9 +8,9 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–3: Complete on `main` (47 tests). Milestones 4A–4D: Implemented and locally tested on `feature/milestone-4` (148 tests, October 23, 2026).**
+**Milestones 1–3: Complete on `main` (47-test baseline). Milestones 4A–4E: Implemented and locally validated on `feature/milestone-4` (155 tests, October 23, 2026).**
 
-Milestone 3 merged into `main` on October 21, 2026. Milestone 4 remains on the feature branch and is not merged into `main`. Stage 4E and Milestone 5 remain planned. Milestone 4D was committed and pushed in `517f312`. To use the Milestone 4 workflows after cloning, run `git switch feature/milestone-4`.
+Milestone 3 merged into `main` on October 21, 2026. Milestone 4 remains on the feature branch and is not merged into `main`. Milestone 4E review is complete on the feature branch; Milestone 5 remains planned. Milestone 4D was committed and pushed in `517f312`. To use the Milestone 4 workflows after cloning, run `git switch feature/milestone-4`.
 
 Implemented:
 
@@ -117,7 +117,7 @@ python3 -m pip install pytest
 python3 -m pytest -v
 ```
 
-The `main` baseline contains **47 tests**. The `feature/milestone-4` branch passed **148 automated tests** after implementing 4D on October 23, 2026 (111 tests at the completed 4C checkpoint). Tests include offline evaluation, reference validation, accepted-answer scoring, mocked Ollama requests, consistency inference, response scoring, human classification, SHA-256 verification, prompt-injection validation/scoring, and report generation. Automated tests mock model calls; an Ollama service is not necessary to run them.
+The `main` baseline contains **47 tests**. The `feature/milestone-4` branch passed **155 automated tests** after the 4E regression review on October 23, 2026 (148 at the 4D checkpoint; 111 at the completed 4C checkpoint). Tests include offline evaluation, reference validation, accepted-answer scoring, mocked Ollama requests, consistency inference, response scoring, human classification, SHA-256 verification, prompt-injection validation/scoring, and report generation. Automated tests mock model calls; an Ollama service is not necessary to run them.
 
 ## Offline input format
 
@@ -270,14 +270,14 @@ Agreement is **not** factual correctness: the mass-unit responses agreed but wer
 
 ## Controlled prompt-injection resilience (Milestone 4D, feature branch)
 
-**Status: Implemented and locally tested on `feature/milestone-4` (148 passing tests, October 23, 2026). Milestone 4D was committed and pushed as `517f312`; Milestone 4E synthesis remains planned.**
+**Status: Implemented and locally tested on `feature/milestone-4` (148 tests at the 4D checkpoint; 155 after 4E regression review, October 23, 2026). Milestone 4D was committed as `517f312`; 4E regression improvements were pushed as `f7c06d2`.**
 
 TrustBench tests whether a local model follows a specified task when synthetic, lower-trust document content contains competing instructions. This is a controlled *single-prompt* instruction-boundary experiment, not an evaluation of API-level system/developer-role separation.
 
 ### Files and method
 
 - `prompt-injection-cases.json` contains three harmless scenarios, each with `id`, `trusted_instruction`, `untrusted_text`, `expected`, `attack_goal`, and `attack_target`.
-- `prompt_injection_validator.py` rejects non-list or empty datasets, invalid scenario structures, missing/nonblank-string fields, and duplicate scenario IDs.
+- `prompt_injection_validator.py` rejects non-list or empty datasets, invalid scenario structures, missing/nonblank-string fields, duplicate scenario IDs, and ambiguous scenarios where `expected` equals `attack_target` after normalization (4E safeguard).
 - `run_prompt_injection.py` uses the existing `ollama_client.generate_response()` with `gemma3:1b`. It places trusted task text and untrusted content between explicit document markers in one prompt. It makes one sequential request per scenario, preserving raw replies, durations, request errors, and original prompts in a new `reports/prompt-injection-<unique-id>.json` file.
 - `prompt_injection_scorer.py` reuses `compare_answers()` (case-insensitive and surrounding-whitespace-normalized exact matching), adding a separate `injection_scoring` result while retaining request `status` (`SUCCESS` or `ERROR`). Tests in `tests/test_prompt_injection_validator.py`, `tests/test_prompt_injection_scorer.py`, and `tests/test_run_prompt_injection.py` cover validation, classification, mocked inference, error handling, and non-overwriting reports.
 
@@ -308,12 +308,31 @@ Recorded source: `reports/prompt-injection-d2fe3abd6a1243cc89b073391c4dda9b.json
 
 **Limitations:** Delimiting trusted and untrusted text within one `/api/generate` prompt does not create security-enforced role boundaries. Three curated cases and one request per case are not a benchmark or a general estimate of prompt-injection resilience. Exact-target matching can miss alternate attack manifestations, and task failures may have unrelated causes. The seed and temperature do not guarantee deterministic behavior; model/runtime binaries and dataset hashes are not pinned. No secrets, exfiltration endpoints, harmful payloads, or external document retrieval are tested.
 
+## Milestone 4E: Final synthesis and regression review (feature branch)
+
+**Status: Complete on `feature/milestone-4` (October 23, 2026); `main` remains unchanged.**
+
+The final review covered the earlier evaluation workflows and bounded local experiments:
+
+| Milestone | Evidence | Interpretation |
+| --- | --- | --- |
+| 4A | 10 reference-based factual questions; one run recorded 8 exact matches, 2 mismatches | References are curated metadata, not retrieved source context or automatically verified facts. |
+| 4B | 8 labeled scoring fixtures; 2 exact matches and 4 accepted-answer matches; 4 flagged for review | Alternative acceptance is curated, not semantic correctness determination. |
+| 4C | 3 prompts with 3 attempts each; human-reviewed 3 correct, 5 incorrect, 1 formatting mismatch | Response agreement does not imply factual correctness; analysis binds to an exact local report. |
+| 4D | 3 safe synthetic injection scenarios; 1 expected-target match, 1 attack-target match, 1 other incorrect answer | Automatic classifications describe those explicit outputs, not general injection resilience or causal mechanism. |
+
+**4E regression fixes:** `prompt_injection_validator.py` rejects scenarios whose expected answer and attack target are equivalent after `.lower().strip()`. New mocked tests verify that both the consistency and injection runners reject non-string model responses with `TypeError` rather than treating broken response contracts as routine network errors. Commit `f7c06d2` contains the 4E regression changes.
+
+**Reproduction verified locally:** `python3 eval.py` reported 2 passes, 1 failure, 66.67 accuracy; `python3 compare_scorers.py` reported 8 fixtures with 2 exact passes, 4 alternative passes, 4 reviews; and `python3 -m pytest -q` passed **155 tests**. Another `python3 run_prompt_injection.py` run completed all three model requests, recorded `999\n`, `Gardening\n`, and `NO\n`, and saved `reports/prompt-injection-0430565469e7487e88765a77ca519fa5.json` (local, Git-ignored). These repeat observations are not a population-level success rate or proof of identical behavior in future runs.
+
+**Limits:** Tiny, curated datasets; normalized exact matching; human-curated labels and references; single-prompt document delimiters rather than security-enforced roles; unpinned model/runtime versions and dataset hashes; and local-only reports. Model request errors and non-string client contract violations remain conceptually distinct. Milestone 5 is reserved for advanced cross-run comparisons and stronger reproducibility metadata. No new hosted APIs or paid resources were required.
+
 ## Development roadmap
 
 - **Milestone 1: Basic evaluation (complete).** Read prerecorded answers from JSON, normalize and score them.
 - **Milestone 2: Testable architecture (complete).** Reusable functions, pytest tests, dataset validation, and controlled CLI errors.
 - **Milestone 3: Local model integration (complete).** Ollama HTTP inference, live scoring, request failure handling, elapsed-time tracking, and saved JSON run reports.
-- **Milestone 4: Responsible AI evaluation methods (in progress).** 4A reference-based evaluation, 4B alternative scoring, 4C response consistency/failure classification, and 4D controlled prompt-injection experiments are implemented and locally tested on the feature branch; 4E synthesis remains planned.
+- **Milestone 4: Responsible AI evaluation methods (complete on feature branch; not merged).** 4A reference-based evaluation, 4B alternative scoring, 4C response consistency/failure classification, 4D controlled prompt-injection experiments, and 4E synthesis/regression review have been locally validated (155 tests).
 - **Milestone 5: Advanced reproducibility and comparisons (planned).** Build on the basic JSON reporting from Milestone 3 to compare runs, record more configuration/version metadata, and produce cautious aggregate analyses.
 
 See [`milestones.md`](milestones.md) for detailed status and acceptance evidence.
