@@ -2,7 +2,7 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestones 1, 2, and 3 implemented, tested (47 automated tests), and merged into `main` on October 21, 2026. Milestones 4A and 4B and stage 4C-1 implemented and tested on `feature/milestone-4` (70 passing tests); not yet merged. Stages 4C-2 through 4C-5, Milestones 4D–4E, and Milestone 5 remain planned.
+**Current status:** Milestones 1–3 are complete on `main` (47 tests). Milestones 4A, 4B, and all five stages of 4C have been implemented and locally validated on `feature/milestone-4` (111 passing tests, October 23, 2026). The 4C implementation was pushed in commit `e87353c`. Milestones 4D–4E and Milestone 5 remain planned; Milestone 4 has not been merged into `main`.
 
 ## Guiding principles
 
@@ -21,7 +21,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 | 2B | Automated unit tests with pytest | **Complete** |
 | 2C | Input validation and error handling | **Complete** |
 | 3 | Run evaluations against a local AI model and save basic JSON reports | **Complete (47 tests total)** |
-| 4 | Responsible AI evaluation methods | In progress: 4A–4B and stage 4C-1 implemented/tested on feature branch; remaining 4C stages and 4D–4E planned |
+| 4 | Responsible AI evaluation methods | In progress: 4A–4C implemented/tested on feature branch; 4D–4E planned |
 | 5 | Reproducibility, comparison, and reporting | Planned |
 
 ---
@@ -167,7 +167,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ## Milestone 4: Responsible AI evaluation methods
 
-**Status: In progress on `feature/milestone-4`.** Milestones 4A and 4B and stage 4C-1 are implemented and locally tested (70 passing tests), building on Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47-test baseline**. Work remains on the feature branch pending review/merge; stages 4C-2 through 4C-5 and Milestones 4D–4E are planned.
+**Status: In progress on `feature/milestone-4`.** Milestones 4A, 4B, and 4C-1 through 4C-5 are implemented and locally tested (111 passing tests), building on Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47-test baseline**. Work remains on the feature branch; Milestones 4D–4E are planned.
 
 **Working approach:** Progress through 4A–4E sequentially, with small learning exercises, targeted tests, and review of outputs before advancing. Preserve `eval.py`, existing `eval_live.py` behavior, JSON reports, and all baseline tests. Favor free local execution, offline fixtures, and mocked calls; no paid API accounts or substantial new dependencies required. Keep dataset and scoring definitions explicit rather than adding vague "responsible AI" scores.
 
@@ -213,32 +213,48 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ### Milestone 4C: Response consistency and failure classification
 
-**Goal:** Investigate variability across repeated local generations and organize observed errors.
+**Status: Complete on `feature/milestone-4` (October 23, 2026).** The completed implementation was pushed in commit `e87353c`; 111 automated tests passed locally. Human-reviewed outputs and original local reports are Git-ignored.
 
-**Progress (October 21, 2026):** Stage 4C-1 completed, tested, and pushed to `feature/milestone-4` in commit `fdf3095`. Stages 4C-2 through 4C-5 remain planned.
+**Goal:** Investigate repeated local responses, separate agreement from correctness, classify observed failures, and preserve the review evidence without overstating general reliability.
 
-#### Stage 4C-1: Offline response consistency analysis
+#### Stage 4C-1: Offline agreement analysis (complete)
 
-**Status: Complete.**
+- [x] Implemented `consistency_analyzer.py` with normalized distinct-response counts, disagreement count relative to the most common normalized response, and a consistency flag.
+- [x] Defined empty-input behavior; tested the helper independently without Ollama (three tests; 70-test checkpoint).
 
-- [x] Created `consistency_analyzer.py` with `analyze_consistency(responses)`.
-- [x] Normalized responses using `.lower().strip()`, consistent with the existing exact-match evaluator.
-- [x] Used Python's standard-library `Counter` to count distinct normalized responses.
-- [x] Reported total responses, unique responses, disagreement count, and consistency.
-- [x] Defined disagreement count as the total number of responses minus the frequency of the most common normalized response.
-- [x] Handled empty input with zero counts and `consistent: None`.
-- [x] Added three automated tests in `tests/test_consistency_analyzer.py`.
-- [x] Verified LF line endings and a full suite of 70 passing tests.
+#### Stage 4C-2: Bounded repeated inference and JSON reports (complete)
 
-**Limitations:** This helper measures observed response agreement, not correctness, truthfulness, or model reliability. It does not make Ollama requests, classify failures, or save reports. Small samples cannot establish statistically reliable behavior.
+- [x] Added optional generation settings to `ollama_client.py` without breaking existing callers.
+- [x] Implemented `consistency_runner.py`: sequential, bounded runs of 1–3 prompts with 1–3 repetitions each, preserving raw responses and request errors.
+- [x] Added `run_consistency.py`: three fixed prompts with model `gemma3:1b`, `temperature=0.7`, `seed=42`, and `num_predict=64`; saves a new unique JSON report with UTC metadata and agreement summaries.
+- [x] Verified the original nine-request experiment saved successfully on October 22, 2026, and kept its original report local and unmodified.
 
-- [ ] Choose a small fixed prompt set and repeat runs under documented conditions; record run count, prompts, model, and any available inference settings.
-- [ ] Keep requests sequential and bounded for the 8 GB development machine; do not require costly compute.
-- [ ] Classify examples by specific categories such as correct, incorrect, unsupported, ambiguous, formatting-only mismatch, or request error.
-- [ ] Summarize disagreement counts and representative outputs, without treating small-sample variability as a statistically definitive reliability metric.
-- [ ] Test classification helpers independently of live Ollama access.
+#### Stage 4C-3: Correctness scoring (complete)
 
-**Acceptance:** A short reproducible experiment and saved evidence show where answers vary, with a clear separation between model behavior and evaluator limitations.
+- [x] Added `consistency_scoring.py` to reuse normalized exact matching and curated accepted-answer scoring on recorded successful responses, without Ollama.
+- [x] Preserved the distinction between `PASS`, `REVIEW`, and request `ERROR`; `REVIEW` does not automatically mean factually incorrect.
+- [x] Added six focused tests, reaching the 91-test checkpoint.
+
+#### Stage 4C-4: Human-reviewed failure classification (complete)
+
+- [x] Added `failure_classifier.py` with the labels `CORRECT`, `INCORRECT`, `FORMATTING_MISMATCH`, `UNSUPPORTED`, and `AMBIGUOUS`.
+- [x] Unlabeled successful responses remain `NEEDS_REVIEW`; request failures become `REQUEST_ERROR` automatically. A submitted human `NEEDS_REVIEW` label is rejected.
+- [x] Added eight focused tests, reaching the 99-test checkpoint.
+
+#### Stage 4C-5: Experiment-specific, verified review reporting (complete)
+
+- [x] Added `consistency_review.py` to combine response scoring and human classifications, rejecting duplicate attempt numbers, unknown attempt references, and labels for request errors.
+- [x] Added `consistency_report_reader.py` to check exact source bytes against a supplied SHA-256 and validate top-level JSON structure.
+- [x] Added `analyze_consistency_report.py` to bind the specific October 22 file to its expected answers and reviewed labels. It verifies the report hash, model, prompts, and three numbered attempts per prompt, and saves a separate `consistency-analysis-*.json` without altering the original.
+- [x] Added 12 tests across these integration components and verified the complete **111-test suite** after a test-fixture disagreement-calculation correction.
+
+**Evidence from the recorded experiment:** Nine successful responses across three prompts. The SI mass-unit prompt produced `Gram/gram/gram` (consistent but all factually wrong; expected `kilogram`). The Australian-capital prompt produced ` Canberra` three times (consistent and correct). The DNA pairing prompt produced `T\\n/Adenine/Adenine` (inconsistent; `T` is a scientifically valid abbreviation but failed the requested full-name format, and `Adenine` was wrong). **Human-reviewed totals: 3 CORRECT, 5 INCORRECT, 1 FORMATTING_MISMATCH.** Two of three prompts were consistent after normalization.
+
+**Reproduction:** Run `python3 run_consistency.py` to create a **new** local experiment (Ollama required). Run `python3 -m pytest -q` to test with mocked calls (Ollama not required). To replay the *specific human review*, place the exact local file `reports/consistency-f0503c787fec46e1a4052f5c17743f5d.json` in the repository, verify SHA-256 `b4a4a5cd5e2c04f98e585bca144efb5cd9e06bc44c0e2be7d9641d89d41fd70c`, and run `python3 analyze_consistency_report.py`. This original file and the derived analysis are Git-ignored, so they are **not available in a fresh clone**. A newly generated report will have different bytes and cannot inherit the fixed human labels automatically.
+
+**Limitations:** Agreement is not correctness. The SHA-256 check confirms file identity, not correctness of review labels or authenticity of underlying model behavior. The review script is experiment-specific, not a general-purpose analyzer. Reference and accepted-answer judgments remain human-curated; a successful alternative match can still violate instructions. A fixed seed does not guarantee identical outputs, the exact Ollama/model runtime version is not pinned, and nine requests are insufficient to estimate broad factuality, reliability, safety, or prompt-injection resistance. `UNSUPPORTED` and `AMBIGUOUS` are supported labels but were not observed in the reviewed experiment.
+
+**Acceptance:** A bounded experiment and its distinct scoring/classification stages are tested; source report identity is checked before a human review is applied; a separate analyzed JSON report records metadata, agreement, categories, and original generated strings without mutating the source.
 
 ### Milestone 4D: Controlled prompt-injection resilience
 
@@ -318,4 +334,4 @@ A reader can compare multiple runs using documented model/dataset/scoring versio
 
 ### Near-term next step
 
-Milestones 4A and 4B and stage 4C-1 are implemented and tested on `feature/milestone-4` (70 passing tests). Stage 4C-1 was pushed in commit `fdf3095`; next, implement **4C-2: bounded, sequential repeated local Ollama inference** with mocked tests before live runs. Milestone 3 remains complete on `main` (47-test baseline); advanced cross-run reporting remains planned for Milestone 5.
+Milestone 4C is complete on `feature/milestone-4` (111 passing tests; implementation commit `e87353c`). Begin **Milestone 4D: controlled prompt-injection resilience** using only synthetic, safe and locally testable cases. Then complete 4E synthesis and branch-wide validation before considering a merge to `main`. Milestone 5 cross-run comparisons remain planned.
