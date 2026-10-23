@@ -8,7 +8,7 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–4: Complete on `main` (155 passing tests after the October 23, 2026 merge). Milestone 5: Planned.**
+**Milestones 1–4: Complete on `main` (155 passing tests after the October 23, 2026 merge). Milestone 5: Planned on `feature/milestone-5` (CLI, desktop GUI, reproducibility, and reporting).**
 
 Milestone 3 merged into `main` on October 21, 2026. Milestone 4 (stages 4A–4E) was fast-forward merged and pushed to `main` on October 23, 2026 at commit `72a4842`, after 155 tests passed locally. The historical `feature/milestone-4` branch remains available, but all Milestone 4 workflows are now on `main`. Milestone 5 remains planned.
 
@@ -333,9 +333,20 @@ The final review covered the earlier evaluation workflows and bounded local expe
 - **Milestone 2: Testable architecture (complete).** Reusable functions, pytest tests, dataset validation, and controlled CLI errors.
 - **Milestone 3: Local model integration (complete).** Ollama HTTP inference, live scoring, request failure handling, elapsed-time tracking, and saved JSON run reports.
 - **Milestone 4: Responsible AI evaluation methods (complete and merged into `main`).** 4A reference-based evaluation, 4B alternative scoring, 4C response consistency/failure classification, 4D controlled prompt-injection experiments, and 4E synthesis/regression review have been locally validated (155 tests).
-- **Milestone 5: Advanced reproducibility and comparisons (planned).** Build on the basic JSON reporting from Milestone 3 to compare runs, record more configuration/version metadata, and produce cautious aggregate analyses.
+- **Milestone 5: CLI + desktop GUI, reproducibility, and reporting (planned).** Build a unified command-line tool and a local graphical desktop app as two optional interfaces over the same evaluation engine. Add compatible run comparisons, richer provenance metadata, report summaries, and end-user installation guidance.
 
 See [`milestones.md`](milestones.md) for detailed status and acceptance evidence.
+
+## Planned user interfaces (Milestone 5)
+
+TrustBench is intended to offer **two equal ways to use the application**, without requiring everyone to open a browser:
+
+- **CLI:** A single discoverable terminal command for developers, automation, and users who prefer text-based workflows.
+- **Desktop GUI:** A local graphical application to choose evaluations, configure model/dataset inputs, run tests, and inspect or compare reports. A browser window should not be required.
+
+Both interfaces will share the same Python evaluation, validation, scoring, and reporting logic. The GUI will be optional; installing or running the CLI should not require a GUI or graphical environment. Basic JSON reporting is already implemented, but the unified CLI, desktop GUI, packaging, advanced comparisons, and enhanced provenance are **planned, not yet available**. A browser dashboard may be considered separately in the future.
+
+Development stages: **5A** unified CLI; **5B** provenance and reproducibility metadata; **5C** compatible run comparisons; **5D** human-readable reporting; **5E** desktop GUI; **5F** documentation, packaging, and release validation. See [`milestones.md`](milestones.md) for details.
 
 ## Evaluation principles
 
