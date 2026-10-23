@@ -8,9 +8,9 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–3: Complete on `main` (47 tests). Milestones 4A and 4B and stage 4C-1: Implemented and tested on `feature/milestone-4` (70 tests).**
+**Milestones 1–3: Complete on `main` (47 tests). Milestones 4A, 4B, and all stages of 4C: Implemented and locally tested on `feature/milestone-4` (111 tests).**
 
-Milestone 3 was merged into the default `main` branch on October 21, 2026. Milestone 4 work described below is currently on `feature/milestone-4`, not yet merged into `main`. Stage 4C-1 is complete; stages 4C-2 through 4C-5, Milestones 4D–4E, and Milestone 5 remain planned. For Milestone 4 workflows, check out that branch after cloning.
+Milestone 3 merged into `main` on October 21, 2026. Milestone 4 remains on the feature branch and is not merged into `main`. Stages 4D–4E and Milestone 5 remain planned. To use the Milestone 4 workflows after cloning, run `git switch feature/milestone-4`.
 
 Implemented:
 
@@ -23,7 +23,7 @@ Implemented:
 - Capture UTC run timestamps, model and dataset names, raw generated responses, and per-request elapsed seconds.
 - Save a structured JSON report for each live run to `reports/evaluation-<unique-id>.json` without overwriting previous reports.
 - Handle invalid input and report-save failures with clear errors; test the evaluator and mocked model client with `pytest`.
-- Analyze agreement across prerecorded responses with the offline `consistency_analyzer.py` helper (stage 4C-1 on the feature branch).
+- Measure normalized response agreement and run bounded repeated local inference; score stored responses, record human-reviewed classifications, and verify experiment-specific reports by SHA-256 (Milestone 4C on the feature branch).
 
 **Scoring limitation:** “Accuracy” means *normalized exact-match rate among successfully scored responses in the provided dataset*. It is not a general measure of model accuracy, semantic equivalence, factuality, hallucinations, bias, safety, or reliability. Model request errors are counted separately and excluded from the accuracy denominator.
 
@@ -116,7 +116,7 @@ python3 -m pip install pytest
 python3 -m pytest -v
 ```
 
-The `main` baseline contains **47 tests**. The `feature/milestone-4` branch currently contains **70 passing tests**, including three consistency-analyzer tests, reference validation, alternative-answer scoring, and report regression tests, in addition to offline CLI tests, mocked Ollama requests, error handling, request-timing regression tests, and JSON report persistence tests. Model calls are mocked in the automated tests, so no Ollama server is needed to run them.
+The `main` baseline contains **47 tests**. The `feature/milestone-4` branch passed **111 automated tests** after completing 4C on October 23, 2026. Tests include offline evaluation, reference validation, accepted-answer scoring, mocked Ollama requests, consistency inference, response scoring, human classification, SHA-256 verification, and report generation. Automated tests mock model calls; an Ollama service is not necessary to run them.
 
 ## Offline input format
 
@@ -227,52 +227,52 @@ In reference-dataset JSON reports, `results[*].status` and `summary.accuracy` re
 
 **Limitations:** Accepted variants must be written by a human; an incorrect response that accidentally appears on an accepted list would pass. The `REVIEW` outcome requires subsequent human judgment and is not automatically resolved. The comparison tool prints and returns in-memory results but does not yet persist a separate comparison report. The eight labeled examples were constructed for demonstration and should not be presented as an independent benchmark. The full test suite passed **67 tests** without requiring Ollama.
 
-## Response consistency analysis (Milestone 4C, in progress)
+## Response consistency and failure classification (Milestone 4C, feature branch)
 
-**Stage 4C-1 implemented and tested on `feature/milestone-4`.**
+**Status: Stages 4C-1 through 4C-5 implemented and locally tested (111 passing tests, October 23, 2026).**
 
-`consistency_analyzer.py` provides `analyze_consistency(responses)`, an offline helper for identifying variation between repeated text responses.
+- `consistency_analyzer.py` measures agreement among normalized text responses using `.lower().strip()`: total responses, unique responses, disagreement relative to the most common response, and a consistency flag. For empty input, `consistent` is `None`.
+- `consistency_runner.py` makes sequential requests for 1–3 prompts with 1–3 repetitions per prompt, records successful responses and request errors separately, and accepts optional Ollama generation settings. `run_consistency.py` fixes a three-prompt experiment with `gemma3:1b`, temperature `0.7`, seed `42`, and `num_predict` `64`; it creates a timestamped, uniquely named JSON report in `reports/`.
+- `consistency_scoring.py` reuses `compare_answers()` and `score_answer()`. Exact/accepted answers are `PASS`; unmatched answers require `REVIEW`; request failures remain `ERROR`.
+- `failure_classifier.py` records explicitly supplied human labels: `CORRECT`, `INCORRECT`, `FORMATTING_MISMATCH`, `UNSUPPORTED`, or `AMBIGUOUS`. Responses without human labels are `NEEDS_REVIEW`. Request errors become `REQUEST_ERROR` automatically. `consistency_review.py` combines scoring and classification and rejects duplicate attempt numbers or labels for nonexistent/errored attempts.
+- `consistency_report_reader.py` validates an existing JSON report against its expected SHA-256 and checks its top-level structure. `analyze_consistency_report.py` is an **experiment-specific** offline review script with the October 22 source filename, hash, prompts, and manually reviewed labels fixed in source. It generates a separate, uniquely named `consistency-analysis-*.json` file without modifying or regenerating the source report.
 
-The helper normalizes responses using lowercase conversion and surrounding-whitespace removal, counts distinct normalized answers, and calculates disagreement relative to the most frequently occurring response.
+### Commands
 
-Example:
-
-```python
-from consistency_analyzer import analyze_consistency
-
-result = analyze_consistency(["kilogram", "gram", "kilogram"])
-print(result)
-```
-
-Expected output:
-
-```python
-{
-    "total_responses": 3,
-    "unique_responses": 2,
-    "disagreement_count": 1,
-    "consistent": False,
-}
-```
-
-For empty input, `consistent` is `None`.
-
-Run the tests with:
+From the repository root, with local Ollama and `gemma3:1b` installed, run a **new** bounded experiment:
 
 ```bash
-python3 -m pytest tests/test_consistency_analyzer.py -v
+python3 run_consistency.py
 ```
 
-**Validation:** Three consistency tests passed, with 70 passing tests across the project.
+To reapply the existing human review, first obtain the **exact original** report `reports/consistency-f0503c787fec46e1a4052f5c17743f5d.json`, whose SHA-256 must equal `b4a4a5cd5e2c04f98e585bca144efb5cd9e06bc44c0e2be7d9641d89d41fd70c`. Then run, without Ollama:
 
-**Limitations:** Consistency does not imply factual correctness. The disagreement count is not a statistical reliability estimate. Repeated Ollama inference, failure classification, and experiment reporting remain planned.
+```bash
+shasum -a 256 reports/consistency-f0503c787fec46e1a4052f5c17743f5d.json
+python3 analyze_consistency_report.py
+python3 -m pytest -q
+```
+
+**A fresh clone does not contain the original report**: `reports/` is Git-ignored by design. Running `run_consistency.py` generates a different file, even if the responses happen to match, and does not make it eligible for the fixed human-review script. Automated tests use temporary synthetic reports and do not require the original file or Ollama.
+
+### Observed experiment and interpretation
+
+On October 22, 2026, one local `gemma3:1b` run made **9 successful requests** (three prompts, three attempts each), using the settings above. Two of the three prompts were consistent after normalization. The manually reviewed results were **3 CORRECT, 5 INCORRECT, and 1 FORMATTING_MISMATCH**:
+
+| Prompt | Recorded responses | Agreement | Human review |
+| --- | --- | --- | --- |
+| SI base unit of mass | `Gram`, `gram`, `gram` | Consistent | All three incorrect; expected `kilogram` |
+| Capital of Australia | ` Canberra` three times | Consistent | All three correct; expected `Canberra` |
+| DNA base paired with adenine | `T\\n`, `Adenine`, `Adenine` | Inconsistent | `T` accepted as scientifically equivalent but not the requested full base name; two `Adenine` responses incorrect |
+
+Agreement is **not** factual correctness: the mass-unit responses agreed but were wrong. Accepted-answer scoring and human-reviewed instruction-format labels answer different questions. The hash ties the reviewed labels to the **exact original file bytes**, but does not verify the correctness of human judgments or preserve Ollama/model binary versions. A fixed seed does not guarantee identical responses; this tiny single-run sample cannot estimate general reliability or safety. Labels are human annotations, not automatic fact-checking, and `UNSUPPORTED` and `AMBIGUOUS` are supported categories but were not observed in this experiment.
 
 ## Development roadmap
 
 - **Milestone 1: Basic evaluation (complete).** Read prerecorded answers from JSON, normalize and score them.
 - **Milestone 2: Testable architecture (complete).** Reusable functions, pytest tests, dataset validation, and controlled CLI errors.
 - **Milestone 3: Local model integration (complete).** Ollama HTTP inference, live scoring, request failure handling, elapsed-time tracking, and saved JSON run reports.
-- **Milestone 4: Responsible AI evaluation methods (in progress).** 4A reference-based evaluation, 4B accepted-alternative scoring, and 4C-1 offline consistency analysis are implemented and tested on the feature branch; the remaining 4C stages and 4D–4E are planned.
+- **Milestone 4: Responsible AI evaluation methods (in progress).** 4A reference-based evaluation, 4B alternative scoring, and 4C response consistency/failure classification are implemented and tested on the feature branch; 4D–4E remain planned.
 - **Milestone 5: Advanced reproducibility and comparisons (planned).** Build on the basic JSON reporting from Milestone 3 to compare runs, record more configuration/version metadata, and produce cautious aggregate analyses.
 
 See [`milestones.md`](milestones.md) for detailed status and acceptance evidence.
