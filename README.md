@@ -117,7 +117,7 @@ python3 -m pip install pytest
 python3 -m pytest -v
 ```
 
-The `main` baseline contains **47 tests**. The local `feature/milestone-4` working tree passed **148 automated tests** after implementing 4D on October 23, 2026 (111 tests at the completed 4C checkpoint). Tests include offline evaluation, reference validation, accepted-answer scoring, mocked Ollama requests, consistency inference, response scoring, human classification, SHA-256 verification, prompt-injection validation/scoring, and report generation. Automated tests mock model calls; an Ollama service is not necessary to run them.
+The `main` baseline contains **47 tests**. The `feature/milestone-4` branch passed **148 automated tests** after implementing 4D on October 23, 2026 (111 tests at the completed 4C checkpoint). Tests include offline evaluation, reference validation, accepted-answer scoring, mocked Ollama requests, consistency inference, response scoring, human classification, SHA-256 verification, prompt-injection validation/scoring, and report generation. Automated tests mock model calls; an Ollama service is not necessary to run them.
 
 ## Offline input format
 
@@ -270,7 +270,7 @@ Agreement is **not** factual correctness: the mass-unit responses agreed but wer
 
 ## Controlled prompt-injection resilience (Milestone 4D, feature branch)
 
-**Status: Implemented and locally tested on `feature/milestone-4` (148 passing tests, October 23, 2026). Changes remain local and uncommitted; Milestone 4E synthesis remains planned.**
+**Status: Implemented and locally tested on `feature/milestone-4` (148 passing tests, October 23, 2026). Milestone 4D was committed and pushed as `517f312`; Milestone 4E synthesis remains planned.**
 
 TrustBench tests whether a local model follows a specified task when synthetic, lower-trust document content contains competing instructions. This is a controlled *single-prompt* instruction-boundary experiment, not an evaluation of API-level system/developer-role separation.
 
