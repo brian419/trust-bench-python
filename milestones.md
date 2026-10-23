@@ -2,7 +2,7 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestones 1–3 are complete on `main` (47 tests). Milestones 4A–4C are complete on `feature/milestone-4` (111-test checkpoint); 4C was pushed in commit `e87353c`. Milestone 4D has been implemented and locally tested (148 passing tests, October 23, 2026), but its new files and documentation have not yet been committed or pushed. Milestone 4E and Milestone 5 remain planned; Milestone 4 has not been merged into `main`.
+**Current status:** Milestones 1–3 are complete on `main` (47 tests). Milestones 4A–4C are complete on `feature/milestone-4` (111-test checkpoint); 4C was pushed in commit `e87353c`. Milestone 4D has been implemented and locally tested (148 passing tests, October 23, 2026), and was committed and pushed as `517f312`. Milestone 4E and Milestone 5 remain planned; Milestone 4 has not been merged into `main`.
 
 ## Guiding principles
 
@@ -167,7 +167,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ## Milestone 4: Responsible AI evaluation methods
 
-**Status: In progress on `feature/milestone-4`.** Milestones 4A–4D are implemented and locally tested (148 passing tests after 4D; 111 at the 4C checkpoint), building on Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47-test baseline**. Milestone 4D remains uncommitted locally; 4E is planned.
+**Status: In progress on `feature/milestone-4`.** Milestones 4A–4D are implemented and locally tested (148 passing tests after 4D; 111 at the 4C checkpoint), building on Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47-test baseline**. Milestone 4D was committed and pushed as `517f312`; 4E is planned.
 
 **Working approach:** Progress through 4A–4E sequentially, with small learning exercises, targeted tests, and review of outputs before advancing. Preserve `eval.py`, existing `eval_live.py` behavior, JSON reports, and all baseline tests. Favor free local execution, offline fixtures, and mocked calls; no paid API accounts or substantial new dependencies required. Keep dataset and scoring definitions explicit rather than adding vague "responsible AI" scores.
 
@@ -258,7 +258,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ### Milestone 4D: Controlled prompt-injection resilience
 
-**Status: Implementation, tests, and local experiment complete (October 23, 2026; 148 tests passing). New work is uncommitted and not pushed.**
+**Status: Implementation, tests, and local experiment complete (October 23, 2026; 148 tests passing). Implementation and documentation were committed and pushed as `517f312`.**
 
 **Goal:** Explore safe instruction-boundary failures in three synthetic single-prompt experiments, with explicit trusted answers, attacker targets, and conservative interpretations.
 
@@ -372,4 +372,4 @@ A reader can compare multiple runs using documented model/dataset/scoring versio
 
 ### Near-term next step
 
-Milestone 4D is implemented and locally tested on `feature/milestone-4` (**148 passing tests**); the 4D files are still uncommitted. Begin **Milestone 4E: synthesis and branch-wide validation**, reviewing the README, experiment limitations, previous functionality, and repository state before committing/pushing to the feature branch or considering a merge to `main`. Milestone 5 cross-run comparisons remain planned.
+Milestone 4D is implemented and locally tested on `feature/milestone-4` (**148 passing tests**); the 4D changes were committed and pushed as `517f312`. Begin **Milestone 4E: synthesis and branch-wide validation**, reviewing the README, experiment limitations, previous functionality, and repository state before committing/pushing to the feature branch or considering a merge to `main`. Milestone 5 cross-run comparisons remain planned.
