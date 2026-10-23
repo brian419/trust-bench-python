@@ -10,7 +10,7 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 **Milestones 1–3: Complete on `main` (47 tests). Milestones 4A–4D: Implemented and locally tested on `feature/milestone-4` (148 tests, October 23, 2026).**
 
-Milestone 3 merged into `main` on October 21, 2026. Milestone 4 remains on the feature branch and is not merged into `main`. Stage 4E and Milestone 5 remain planned. The 4D work is local and uncommitted as of this checkpoint. To use the Milestone 4 workflows after cloning, run `git switch feature/milestone-4`.
+Milestone 3 merged into `main` on October 21, 2026. Milestone 4 remains on the feature branch and is not merged into `main`. Stage 4E and Milestone 5 remain planned. Milestone 4D was committed and pushed in `517f312`. To use the Milestone 4 workflows after cloning, run `git switch feature/milestone-4`.
 
 Implemented:
 
