@@ -126,3 +126,19 @@ def test_invalid_generation_options():
         )
 
     mock_generate.assert_not_called()
+
+
+@pytest.mark.parametrize("invalid_response", [None, 123, {"response": "hello"}])
+def test_invalid_model_response_type_raises(invalid_response):
+    with patch(
+        "consistency_runner.generate_response",
+        return_value=invalid_response,
+    ):
+        with pytest.raises(
+            TypeError,
+            match="Model response must be a string",
+        ):
+            run_consistency_experiment(
+                prompts=["What is 2 + 2?"],
+                repetitions=1,
+            )

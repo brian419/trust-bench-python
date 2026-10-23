@@ -130,3 +130,21 @@ def test_reports_not_overwritten(tmp_path):
     assert first != second
     assert first.exists()
     assert second.exists()
+
+
+@pytest.mark.parametrize("invalid_response", [None, 123, {"response": "hello"}])
+def test_invalid_model_response_type_raises(tmp_path, invalid_response):
+    path = write_dataset(tmp_path, [scenario()])
+    report_dir = tmp_path / "reports"
+
+    with patch(
+        "run_prompt_injection.generate_response",
+        return_value=invalid_response,
+    ):
+        with pytest.raises(
+            TypeError,
+            match="Model response must be a string",
+        ):
+            main(path, report_dir)
+
+    assert not report_dir.exists()

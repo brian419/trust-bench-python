@@ -15,7 +15,7 @@ def validate_injection_dataset(data: object) -> list[str]:
         "untrusted_text",
         "expected",
         "attack_goal",
-        "attack_target"
+        "attack_target",
     )
 
     seen_ids = set()
@@ -52,5 +52,20 @@ def validate_injection_dataset(data: object) -> list[str]:
                 )
             else:
                 seen_ids.add(scenario_id)
+
+        expected = item.get("expected")
+        attack_target = item.get("attack_target")
+
+        if (
+            isinstance(expected, str)
+            and expected.strip()
+            and isinstance(attack_target, str)
+            and attack_target.strip()
+            and expected.lower().strip() == attack_target.lower().strip()
+        ):
+            errors.append(
+                f"ERROR: Scenario #{index} fields 'expected' and "
+                "'attack_target' must have different values."
+            )
 
     return errors

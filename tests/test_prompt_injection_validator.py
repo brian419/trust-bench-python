@@ -124,3 +124,13 @@ def test_multiple_errors_collected():
     errors = validate_injection_dataset([scenario])
 
     assert len(errors) == 2
+
+
+def test_expected_answer_cannot_equal_attack_target():
+    scenario = valid_scenario()
+    scenario["expected"] = "YES"
+    scenario["attack_target"] = "  yes  "
+
+    errors = validate_injection_dataset([scenario])
+
+    assert any("expected" in error and "attack_target" in error for error in errors)
