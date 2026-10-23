@@ -2,7 +2,7 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestones 1–4 are complete and merged into `main` (155 tests passing after Milestone 4, October 23, 2026). Milestone 4A–4E work was fast-forward merged from `feature/milestone-4` and pushed to `main` at commit `72a4842`. Historical checkpoints include 47 tests at Milestone 3, 111 after 4C, and 148 after 4D. Milestone 5 remains planned.
+**Current status:** Milestones 1–4 are complete and merged into `main` (155 tests passing after Milestone 4, October 23, 2026). Milestone 4A–4E work was fast-forward merged from `feature/milestone-4` and pushed to `main` at commit `72a4842`. Historical checkpoints include 47 tests at Milestone 3, 111 after 4C, and 148 after 4D. Milestone 5 is planned on `feature/milestone-5` with CLI and desktop GUI interfaces alongside reproducibility and reporting.
 
 ## Guiding principles
 
@@ -337,22 +337,31 @@ Original local source: `reports/prompt-injection-d2fe3abd6a1243cc89b073391c4dda9
 
 ---
 
-## Milestone 5: Reproducibility and reporting
+## Milestone 5: Usable interfaces, reproducibility, and reporting
 
-**Status: Planned (advanced features).** Basic per-run JSON reports already exist from Milestone 3; cross-run comparisons and stronger reproducibility metadata remain future work.
+**Status: Planned on `feature/milestone-5`.** The goal is a usable **CLI and desktop GUI**, with a choice of interface. Users who prefer the terminal should never need to open a browser; users who prefer a graphical application should be able to work without terminal commands after setup. Both interfaces will use the same evaluation engine, datasets, scoring definitions, and report formats.
 
-### Proposed work
+### Implementation plan
 
-- [x] Save basic structured JSON run results (**implemented in Milestone 3**; CSV/SQLite remain optional future work).
-- [ ] Compare runs against the same versioned test suite and evaluation rules.
-- [ ] Summarize pass rates by category and retain examples of failures.
-- [ ] Expand existing model-name/dataset-name/timestamp metadata to include model versions/configuration, dataset revision, and explicit scoring-rule version.
-- [ ] Include sample sizes and uncertainty or limitations where appropriate.
-- [ ] Publish a concise evaluation report, with clear instructions to reproduce it.
+- **5A — Unified CLI:** A discoverable command entry point, help text, dataset/model selection, evaluation modes, basic configuration, and clear exit/error behavior. Preserve existing script entry points.
+- **5B — Reproducibility metadata:** Record available model/version information, decoding options, prompt and scoring-rule identifiers, dataset fingerprints/revisions, timestamps, and environment limitations. Explicitly mark unavailable metadata rather than inventing it.
+- **5C — Compatible run comparisons:** List and inspect reports; compare only runs whose tasks, inputs, scoring rules, and metadata support a meaningful comparison. Show response changes, regressions, improvements, and request errors separately.
+- **5D — Reports and summaries:** Human-readable summaries and exportable evaluation reports with counts, sample sizes, categorized failure examples, and transparent limitations.
+- **5E — Desktop GUI:** A local graphical interface for selecting datasets/models, starting evaluations, inspecting progress and prior reports, and viewing comparisons. **Do not require users to launch a web browser.** Favor a lightweight, free desktop approach suitable for local machines. The GUI must reuse the same core functions as the CLI, not duplicate evaluation/scoring logic. A browser-based dashboard can be considered later but is not required.
+- **5F — Packaging, accessibility, documentation, and release:** Easy installation and first-run guidance, platform considerations, meaningful validation errors, keyboard-accessible interface where practical, examples, tests, and a clear comparison of CLI versus GUI workflows.
 
-### Completion evidence
+### Architecture and scope rules
 
-A reader can compare multiple runs using documented model/dataset/scoring versions, inspect individual cases and categories, understand the uncertainty and limitations, and reproduce the comparison without undocumented manual steps.
+- Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.
+- Keep free local Ollama execution and avoid paid hosted services. Prefer standard-library or small free dependencies, subject to explicit review before adding them.
+- Develop the CLI and reusable application/service layer first; build the desktop GUI on those shared capabilities.
+- Running the CLI must not depend on GUI packages or a display server. Running the desktop GUI must not require opening a web browser.
+- Keep reproducibility and comparison requirements from the original Milestone 5 plan; the GUI is an additional access path, not a substitute.
+- Deliver iteratively with targeted automated tests, representative local validation, and clear separation of implemented features from planned ones.
+
+### Acceptance criteria
+
+A new user can choose either the terminal-based CLI or local desktop GUI to run a supported evaluation, understand errors, find and inspect saved reports, and compare compatible runs. Reports include available provenance/configuration details, clear outcome definitions, sample sizes, and limitations. Existing script interfaces and regression tests continue working.
 
 ---
 
@@ -380,4 +389,4 @@ A reader can compare multiple runs using documented model/dataset/scoring versio
 
 ### Near-term next step
 
-Milestones 1–4 are complete and merged into `main` (**155 passing tests**, October 23, 2026). The Milestone 4 fast-forward merge reached commit `72a4842`; the working tree was clean and the push to `origin/main` succeeded. Begin planning Milestone 5 cross-run comparisons, version metadata, and reporting on a new feature branch.
+Milestones 1–4 are complete and merged into `main` (**155 passing tests**, October 23, 2026). The Milestone 4 fast-forward merge reached commit `72a4842`; the working tree was clean and the push to `origin/main` succeeded. Begin Milestone 5 on `feature/milestone-5`: unified CLI, shared evaluation service, reproducibility metadata, run comparisons, reports, and an optional local desktop GUI. No browser is required for either supported interface.
