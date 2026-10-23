@@ -2,7 +2,7 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestones 1–3 are complete on `main` (47 tests). Milestones 4A–4C are complete on `feature/milestone-4` (111-test checkpoint); 4C was pushed in commit `e87353c`. Milestone 4D has been implemented and locally tested (148 passing tests, October 23, 2026), and was committed and pushed as `517f312`. Milestone 4E and Milestone 5 remain planned; Milestone 4 has not been merged into `main`.
+**Current status:** Milestones 1–3 are complete on `main` (47 tests). Milestones 4A–4C are complete on `feature/milestone-4` (111-test checkpoint); 4C was pushed in commit `e87353c`. Milestone 4D has been implemented and locally tested (148 passing tests, October 23, 2026), and was committed and pushed as `517f312`. Milestone 4E synthesis and local validation are complete (155 passing tests); Milestone 5 remains planned. Milestone 4 has not been merged into `main`.
 
 ## Guiding principles
 
@@ -21,7 +21,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 | 2B | Automated unit tests with pytest | **Complete** |
 | 2C | Input validation and error handling | **Complete** |
 | 3 | Run evaluations against a local AI model and save basic JSON reports | **Complete (47 tests total)** |
-| 4 | Responsible AI evaluation methods | In progress: 4A–4D implemented and tested; 4E planned |
+| 4 | Responsible AI evaluation methods | Complete on feature branch: 4A–4E locally validated (155 tests); merge pending |
 | 5 | Reproducibility, comparison, and reporting | Planned |
 
 ---
@@ -167,7 +167,7 @@ TrustBench is an independent Python learning and portfolio project exploring rep
 
 ## Milestone 4: Responsible AI evaluation methods
 
-**Status: In progress on `feature/milestone-4`.** Milestones 4A–4D are implemented and locally tested (148 passing tests after 4D; 111 at the 4C checkpoint), building on Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47-test baseline**. Milestone 4D was committed and pushed as `517f312`; 4E is planned.
+**Status: Complete on `feature/milestone-4`, pending merge.** Milestones 4A–4E are implemented or reviewed and locally validated (155 passing tests after 4E; 148 at the 4D checkpoint; 111 at the 4C checkpoint), building on Milestone 3's local `gemma3:1b` Ollama workflow, JSON reports, and **47-test baseline**. Milestone 4D was committed as `517f312`; 4E regression changes were committed as `f7c06d2`, with 155 tests passing in the final local validation.
 
 **Working approach:** Progress through 4A–4E sequentially, with small learning exercises, targeted tests, and review of outputs before advancing. Preserve `eval.py`, existing `eval_live.py` behavior, JSON reports, and all baseline tests. Favor free local execution, offline fixtures, and mocked calls; no paid API accounts or substantial new dependencies required. Keep dataset and scoring definitions explicit rather than adding vague "responsible AI" scores.
 
@@ -308,15 +308,23 @@ Original local source: `reports/prompt-injection-d2fe3abd6a1243cc89b073391c4dda9
 
 ### Milestone 4E: Review, synthesis, and documentation
 
+**Status: Complete on `feature/milestone-4` (October 23, 2026; 155 tests passed locally).** Feature-branch merge review remains separate.
+
 **Goal:** Make Milestone 4 evidence understandable and ready to share without overstating results.
 
-- [ ] Summarize dataset size, method, reference quality, labeled examples, and major failure modes; use existing local JSON reports where useful.
-- [ ] Explain known evaluator errors, manual review decisions, compute constraints, and threats to validity.
-- [ ] Update `README.md` and this milestone plan only for features actually implemented.
-- [ ] Run the full pytest suite, verify preserved Milestones 1–3 behavior, and manually reproduce at least one representative experiment.
-- [ ] Commit/push changes to `feature/milestone-4`; review before eventual merge into `main`.
+- [x] Summarized the 4A–4D dataset sizes, methods, curated references and labels, and observed failure modes in the README.
+- [x] Documented evaluator limitations, interpretation of manually reviewed mismatches, local compute requirements, and threats to validity.
+- [x] Updated `README.md` and this milestone plan to reflect implemented and tested features.
+- [x] Ran the full pytest suite; verified the original offline evaluator and alternative-scoring fixture; repeated representative local `gemma3:1b` inference.
+- [x] Committed and pushed 4E regression safeguards to `feature/milestone-4` as `f7c06d2`; documented the final synthesis on the feature branch. Merge into `main` remains pending.
 
-**Acceptance:** Every reported conclusion is traceable to specific prompts, reference material, scoring criteria, and saved or documented evidence.
+**Local acceptance evidence:** `python3 eval.py`: 2 PASS, 1 FAIL, 66.67 accuracy. `python3 compare_scorers.py`: 8 cases, 2 exact passes, 4 accepted passes, 4 review cases. `python3 -m pytest -q`: **155 passed**. `python3 run_prompt_injection.py`: three completed requests with generated responses `999\n`, `Gardening\n`, and `NO\n` in `reports/prompt-injection-0430565469e7487e88765a77ca519fa5.json` (Git-ignored, local). The same three response classifications were observed in an earlier run, without establishing broader reliability.
+
+**Audit safeguards:** Rejected expected-answer/attack-target pairs equal under `.lower().strip()`; covered invalid non-string client responses (`None`, integer, dictionary) with tests for `consistency_runner.py` and `run_prompt_injection.py`. Such responses remain contract errors, not ordinary model request errors.
+
+**Evidence scope:** 4A uses 10 reference-based questions and retains human-supplied URLs/dates rather than verifying sources automatically. 4B uses 8 labeled accepted-answer examples. 4C observed 3 CORRECT, 5 INCORRECT, and 1 FORMATTING_MISMATCH over 9 requests. 4D has 3 curated synthetic cases, with one explicit attack-target match, one expected-answer match, and one incorrect task answer not matching the attack target. Small sample sizes, exact matching, and model/runtime version uncertainty prohibit general conclusions about factuality or safety.
+
+**Acceptance:** Reported conclusions trace to the documented prompts, evaluation definitions, human judgments, and local saved reports. The test suite and representative workflow passed; merging into `main` requires its own review.
 
 ### Deferred work and scope boundaries
 
@@ -372,4 +380,4 @@ A reader can compare multiple runs using documented model/dataset/scoring versio
 
 ### Near-term next step
 
-Milestone 4D is implemented and locally tested on `feature/milestone-4` (**148 passing tests**); the 4D changes were committed and pushed as `517f312`. Begin **Milestone 4E: synthesis and branch-wide validation**, reviewing the README, experiment limitations, previous functionality, and repository state before committing/pushing to the feature branch or considering a merge to `main`. Milestone 5 cross-run comparisons remain planned.
+Milestones 4A–4E are complete and locally validated on `feature/milestone-4` (**155 passing tests**, October 23, 2026). Milestone 4D was committed as `517f312` and 4E regression safeguards as `f7c06d2`. Review the complete feature-branch diff before any merge to `main`. Milestone 5 cross-run comparisons remain planned.
