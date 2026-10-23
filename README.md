@@ -8,9 +8,9 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–3: Complete on `main` (47-test baseline). Milestones 4A–4E: Implemented and locally validated on `feature/milestone-4` (155 tests, October 23, 2026).**
+**Milestones 1–4: Complete on `main` (155 passing tests after the October 23, 2026 merge). Milestone 5: Planned.**
 
-Milestone 3 merged into `main` on October 21, 2026. Milestone 4 remains on the feature branch and is not merged into `main`. Milestone 4E review is complete on the feature branch; Milestone 5 remains planned. Milestone 4D was committed and pushed in `517f312`. To use the Milestone 4 workflows after cloning, run `git switch feature/milestone-4`.
+Milestone 3 merged into `main` on October 21, 2026. Milestone 4 (stages 4A–4E) was fast-forward merged and pushed to `main` on October 23, 2026 at commit `72a4842`, after 155 tests passed locally. The historical `feature/milestone-4` branch remains available, but all Milestone 4 workflows are now on `main`. Milestone 5 remains planned.
 
 Implemented:
 
@@ -117,7 +117,7 @@ python3 -m pip install pytest
 python3 -m pytest -v
 ```
 
-The `main` baseline contains **47 tests**. The `feature/milestone-4` branch passed **155 automated tests** after the 4E regression review on October 23, 2026 (148 at the 4D checkpoint; 111 at the completed 4C checkpoint). Tests include offline evaluation, reference validation, accepted-answer scoring, mocked Ollama requests, consistency inference, response scoring, human classification, SHA-256 verification, prompt-injection validation/scoring, and report generation. Automated tests mock model calls; an Ollama service is not necessary to run them.
+The Milestone 3 baseline contained **47 tests**. The merged `main` branch passed **155 automated tests** after the 4E regression review on October 23, 2026 (148 at the 4D checkpoint; 111 at the completed 4C checkpoint). Tests include offline evaluation, reference validation, accepted-answer scoring, mocked Ollama requests, consistency inference, response scoring, human classification, SHA-256 verification, prompt-injection validation/scoring, and report generation. Automated tests mock model calls; an Ollama service is not necessary to run them.
 
 ## Offline input format
 
@@ -149,7 +149,7 @@ Live evaluation makes HTTP requests to a locally running model. It does not use 
    python3 eval_live.py
    ```
 
-The client sends non-streaming requests to `http://localhost:11434/api/generate` using the model name `gemma3:1b`. The script defaults to `eval-read-live.json` and uses a fixed model name in source. On `feature/milestone-4`, Python callers can supply `main("eval-read-reference.json")` to evaluate the new reference dataset; **live model selection and arbitrary dataset paths are not yet CLI options**. Ollama runs the model locally, but model download and local execution still consume bandwidth, disk space, and computer resources.
+The client sends non-streaming requests to `http://localhost:11434/api/generate` using the model name `gemma3:1b`. The script defaults to `eval-read-live.json` and uses a fixed model name in source. Python callers can supply `main("eval-read-reference.json")` to evaluate the new reference dataset; **live model selection and arbitrary dataset paths are not yet CLI options**. Ollama runs the model locally, but model download and local execution still consume bandwidth, disk space, and computer resources.
 
 ### Live dataset format
 
@@ -180,7 +180,7 @@ A report includes:
 
 - `metadata`: model name, dataset filename, and UTC ISO 8601 run timestamp.
 - `summary`: counts of passed, failed, and errored requests, plus `accuracy` (a percentage, or JSON `null` if no requests were scored).
-- `results`: test ID, question, expected answer, generated response, status, and `duration_seconds`; error cases contain `generated: null` and an `error` message. On `feature/milestone-4`, reference-dataset results also retain `reference` metadata for PASS, FAIL, and ERROR cases.
+- `results`: test ID, question, expected answer, generated response, status, and `duration_seconds`; error cases contain `generated: null` and an `error` message. Reference-dataset results also retain `reference` metadata for PASS, FAIL, and ERROR cases.
 
 A `PASS` or `FAIL` counts toward the accuracy denominator; an `ERROR` (HTTP, connection, or timeout failure) does not. An evaluation with no scored answers reports `Accuracy: N/A`. Request durations measure elapsed time for each model request, not total CLI runtime. Output can vary between runs even for the same prompts.
 
@@ -188,7 +188,7 @@ Report filenames use unique identifiers, so earlier reports are preserved. A dir
 
 ## Reference-grounded factual evaluation (Milestone 4A, feature branch)
 
-**Status: Implemented and locally tested on `feature/milestone-4`; not yet merged into `main`.**
+**Status: Implemented, locally tested, and merged into `main` on October 23, 2026.**
 
 The `eval-read-reference.json` dataset contains **10 short, stable factual questions**, each with `id`, `question`, `expected`, and `reference` (`url` and `verified_date`). The accompanying `reference_validator.py` reuses live-dataset validation and checks that reference fields exist, have the expected types, are nonblank, and include a valid `YYYY-MM-DD` verification date. This **does not** fetch URLs or independently prove that a source supports its answer.
 
@@ -206,7 +206,7 @@ This invokes reference validation before inference, preserves the default `pytho
 
 ## Evaluation beyond exact matching (Milestone 4B, feature branch)
 
-**Status: Implemented and locally tested on `feature/milestone-4`; not yet merged into `main`.**
+**Status: Implemented, locally tested, and merged into `main` on October 23, 2026.**
 
 `answer_scorer.py` adds `score_answer(expected, generated, accepted_answers=None)` alongside the original `compare_answers()` function. It returns `PASS` for a normalized exact match or an explicitly listed accepted alternative, and `REVIEW` when neither matches. `REVIEW` is not a claim that an answer is wrong: it can represent either an incorrect answer or a correct but unrecognized paraphrase. It does not perform semantic inference, fact-checking, or automatic determination of `FAIL` for unmatched text.
 
@@ -270,7 +270,7 @@ Agreement is **not** factual correctness: the mass-unit responses agreed but wer
 
 ## Controlled prompt-injection resilience (Milestone 4D, feature branch)
 
-**Status: Implemented and locally tested on `feature/milestone-4` (148 tests at the 4D checkpoint; 155 after 4E regression review, October 23, 2026). Milestone 4D was committed as `517f312`; 4E regression improvements were pushed as `f7c06d2`.**
+**Status: Implemented, locally tested, and merged into `main` on October 23, 2026 (148 tests at the 4D checkpoint; 155 after 4E regression review). Milestone 4D was committed as `517f312`; 4E regression improvements as `f7c06d2`.**
 
 TrustBench tests whether a local model follows a specified task when synthetic, lower-trust document content contains competing instructions. This is a controlled *single-prompt* instruction-boundary experiment, not an evaluation of API-level system/developer-role separation.
 
@@ -310,7 +310,7 @@ Recorded source: `reports/prompt-injection-d2fe3abd6a1243cc89b073391c4dda9b.json
 
 ## Milestone 4E: Final synthesis and regression review (feature branch)
 
-**Status: Complete on `feature/milestone-4` (October 23, 2026); `main` remains unchanged.**
+**Status: Complete and merged into `main` on October 23, 2026 (155 tests passed).**
 
 The final review covered the earlier evaluation workflows and bounded local experiments:
 
@@ -332,7 +332,7 @@ The final review covered the earlier evaluation workflows and bounded local expe
 - **Milestone 1: Basic evaluation (complete).** Read prerecorded answers from JSON, normalize and score them.
 - **Milestone 2: Testable architecture (complete).** Reusable functions, pytest tests, dataset validation, and controlled CLI errors.
 - **Milestone 3: Local model integration (complete).** Ollama HTTP inference, live scoring, request failure handling, elapsed-time tracking, and saved JSON run reports.
-- **Milestone 4: Responsible AI evaluation methods (complete on feature branch; not merged).** 4A reference-based evaluation, 4B alternative scoring, 4C response consistency/failure classification, 4D controlled prompt-injection experiments, and 4E synthesis/regression review have been locally validated (155 tests).
+- **Milestone 4: Responsible AI evaluation methods (complete and merged into `main`).** 4A reference-based evaluation, 4B alternative scoring, 4C response consistency/failure classification, 4D controlled prompt-injection experiments, and 4E synthesis/regression review have been locally validated (155 tests).
 - **Milestone 5: Advanced reproducibility and comparisons (planned).** Build on the basic JSON reporting from Milestone 3 to compare runs, record more configuration/version metadata, and produce cautious aggregate analyses.
 
 See [`milestones.md`](milestones.md) for detailed status and acceptance evidence.
