@@ -2,7 +2,7 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestones 1–4 are complete and merged into `main` (155 tests passing after Milestone 4, October 23, 2026). Milestone 4A–4E work was fast-forward merged from `feature/milestone-4` and pushed to `main` at commit `72a4842`. Historical checkpoints include 47 tests at Milestone 3, 111 after 4C, and 148 after 4D. Milestone 5 is planned on `feature/milestone-5` with CLI and desktop GUI interfaces alongside reproducibility and reporting.
+**Current status:** Milestones 1–4 are complete and merged into `main` (155 tests passing after Milestone 4, October 23, 2026). Milestone 4A–4E work was fast-forward merged from `feature/milestone-4` and pushed to `main` at commit `72a4842`. Historical checkpoints include 47 tests at Milestone 3, 111 after 4C, and 148 after 4D. Milestone 5 is underway on `feature/milestone-5`: 5A and 5B have been pushed, while the 5C live-report comparison implementation was verified locally (289 tests) and is staged but not yet committed/pushed. 5D–5F are planned.
 
 ## Guiding principles
 
@@ -339,13 +339,13 @@ Original local source: `reports/prompt-injection-d2fe3abd6a1243cc89b073391c4dda9
 
 ## Milestone 5: Usable interfaces, reproducibility, and reporting
 
-**Status: In progress on `feature/milestone-5`. Initial 5A CLI foundation: `f4a8ccf` (183 tests). 5B provenance checkpoint: `7f75d53` (200 tests passing, October 24, 2026). Stages 5C–5F are not yet implemented.** The goal is a usable **CLI and desktop GUI**, with a choice of interface. Users who prefer the terminal should never need to open a browser; users who prefer a graphical application should be able to work without terminal commands after setup. Both interfaces will use the same evaluation engine, datasets, scoring definitions, and report formats.
+**Status: In progress on `feature/milestone-5`. Initial 5A CLI foundation: `f4a8ccf` (183 tests). 5B provenance checkpoint: `7f75d53` (200 tests passing, October 24, 2026). 5C live-report comparison is locally implemented and tested (289 tests); its eight new code/test files are staged but not yet committed/pushed. Stages 5D–5F remain planned.** The goal is a usable **CLI and desktop GUI**, with a choice of interface. Users who prefer the terminal should never need to open a browser; users who prefer a graphical application should be able to work without terminal commands after setup. Both interfaces will use the same evaluation engine, datasets, scoring definitions, and report formats.
 
 ### Implementation plan
 
 - **5A — Unified CLI (initial checkpoint complete):** A discoverable command entry point, help text, dataset/model selection where supported, five evaluation modes, and input/error handling. Existing script entry points are preserved. Broader configuration and shared service extraction remain to be developed.
 - **5B — Reproducibility metadata (implemented checkpoint):** Added available generation options, input/dataset fingerprints, scoring/prompt identifiers, Python runtime version and honest nulls for uncaptured model versions. Future work: exact model digests and more complete mode coverage.
-- **5C — Compatible run comparisons:** List and inspect reports; compare only runs whose tasks, inputs, scoring rules, and metadata support a meaningful comparison. Show response changes, regressions, improvements, and request errors separately.
+- **5C — Compatible run comparisons (local checkpoint complete):** Read existing saved live reports, check recorded experiment type/input fingerprints/scoring definitions and model-configuration warnings, match per-case statuses by ID and summarize changes. A general directory browser, detailed inspection UI, non-live comparison modes and raw-text diffing remain open.
 - **5D — Reports and summaries:** Human-readable summaries and exportable evaluation reports with counts, sample sizes, categorized failure examples, and transparent limitations.
 - **5E — Desktop GUI:** A local graphical interface for selecting datasets/models, starting evaluations, inspecting progress and prior reports, and viewing comparisons. **Do not require users to launch a web browser.** Favor a lightweight, free desktop approach suitable for local machines. The GUI must reuse the same core functions as the CLI, not duplicate evaluation/scoring logic. A browser-based dashboard can be considered later but is not required.
 - **5F — Packaging, accessibility, documentation, and release:** Easy installation and first-run guidance, platform considerations, meaningful validation errors, keyboard-accessible interface where practical, examples, tests, and a clear comparison of CLI versus GUI workflows.
@@ -392,9 +392,35 @@ The bracketed options above are illustrative syntax; omit brackets in real comma
 - [x] Live, consistency and injection reports store `metadata.provenance.python_version` while retaining existing timestamp fields and previous top-level metadata.
 - [x] Added targeted tests for content hashing, consistent input fingerprints, scoring IDs, generation option reporting, Python version, persisted JSON contents and preserved model calls. Full suite increased from **183** (5A) to **200** and passed.
 
-**Interpretation and limitations:** Dataset fingerprints detect byte-level changes, including whitespace, not semantic correctness. The consistency `inputs_sha256` fingerprints prompts and repetition count, but not model identity or decoding options: assess those separately. No exact Ollama model digest or runtime/server version has been captured; `model_version: null` represents missing information, and `model_options: null` for live evaluation means that no options were explicitly passed, **not** that Ollama defaults are absent. Even a fixed seed does not guarantee deterministic output. Historical reports remain unchanged and will lack these fields. Offline and scorer modes do not yet save equivalent standardized provenance. There is no report browser or compatibility comparator yet.
+**Interpretation and limitations:** Dataset fingerprints detect byte-level changes, including whitespace, not semantic correctness. The consistency `inputs_sha256` fingerprints prompts and repetition count, but not model identity or decoding options: assess those separately. No exact Ollama model digest or runtime/server version has been captured; `model_version: null` represents missing information, and `model_options: null` for live evaluation means that no options were explicitly passed, **not** that Ollama defaults are absent. Even a fixed seed does not guarantee deterministic output. Historical reports remain unchanged and will lack these fields. Offline and scorer modes do not yet save equivalent standardized provenance. The 5C local working tree now includes a live-report compatibility comparator and CLI, but no general report browser or comprehensive provenance capture.
 
 **Next:** **5C — Compatible run comparisons.** Start with read-only inspection of saved reports and compatibility rules that reject mismatched experiment types, inputs and scoring definitions. Handle missing/older metadata explicitly rather than assuming compatibility. Keep model request errors separate from incorrect answers. Full model-digest capture and broader provenance standardization remain possible future enhancements, not claimed as finished in this checkpoint.
+
+### Milestone 5C: Compatible live-report comparisons (local checkpoint complete)
+
+**Branch and evidence:** `feature/milestone-5`; locally verified October 24, 2026. `python3 -m pytest -q`: **289 passed**. `python3 -m compileall -q` succeeded for the four runtime modules, and manual CLI execution on two temporary synthetic reports matched expected output. The eight code/test files are staged locally and **not yet committed or pushed**. This documentation is written ahead of that code commit; 5C is not merged into `main`.
+
+- [x] `report_loader.py`: read existing JSON, validate top-level metadata/results containers and report clear errors for invalid structure.
+- [x] `report_compatibility.py`: classify live, consistency and injection report types; check recorded dataset/input SHA-256, scoring definitions, model names/options and known/unknown versions. Require consistent type, inputs and scoring before allowing comparison, while retaining cross-model warnings.
+- [x] `report_comparison.py`: match live cases by unique IDs, reject invalid/missing/duplicate IDs and invalid `PASS`/`FAIL`/`ERROR` statuses, detect added/removed cases, classify improvements/regressions/recovered requests/new errors and aggregate counts.
+- [x] `compare_reports.py`: load two report paths, run live-only compatibility and comparison, display counts, detailed changed cases and provenance warnings; provide concise CLI errors for missing files, invalid JSON and incompatible/malformed reports.
+- [x] Tests added in `tests/test_report_loader.py`, `tests/test_report_compatibility.py`, `tests/test_report_comparison.py`, `tests/test_compare_reports_cli.py`; local full suite reached **289 passing tests**.
+- [x] Manual CLI test with three synthetic shared cases: one `FAIL → PASS` improvement, one `PASS → FAIL` regression, one `ERROR → PASS` recovered request. Printed `PARTIAL_MATCH` and missing model options/version warnings as expected.
+- [ ] Complete final documentation review and make a local code commit under the intended Git author; push when ready. Update this checklist with the actual commit SHA afterward.
+- [ ] Implement the remaining broader 5C scope, if retained as requirements: directory report listing/browsing, inspection of saved reports, explicit comparisons for consistency/injection formats, or record them as deferred before 5C is marked fully complete.
+
+**Usage (after the staged files are committed or available locally):**
+
+```bash
+python3 compare_reports.py reports/previous.json reports/current.json
+python3 -m pytest -q
+```
+
+Reports under `reports/` are Git-ignored and are not distributed with the repo. The CLI reads existing files without Ollama. `total_cases` is the **union of case IDs**, including added and removed items, not only the intersection. `UNCHANGED` compares status alone, not the full generated text. `ERROR → FAIL` is a recovered request, not an accuracy improvement.
+
+**Compatibility and evidence limits:** `PARTIAL_MATCH` confirms only the recorded experiment type, inputs and scoring rules align; it is not proof of deterministic reproduction. Missing model versions/options are warned about; different model names/configuration settings are reported as warnings so cross-model evaluations remain possible. Mismatched input fingerprints, scoring rules or experiment types are incompatible. Missing/invalid provenance makes the comparison unverified. Fingerprints are recorded data, not an independent integrity attestation. Older reports without 5B metadata may be rejected. The interface presently supports **live-evaluation reports only**, with no general browser, cross-run statistical confidence bounds, semantic answer equivalence, complete model digests or exact runtime replay.
+
+**Next intended handoff:** Review and commit the staged 5C files locally, reconcile documentation with the actual Git commit and remaining scope, then proceed to **5D — Reports and summaries**. Preserve 5A/5B behavior and all 289 tests.
 
 ### Architecture and scope rules
 
@@ -435,4 +461,4 @@ A new user can choose either the terminal-based CLI or local desktop GUI to run 
 
 ### Near-term next step
 
-Milestones 1–4 remain merged into `main` (155 passing tests at the October 23, 2026 merge, commit `72a4842`). The initial Milestone 5A unified CLI was committed and pushed on `feature/milestone-5` at `f4a8ccf`; **183 automated tests passed** and the working tree was clean. Documentation was refreshed next. Proceed to **5B reproducibility metadata**, then compatible comparisons (5C), human-readable reporting (5D), a browser-free local desktop GUI (5E), and packaging/release work (5F). Maintain separate CLI and GUI workflows while building shared evaluation services.
+Milestones 1–4 remain merged into `main` (155 passing tests at the October 23, 2026 merge, commit `72a4842`). The initial Milestone 5A unified CLI was committed and pushed on `feature/milestone-5` at `f4a8ccf`; **183 automated tests passed** and the working tree was clean. Documentation was refreshed next. 5B provenance and local 5C live-report comparison have now been implemented; code for 5C is staged locally, pending commit/push. Next address remaining report-browser scope explicitly and continue to 5D human-readable reporting, 5E browser-free desktop GUI, and 5F packaging/release work. Maintain separate CLI and GUI workflows while building shared evaluation services.
