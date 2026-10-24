@@ -3,6 +3,7 @@ import pytest
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
 from eval_live import main
+from pathlib import Path
 
 
 def test_live_evaluation_all_pass(tmp_path, monkeypatch, capsys):
@@ -564,3 +565,52 @@ def test_alternative_scoring_on_request_error(tmp_path, monkeypatch):
     assert result["alternative_scoring"]["status"] == "ERROR"
     assert result["reference"] == data[0]["reference"]
     assert report["summary"]["errors"] == 1
+
+
+def test_custom_model_forwarded(tmp_path, monkeypatch):
+    data = [
+        {
+            "id": "test_001",
+            "question": "What is 2 + 2?",
+            "expected": "4",
+        }
+    ]
+
+    dataset = tmp_path / "eval-read-live.json"
+    dataset.write_text(json.dumps(data), encoding="utf-8")
+
+    monkeypatch.chdir(tmp_path)
+
+    with patch(
+        "eval_live.generate_response",
+        return_value="4",
+    ) as mock_generate:
+        report = main(model="custom-model")
+
+    mock_generate.assert_called_once_with(
+        "What is 2 + 2?",
+        "custom-model",
+    )
+    assert report["metadata"]["model"] == "custom-model"
+
+
+def test_reference_dataset_in_subdirectory(tmp_path, monkeypatch):
+    source = Path(__file__).resolve().parent.parent / "eval-read-reference.json"
+
+    dataset_dir = tmp_path / "datasets"
+    dataset_dir.mkdir()
+
+    dataset_path = dataset_dir / "eval-read-reference.json"
+    dataset_path.write_bytes(source.read_bytes())
+
+    monkeypatch.chdir(tmp_path)
+
+    with patch(
+        "eval_live.generate_response",
+        return_value="Incorrect answer",
+    ):
+        report = main(filename=str(dataset_path))
+
+    assert report["metadata"]["dataset"] == str(dataset_path)
+    assert "reference" in report["results"][0]
+    assert "alternative_scoring" in report["results"][0]

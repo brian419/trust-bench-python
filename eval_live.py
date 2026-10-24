@@ -1,3 +1,4 @@
+import argparse
 import sys
 import json
 import time
@@ -11,7 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-def main(filename="eval-read-live.json"):
+def main(filename="eval-read-live.json", model="gemma3:1b"):
+    is_reference_dataset = Path(filename).name == "eval-read-reference.json"
 
     try:
         with open(filename, "r") as file:
@@ -25,7 +27,7 @@ def main(filename="eval-read-live.json"):
         print("Error:", e)
         sys.exit(1)
 
-    if filename == "eval-read-reference.json":
+    if is_reference_dataset:
         validation_errors = validate_reference_dataset(data)
     else:
         validation_errors = validate_dataset(data, require_response=False)
@@ -36,8 +38,6 @@ def main(filename="eval-read-live.json"):
         sys.exit(1)
     else:
         print("Live dataset validation passed!")
-
-    model = "gemma3:1b"
 
     run_timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -157,7 +157,7 @@ def main(filename="eval-read-live.json"):
         if "reference" in item:
             result["reference"] = item["reference"]
 
-        if filename == "eval-read-reference.json":
+        if is_reference_dataset:
             if result["status"] == "ERROR":
                 result["alternative_scoring"] = {
                     "status": "ERROR",
@@ -211,4 +211,19 @@ def main(filename="eval-read-live.json"):
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="Evaluate answers using a local Ollama model."
+    )
+    parser.add_argument(
+        "--dataset",
+        default="eval-read-live.json",
+        help="JSON dataset to evaluate.",
+    )
+    parser.add_argument(
+        "--model",
+        default="gemma3:1b",
+        help="Installed Ollama model to use.",
+    )
+
+    args = parser.parse_args()
+    main(filename=args.dataset, model=args.model)

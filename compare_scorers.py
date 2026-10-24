@@ -1,4 +1,6 @@
 import json
+import argparse
+import sys
 from pathlib import Path
 
 from eval import compare_answers
@@ -22,9 +24,7 @@ def compare_scorers(filename="scoring-examples.json"):
         )
 
         improved = score_answer(
-            example["expected"],
-            example["generated"],
-            example["accepted_answers"]
+            example["expected"], example["generated"], example["accepted_answers"]
         )
 
         if exact_status == "PASS":
@@ -41,31 +41,48 @@ def compare_scorers(filename="scoring-examples.json"):
             "human_label": example["human_label"],
             "exact_status": exact_status,
             "improved_status": improved["status"],
-            "reason": improved["reason"]
+            "reason": improved["reason"],
         }
 
         results.append(result)
 
         print(
             example["id"],
-            "| Human:", example["human_label"],
-            "| Exact:", exact_status,
-            "| Improved:", improved["status"]
+            "| Human:",
+            example["human_label"],
+            "| Exact:",
+            exact_status,
+            "| Improved:",
+            improved["status"],
         )
 
     summary = {
         "total": len(examples),
         "exact_passes": exact_passes,
         "alternative_passes": alternative_passes,
-        "review_count": review_count
+        "review_count": review_count,
     }
 
     print("\nComparison summary:", summary)
 
-    return {
-        "summary": summary,
-        "results": results
-    }
+    return {"summary": summary, "results": results}
+
 
 if __name__ == "__main__":
-    compare_scorers()
+    parser = argparse.ArgumentParser(
+        description="Compare exact and alternative answer scoring."
+    )
+    parser.add_argument(
+        "dataset",
+        nargs="?",
+        default="scoring-examples.json",
+        help="Path to a scoring-examples JSON dataset.",
+    )
+
+    args = parser.parse_args()
+
+    try:
+        compare_scorers(args.dataset)
+    except (OSError, json.JSONDecodeError) as error:
+        print(f"Error reading scoring dataset: {error}", file=sys.stderr)
+        sys.exit(1)
