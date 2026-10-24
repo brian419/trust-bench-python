@@ -11,13 +11,23 @@ from urllib.error import HTTPError, URLError
 from datetime import datetime, timezone
 from pathlib import Path
 
+from provenance import (
+    bytes_sha256,
+    EXACT_SCORING_ID,
+    ALTERNATIVE_SCORING_ID,
+    python_runtime_version,
+)
+
 
 def main(filename="eval-read-live.json", model="gemma3:1b"):
     is_reference_dataset = Path(filename).name == "eval-read-reference.json"
 
     try:
-        with open(filename, "r") as file:
-            data = json.load(file)
+        with open(filename, "rb") as file:
+            dataset_bytes = file.read()
+
+        data = json.loads(dataset_bytes)
+        dataset_hash = bytes_sha256(dataset_bytes)
 
     except FileNotFoundError as e:
         print("Error:", e)
@@ -43,7 +53,21 @@ def main(filename="eval-read-live.json", model="gemma3:1b"):
 
     print("Run timestamp:", run_timestamp)
 
-    metadata = {"model": model, "dataset": filename, "timestamp": run_timestamp}
+    metadata = {
+        "model": model,
+        "dataset": filename,
+        "timestamp": run_timestamp,
+        "provenance": {
+            "dataset_sha256": dataset_hash,
+            "primary_scoring": EXACT_SCORING_ID,
+            "alternative_scoring": (
+                ALTERNATIVE_SCORING_ID if is_reference_dataset else None
+            ),
+            "model_options": None,
+            "model_version": None,
+            "python_version": python_runtime_version(),
+        },
+    }
 
     print("Run metadata:", metadata)
 

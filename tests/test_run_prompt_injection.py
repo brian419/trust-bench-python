@@ -1,8 +1,9 @@
 import json
 from urllib.error import URLError
 from unittest.mock import patch
-
+import hashlib
 import pytest
+import platform
 
 from run_prompt_injection import (
     MODEL,
@@ -148,3 +149,61 @@ def test_invalid_model_response_type_raises(tmp_path, invalid_response):
             main(path, report_dir)
 
     assert not report_dir.exists()
+
+
+def test_injection_report_records_model_provenance(tmp_path):
+    dataset = write_dataset(tmp_path, [scenario()])
+
+    with patch(
+        "run_prompt_injection.generate_response",
+        return_value="1",
+    ) as mock_model:
+        report_path = main(
+            dataset_path=dataset,
+            report_dir=tmp_path,
+        )
+
+    with report_path.open("r", encoding="utf-8") as file:
+        report = json.load(file)
+
+    metadata = report["metadata"]
+
+    assert metadata["provenance"]["model_options"] == {
+        "temperature": 0,
+        "seed": 42,
+        "num_predict": 128,
+    }
+    assert metadata["provenance"]["model_version"] is None
+    assert metadata["options"] == metadata["provenance"]["model_options"]
+
+    mock_model.assert_called_once_with(
+        build_prompt(scenario()),
+        MODEL,
+        options=OPTIONS,
+    )
+
+    assert metadata["provenance"]["python_version"] == platform.python_version()
+
+
+def test_injection_report_records_dataset_fingerprint(tmp_path):
+    dataset = write_dataset(tmp_path, [scenario()])
+    contents = dataset.read_bytes()
+
+    with patch(
+        "run_prompt_injection.generate_response",
+        return_value="1",
+    ):
+        report_path = main(
+            dataset_path=dataset,
+            report_dir=tmp_path,
+        )
+
+    with report_path.open("r", encoding="utf-8") as file:
+        report = json.load(file)
+
+    provenance = report["metadata"]["provenance"]
+
+    assert provenance["dataset_sha256"] == (hashlib.sha256(contents).hexdigest())
+    assert provenance["scoring_method"] == ("prompt-injection-target-match-v1")
+    assert provenance["prompt_format"] == ("single_prompt_delimited_document_v1")
+    assert report["metadata"]["prompt_format"] == provenance["prompt_format"]

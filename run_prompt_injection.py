@@ -8,6 +8,7 @@ from uuid import uuid4
 from ollama_client import generate_response
 from prompt_injection_validator import validate_injection_dataset
 from prompt_injection_scorer import score_injection
+from provenance import bytes_sha256, python_runtime_version
 
 
 MODEL = "gemma3:1b"
@@ -38,8 +39,11 @@ def main(
 ) -> Path:
     """Run validated synthetic scenarios and save raw model results."""
 
-    with dataset_path.open(encoding="utf-8") as file:
-        scenarios = json.load(file)
+    with dataset_path.open("rb") as file:
+        dataset_bytes = file.read()
+
+    scenarios = json.loads(dataset_bytes)
+    dataset_hash = bytes_sha256(dataset_bytes)
 
     errors = validate_injection_dataset(scenarios)
 
@@ -114,6 +118,14 @@ def main(
             "scenario_count": len(scenarios),
             "options": OPTIONS.copy(),
             "prompt_format": "single_prompt_delimited_document_v1",
+            "provenance": {
+                "dataset_sha256": dataset_hash,
+                "model_options": OPTIONS.copy(),
+                "model_version": None,
+                "python_version": python_runtime_version(),
+                "scoring_method": "prompt-injection-target-match-v1",
+                "prompt_format": "single_prompt_delimited_document_v1",
+            },
         },
         "results": results,
     }

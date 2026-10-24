@@ -1,5 +1,7 @@
 import json
 import pytest
+import hashlib
+import platform
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
 from eval_live import main
@@ -614,3 +616,114 @@ def test_reference_dataset_in_subdirectory(tmp_path, monkeypatch):
     assert report["metadata"]["dataset"] == str(dataset_path)
     assert "reference" in report["results"][0]
     assert "alternative_scoring" in report["results"][0]
+
+
+def test_live_report_contains_dataset_fingerprint(tmp_path, monkeypatch):
+    contents = b'[{"id":"test_001","question":"What is 2 + 2?","expected":"4"}]'
+
+    dataset = tmp_path / "eval-read-live.json"
+    dataset.write_bytes(contents)
+    monkeypatch.chdir(tmp_path)
+
+    with patch("eval_live.generate_response", return_value="4"):
+        report = main()
+
+    assert report["metadata"]["provenance"]["dataset_sha256"] == (
+        hashlib.sha256(contents).hexdigest()
+    )
+    assert report["summary"]["passed"] == 1
+
+    report_files = list((tmp_path / "reports").glob("evaluation-*.json"))
+
+    assert len(report_files) == 1
+
+    with report_files[0].open("r", encoding="utf-8") as file:
+        saved_report = json.load(file)
+
+    assert saved_report["metadata"]["provenance"]["dataset_sha256"] == (
+        hashlib.sha256(contents).hexdigest()
+    )
+    assert saved_report == report
+
+
+def test_live_report_records_exact_scoring_identifier(tmp_path, monkeypatch):
+    dataset = tmp_path / "eval-read-live.json"
+    dataset.write_text(
+        '[{"id":"test_001","question":"What is 2 + 2?","expected":"4"}]',
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with patch("eval_live.generate_response", return_value="4"):
+        report = main()
+
+    provenance = report["metadata"]["provenance"]
+
+    assert provenance["primary_scoring"] == "normalized-exact-v1"
+    assert provenance["alternative_scoring"] is None
+
+
+def test_reference_report_records_both_scoring_identifiers(tmp_path, monkeypatch):
+    dataset = tmp_path / "eval-read-reference.json"
+    dataset.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "fact_001",
+                    "question": "What is the chemical symbol for gold?",
+                    "expected": "Au",
+                    "reference": {
+                        "url": "https://example.com",
+                        "verified_date": "2026-10-21",
+                    },
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    with patch("eval_live.generate_response", return_value="Au"):
+        report = main("eval-read-reference.json")
+
+    provenance = report["metadata"]["provenance"]
+
+    assert provenance["primary_scoring"] == "normalized-exact-v1"
+    assert provenance["alternative_scoring"] == "accepted-alternatives-v1"
+    assert report["results"][0]["alternative_scoring"]["status"] == "PASS"
+
+
+def test_live_report_does_not_invent_model_configuration(tmp_path, monkeypatch):
+    dataset = tmp_path / "eval-read-live.json"
+    dataset.write_text(
+        json.dumps(
+            [
+                {
+                    "id": "test_001",
+                    "question": "What is 2 + 2?",
+                    "expected": "4",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.chdir(tmp_path)
+
+    with patch(
+        "eval_live.generate_response",
+        return_value="4",
+    ) as mock_generate:
+        report = main(model="gemma3:1b")
+
+    provenance = report["metadata"]["provenance"]
+
+    assert provenance["model_options"] is None
+    assert provenance["model_version"] is None
+
+    mock_generate.assert_called_once_with(
+        "What is 2 + 2?",
+        "gemma3:1b",
+    )
+
+    assert provenance["python_version"] == platform.python_version()

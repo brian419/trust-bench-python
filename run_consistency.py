@@ -4,6 +4,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from consistency_runner import run_consistency_experiment
+from provenance import consistency_inputs_sha256, python_runtime_version
 
 
 MODEL = "gemma3:1b"
@@ -37,6 +38,14 @@ def main(report_dir: Path = Path("reports")) -> Path:
             "repetitions": REPETITIONS,
             "prompt_count": len(PROMPTS),
             "options": OPTIONS.copy(),
+            "provenance": {
+                "inputs_sha256": consistency_inputs_sha256(PROMPTS, REPETITIONS),
+                "model_options": OPTIONS.copy(),
+                "model_version": None,
+                "python_version": python_runtime_version(),
+                "scoring_method": None,
+                "prompt_format": "plain-question-v1",
+            },
         },
         "results": results,
     }

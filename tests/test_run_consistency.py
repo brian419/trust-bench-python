@@ -1,7 +1,9 @@
 import json
-from unittest.mock import patch
+import platform
 
+from unittest.mock import patch
 from run_consistency import main, MODEL, OPTIONS, PROMPTS, REPETITIONS
+from provenance import consistency_inputs_sha256
 
 
 def test_consistency_report_saved(tmp_path):
@@ -62,3 +64,36 @@ def test_consistency_reports_do_not_overwrite(tmp_path):
     assert first_path != second_path
     assert first_path.exists()
     assert second_path.exists()
+
+
+def test_consistency_report_records_model_provenance(tmp_path, monkeypatch):
+    from run_consistency import main
+
+    fake_results = []
+
+    monkeypatch.setattr(
+        "run_consistency.run_consistency_experiment",
+        lambda **kwargs: fake_results,
+    )
+
+    report_path = main(report_dir=tmp_path)
+
+    with report_path.open("r", encoding="utf-8") as file:
+        report = json.load(file)
+
+    metadata = report["metadata"]
+
+    assert metadata["provenance"]["model_options"] == {
+        "temperature": 0.7,
+        "seed": 42,
+        "num_predict": 64,
+    }
+    assert metadata["provenance"]["model_version"] is None
+    assert metadata["options"] == metadata["provenance"]["model_options"]
+
+    assert metadata["provenance"]["inputs_sha256"] == (
+        consistency_inputs_sha256(PROMPTS, REPETITIONS)
+    )
+    assert metadata["provenance"]["scoring_method"] is None
+    assert metadata["provenance"]["prompt_format"] == "plain-question-v1"
+    assert metadata["provenance"]["python_version"] == platform.python_version()
