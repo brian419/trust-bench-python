@@ -8,7 +8,7 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–4: Complete on `main` (155 tests at merge). Milestone 5A: Initial unified CLI implemented at `f4a8ccf` (183 tests). Milestone 5B: Reproducibility metadata checkpoint committed on `feature/milestone-5` at `7f75d53` (200 tests passing, October 24, 2026). Milestones 5C–5F remain planned.**
+**Milestones 1–4: Complete on `main` (155 tests at merge). Milestone 5A: Initial unified CLI implemented at `f4a8ccf` (183 tests). Milestone 5B: Reproducibility metadata checkpoint committed on `feature/milestone-5` at `7f75d53` (200 tests passing, October 24, 2026). Milestone 5C: local implementation and CLI verification complete (289 tests, October 24, 2026); documentation prepared, code commit/push pending. Milestones 5D–5F remain planned.**
 
 Milestone 3 merged into `main` on October 21, 2026. Milestone 4 (stages 4A–4E) was fast-forward merged and pushed to `main` on October 23, 2026 at commit `72a4842`, after 155 tests passed locally. The historical `feature/milestone-4` branch remains available, but all Milestone 4 workflows are now on `main`. Milestone 5A provides the tested CLI foundation; the 5B provenance checkpoint adds report metadata on the same feature branch. Neither stage has been merged into `main`.
 
@@ -27,6 +27,37 @@ Implemented:
 - Validate synthetic prompt-injection scenarios, run them with local `gemma3:1b`, and classify exact expected-answer matches, explicit attack-target matches, other outputs, and request errors separately (Milestone 4D on the feature branch).
 
 **Scoring limitation:** “Accuracy” means *normalized exact-match rate among successfully scored responses in the provided dataset*. It is not a general measure of model accuracy, semantic equivalence, factuality, hallucinations, bias, safety, or reliability. Model request errors are counted separately and excluded from the accuracy denominator.
+
+## Comparing saved live reports (Milestone 5C)
+
+**Status (October 24, 2026):** Implemented and manually verified on the local `feature/milestone-5` working tree; **289 automated tests passed**. The eight implementation/test files are staged locally but have not yet been committed or pushed. This documentation may appear on GitHub before those files are published. Milestone 5C is not merged into `main`.
+
+From the repository root, compare two previously saved live-evaluation JSON reports:
+
+```bash
+python3 compare_reports.py reports/previous.json reports/current.json
+```
+
+This reads existing reports **without running Ollama**. Use actual report filenames from your local `reports/` directory, which is Git-ignored and not included in a fresh clone. The comparison CLI is a separate entry point from the five evaluation commands in `trustbench.py`.
+
+**How it works:** `report_loader.py` reads and checks each report's top-level `metadata` object and `results` list. `report_compatibility.py` identifies experiment types, verifies recorded input SHA-256 fingerprints, compares scoring definitions and checks reported model names, generation options and model versions. `report_comparison.py` matches results by unique case ID, validates `PASS`/`FAIL`/`ERROR`, calculates per-case changes and counts them. `compare_reports.py` prints the summary, compatibility warnings and changed cases; it reports invalid JSON, missing files, malformed reports and incompatible inputs as command-line errors.
+
+| Case transition | Label | Interpretation |
+| --- | --- | --- |
+| `FAIL → PASS` | `IMPROVEMENT` | Previously incorrect exact-match result now passes |
+| `PASS → FAIL` | `REGRESSION` | Previously passing exact-match result now fails |
+| `PASS/FAIL/ERROR → same status` | `UNCHANGED` | Status unchanged; text may still differ |
+| `ERROR → PASS/FAIL` | `RECOVERED` | Request completed; `ERROR → FAIL` is **not** an accuracy improvement |
+| `PASS/FAIL → ERROR` | `NEW_ERROR` | New request error, not an ordinary wrong answer |
+| Case exists only in current/previous report | `ADDED` / `REMOVED` | Different case coverage; not scored as improvement/regression |
+
+`total_cases` counts **unique case IDs across both reports**, including added and removed cases; it does not equal the count shared by both runs. Changed-case output omits `UNCHANGED` cases for readability.
+
+**Compatibility:** `PARTIAL_MATCH` means the recorded experiment type, input fingerprints and scoring definitions agree sufficiently for this limited comparison; it **does not prove reproducibility**. Differences in model identity or generation options yield warnings instead of automatically preventing a cross-model comparison. Unknown model versions and unspecified live generation options are explicitly disclosed. `INCOMPATIBLE` means a known mismatch (such as inputs or scoring rules); `UNVERIFIED` means sufficient trustworthy metadata is absent or invalid. The command does not produce per-case comparisons for incompatible or unverified reports.
+
+**Scope and limitations:** Only **live-evaluation** report comparisons are implemented. Consistency and prompt-injection reports have different result semantics and are rejected by this CLI. Older reports without the Milestone 5B provenance metadata may be unverified. SHA-256 checks compare recorded fingerprints; they do not independently authenticate the source dataset. Exact model digests, runtime settings, semantic answer equality and statistical confidence are not established. Individual `UNCHANGED` outcomes compare status, not raw generated text. The current CLI compares two explicitly provided paths; it does **not** provide a report-directory browser or general report inspection interface yet.
+
+**Validation evidence:** Local `python3 -m pytest -q` completed with **289 passed**; `python3 -m compileall -q` succeeded for the four new runtime modules. A manual terminal run against two synthetic local JSON reports produced one improvement, one regression, one recovered request and both expected model-metadata warnings. Test fixtures require no paid API or local Ollama execution.
 
 ## Requirements
 
@@ -184,7 +215,7 @@ A report includes:
 
 A `PASS` or `FAIL` counts toward the accuracy denominator; an `ERROR` (HTTP, connection, or timeout failure) does not. An evaluation with no scored answers reports `Accuracy: N/A`. Request durations measure elapsed time for each model request, not total CLI runtime. Output can vary between runs even for the same prompts.
 
-Report filenames use unique identifiers, so earlier reports are preserved. A directory/file-system problem while saving produces an error message and exits with code 1. The current implementation does not compare reports across runs or track all model configuration parameters or dataset revisions; those are future improvements.
+Report filenames use unique identifiers, so earlier reports are preserved. A directory/file-system problem while saving produces an error message and exits with code 1. On the local Milestone 5C feature branch, saved live-evaluation reports can be compared using `compare_reports.py` after compatibility checks. Full model configuration, exact model version/digest capture, and standardized provenance across every mode remain incomplete.
 
 ## Reference-grounded factual evaluation (Milestone 4A, feature branch)
 
@@ -392,7 +423,7 @@ All three save the current **Python version** under `metadata.provenance.python_
 
 A local desktop GUI will offer dataset/model selection, evaluation runs, saved report inspection, and compatible comparisons without requiring a browser. The CLI will remain independently usable without installing GUI packages. Both interfaces are intended to call the same reusable Python evaluation services once that architecture is implemented.
 
-Upcoming stages: **5C** compatible run comparisons; **5D** human-readable reporting; **5E** desktop GUI; **5F** packaging, accessibility, documentation, and release validation. See [`milestones.md`](milestones.md) for scope and acceptance criteria.
+Milestone **5C** live-report comparison is locally implemented and validated; the staged code has not yet been committed or pushed. Upcoming stages: **5D** human-readable reporting; **5E** desktop GUI; **5F** packaging, accessibility, documentation, and release validation. See [`milestones.md`](milestones.md) for scope and acceptance criteria.
 
 ## Evaluation principles
 
