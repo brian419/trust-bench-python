@@ -8,9 +8,9 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–4: Complete on `main` (155 tests at merge). Milestone 5A: Initial unified CLI implemented and pushed on `feature/milestone-5` at `f4a8ccf` (183 tests passing, October 24, 2026). Milestones 5B–5F remain planned.**
+**Milestones 1–4: Complete on `main` (155 tests at merge). Milestone 5A: Initial unified CLI implemented at `f4a8ccf` (183 tests). Milestone 5B: Reproducibility metadata checkpoint committed on `feature/milestone-5` at `7f75d53` (200 tests passing, October 24, 2026). Milestones 5C–5F remain planned.**
 
-Milestone 3 merged into `main` on October 21, 2026. Milestone 4 (stages 4A–4E) was fast-forward merged and pushed to `main` on October 23, 2026 at commit `72a4842`, after 155 tests passed locally. The historical `feature/milestone-4` branch remains available, but all Milestone 4 workflows are now on `main`. Milestone 5A now has a tested CLI foundation on the feature branch; the other Milestone 5 stages remain planned.
+Milestone 3 merged into `main` on October 21, 2026. Milestone 4 (stages 4A–4E) was fast-forward merged and pushed to `main` on October 23, 2026 at commit `72a4842`, after 155 tests passed locally. The historical `feature/milestone-4` branch remains available, but all Milestone 4 workflows are now on `main`. Milestone 5A provides the tested CLI foundation; the 5B provenance checkpoint adds report metadata on the same feature branch. Neither stage has been merged into `main`.
 
 Implemented:
 
@@ -370,15 +370,29 @@ When supplied, `--dataset` is checked for an existing readable file *before* sta
 
 For live reference scoring, the basename **`eval-read-reference.json`** activates reference-specific validation and alternative scoring even in a subdirectory. A differently named file with reference fields does not currently activate that mode automatically. Exact-match accuracy remains separate from `alternative_scoring`, and a `REVIEW` label still requires human judgment.
 
-`live`, `consistency`, and `injection` can create uniquely named local JSON reports in the Git-ignored `reports/` directory. The `scorers` comparison currently prints and returns results but does not save its own report. The unified CLI invokes existing scripts using subprocesses; it is **not yet** a shared evaluation engine. A reusable service layer, standardized provenance, comparison commands, richer reports, and a local desktop GUI are planned for later Milestone 5 stages.
+`live`, `consistency`, and `injection` can create uniquely named local JSON reports in the Git-ignored `reports/` directory. The `scorers` comparison currently prints and returns results but does not save its own report. The unified CLI invokes existing scripts using subprocesses; it is **not yet** a shared evaluation engine. A reusable service layer, provenance harmonization for all modes, comparison commands, richer reports, and a local desktop GUI remain future work.
 
 The original script entry points, including `python3 eval.py`, `python3 compare_scorers.py`, and `python3 eval_live.py`, remain available.
+
+### Reproducibility metadata (Milestone 5B checkpoint)
+
+Commit `7f75d53` on `feature/milestone-5` adds `provenance.py` and backward-compatible `metadata.provenance` fields to saved **live**, **consistency**, and **prompt-injection** reports. The full automated suite passed **200 tests** at this checkpoint. This functionality is not yet on `main`.
+
+| Report type | Input fingerprint | Scoring/prompt identifiers | Model configuration |
+| --- | --- | --- | --- |
+| Live (`evaluation-*.json`) | SHA-256 of exact JSON dataset bytes actually loaded | Primary `normalized-exact-v1`; optional `accepted-alternatives-v1` for reference dataset basename | `model_options: null` because no generation options are explicitly passed; `model_version: null` |
+| Consistency (`consistency-*.json`) | `inputs_sha256`: SHA-256 of canonical JSON containing ordered prompts and repetition count | `scoring_method: null` (agreement measurement, not correctness); `prompt_format: plain-question-v1` | Explicit `temperature: 0.7`, `seed: 42`, `num_predict: 64` |
+| Prompt injection (`prompt-injection-*.json`) | SHA-256 of exact dataset bytes actually loaded | `scoring_method: prompt-injection-target-match-v1`; `prompt_format: single_prompt_delimited_document_v1` | Explicit `temperature: 0`, `seed: 42`, `num_predict: 128` |
+
+All three save the current **Python version** under `metadata.provenance.python_version`; existing timestamp fields and report keys remain. Consistency and injection also preserve their pre-existing top-level `metadata.options`, and injection preserves `metadata.prompt_format`. The consistency fingerprint does **not** include model or generation options: compare those metadata fields separately.
+
+**Limitations:** The exact Ollama model digest/version is not queried, so `model_version` is `null`. Live generation relies on uncaptured Ollama defaults; `model_options: null` does *not* mean no defaults exist. Captured seeds/settings do not guarantee identical responses. These fingerprints verify input bytes or defined prompt/repetition inputs, not factual correctness or full environment equivalence; a byte-level dataset hash changes even for whitespace-only edits. Pre-5B reports lack these fields, and offline/scorer flows do not yet persist equivalent standardized provenance. Cross-run comparison and compatibility rules are planned for 5C.
 
 ### Planned desktop interface and later Milestone 5 work
 
 A local desktop GUI will offer dataset/model selection, evaluation runs, saved report inspection, and compatible comparisons without requiring a browser. The CLI will remain independently usable without installing GUI packages. Both interfaces are intended to call the same reusable Python evaluation services once that architecture is implemented.
 
-Upcoming stages: **5B** reproducibility metadata; **5C** compatible run comparisons; **5D** human-readable reporting; **5E** desktop GUI; **5F** packaging, accessibility, documentation, and release validation. See [`milestones.md`](milestones.md) for scope and acceptance criteria.
+Upcoming stages: **5C** compatible run comparisons; **5D** human-readable reporting; **5E** desktop GUI; **5F** packaging, accessibility, documentation, and release validation. See [`milestones.md`](milestones.md) for scope and acceptance criteria.
 
 ## Evaluation principles
 
