@@ -8,9 +8,9 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–4: Complete on `main` (155 passing tests after the October 23, 2026 merge). Milestone 5: Planned on `feature/milestone-5` (CLI, desktop GUI, reproducibility, and reporting).**
+**Milestones 1–4: Complete on `main` (155 tests at merge). Milestone 5A: Initial unified CLI implemented and pushed on `feature/milestone-5` at `f4a8ccf` (183 tests passing, October 24, 2026). Milestones 5B–5F remain planned.**
 
-Milestone 3 merged into `main` on October 21, 2026. Milestone 4 (stages 4A–4E) was fast-forward merged and pushed to `main` on October 23, 2026 at commit `72a4842`, after 155 tests passed locally. The historical `feature/milestone-4` branch remains available, but all Milestone 4 workflows are now on `main`. Milestone 5 remains planned.
+Milestone 3 merged into `main` on October 21, 2026. Milestone 4 (stages 4A–4E) was fast-forward merged and pushed to `main` on October 23, 2026 at commit `72a4842`, after 155 tests passed locally. The historical `feature/milestone-4` branch remains available, but all Milestone 4 workflows are now on `main`. Milestone 5A now has a tested CLI foundation on the feature branch; the other Milestone 5 stages remain planned.
 
 Implemented:
 
@@ -149,7 +149,7 @@ Live evaluation makes HTTP requests to a locally running model. It does not use 
    python3 eval_live.py
    ```
 
-The client sends non-streaming requests to `http://localhost:11434/api/generate` using the model name `gemma3:1b`. The script defaults to `eval-read-live.json` and uses a fixed model name in source. Python callers can supply `main("eval-read-reference.json")` to evaluate the new reference dataset; **live model selection and arbitrary dataset paths are not yet CLI options**. Ollama runs the model locally, but model download and local execution still consume bandwidth, disk space, and computer resources.
+The client sends non-streaming requests to `http://localhost:11434/api/generate` using the model name `gemma3:1b`. The script defaults to `eval-read-live.json` and `gemma3:1b`; either can now be overridden with `--dataset` and `--model`, including through `python3 trustbench.py live`. Python callers can also supply `main(filename="eval-read-reference.json", model="gemma3:1b")`. Ollama runs the model locally, but model download and local execution still consume bandwidth, disk space, and computer resources.
 
 ### Live dataset format
 
@@ -333,20 +333,52 @@ The final review covered the earlier evaluation workflows and bounded local expe
 - **Milestone 2: Testable architecture (complete).** Reusable functions, pytest tests, dataset validation, and controlled CLI errors.
 - **Milestone 3: Local model integration (complete).** Ollama HTTP inference, live scoring, request failure handling, elapsed-time tracking, and saved JSON run reports.
 - **Milestone 4: Responsible AI evaluation methods (complete and merged into `main`).** 4A reference-based evaluation, 4B alternative scoring, 4C response consistency/failure classification, 4D controlled prompt-injection experiments, and 4E synthesis/regression review have been locally validated (155 tests).
-- **Milestone 5: CLI + desktop GUI, reproducibility, and reporting (planned).** Build a unified command-line tool and a local graphical desktop app as two optional interfaces over the same evaluation engine. Add compatible run comparisons, richer provenance metadata, report summaries, and end-user installation guidance.
+- **Milestone 5: CLI + desktop GUI, reproducibility, and reporting (in progress).** The first unified CLI checkpoint is implemented on `feature/milestone-5` (`f4a8ccf`, 183 tests). Shared evaluation services, richer provenance, comparisons, summaries, the desktop GUI, and packaging remain planned.
 
 See [`milestones.md`](milestones.md) for detailed status and acceptance evidence.
 
-## Planned user interfaces (Milestone 5)
+## Unified CLI (Milestone 5A, initial implementation)
 
-TrustBench is intended to offer **two equal ways to use the application**, without requiring everyone to open a browser:
+**Status:** Implemented and tested on `feature/milestone-5` at commit `f4a8ccf`. The complete feature-branch suite passed **183 tests** on October 24, 2026; earlier Milestone 1–4 functionality is preserved. This is an initial CLI foundation, not completion of the full Milestone 5 release.
 
-- **CLI:** A single discoverable terminal command for developers, automation, and users who prefer text-based workflows.
-- **Desktop GUI:** A local graphical application to choose evaluations, configure model/dataset inputs, run tests, and inspect or compare reports. A browser window should not be required.
+Run commands from the repository root. No additional Python runtime packages are required for the CLI. Local Ollama with the intended model installed is required for `live`, `consistency`, and `injection`, but **not** for `offline`, `scorers`, help, or the automated test suite.
 
-Both interfaces will share the same Python evaluation, validation, scoring, and reporting logic. The GUI will be optional; installing or running the CLI should not require a GUI or graphical environment. Basic JSON reporting is already implemented, but the unified CLI, desktop GUI, packaging, advanced comparisons, and enhanced provenance are **planned, not yet available**. A browser dashboard may be considered separately in the future.
+```bash
+python3 trustbench.py --help
+python3 trustbench.py offline
+python3 trustbench.py offline --dataset eval-read-valid.json
+python3 trustbench.py scorers
+python3 trustbench.py scorers --dataset scoring-examples.json
+python3 trustbench.py live
+python3 trustbench.py live --model gemma3:1b --dataset eval-read-live.json
+python3 trustbench.py live --dataset eval-read-reference.json
+python3 trustbench.py consistency
+python3 trustbench.py injection
+```
 
-Development stages: **5A** unified CLI; **5B** provenance and reproducibility metadata; **5C** compatible run comparisons; **5D** human-readable reporting; **5E** desktop GUI; **5F** documentation, packaging, and release validation. See [`milestones.md`](milestones.md) for details.
+| Subcommand | Purpose | Options currently supported | Ollama needed? |
+| --- | --- | --- | --- |
+| `offline` | Score prerecorded JSON responses with normalized exact matching | `--dataset PATH` | No |
+| `scorers` | Compare exact-match and manually accepted-alternative scoring | `--dataset PATH` | No |
+| `live` | Generate and evaluate model responses, saving a JSON report | `--dataset PATH`, `--model NAME` | Yes |
+| `consistency` | Run the existing bounded repeated-response experiment, saving a report | No custom flags yet | Yes |
+| `injection` | Run the existing controlled synthetic prompt-injection scenarios, saving a report | No custom flags yet | Yes |
+
+Each subcommand also supports `--help`. The defaults still use the project's included fixture files and existing model configuration. `live` defaults to `gemma3:1b`; selecting a different `--model` requires that model to be available to your local Ollama service. The consistency and injection commands currently use their original script-defined model, dataset/prompts, and generation settings. They are **not** configurable through CLI flags yet.
+
+When supplied, `--dataset` is checked for an existing readable file *before* starting a subprocess; missing paths produce an argparse error and exit status 2. An empty or whitespace-only `--model` is similarly rejected. The scoring script accepts a custom dataset instead of silently using its default and emits a readable, non-traceback error for missing or malformed JSON. Dataset *content* validation is still performed by the relevant evaluator; checking that a file is readable does not guarantee valid JSON or a valid evaluation schema. Underlying evaluation errors remain distinct from invalid CLI arguments.
+
+For live reference scoring, the basename **`eval-read-reference.json`** activates reference-specific validation and alternative scoring even in a subdirectory. A differently named file with reference fields does not currently activate that mode automatically. Exact-match accuracy remains separate from `alternative_scoring`, and a `REVIEW` label still requires human judgment.
+
+`live`, `consistency`, and `injection` can create uniquely named local JSON reports in the Git-ignored `reports/` directory. The `scorers` comparison currently prints and returns results but does not save its own report. The unified CLI invokes existing scripts using subprocesses; it is **not yet** a shared evaluation engine. A reusable service layer, standardized provenance, comparison commands, richer reports, and a local desktop GUI are planned for later Milestone 5 stages.
+
+The original script entry points, including `python3 eval.py`, `python3 compare_scorers.py`, and `python3 eval_live.py`, remain available.
+
+### Planned desktop interface and later Milestone 5 work
+
+A local desktop GUI will offer dataset/model selection, evaluation runs, saved report inspection, and compatible comparisons without requiring a browser. The CLI will remain independently usable without installing GUI packages. Both interfaces are intended to call the same reusable Python evaluation services once that architecture is implemented.
+
+Upcoming stages: **5B** reproducibility metadata; **5C** compatible run comparisons; **5D** human-readable reporting; **5E** desktop GUI; **5F** packaging, accessibility, documentation, and release validation. See [`milestones.md`](milestones.md) for scope and acceptance criteria.
 
 ## Evaluation principles
 
