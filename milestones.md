@@ -339,16 +339,46 @@ Original local source: `reports/prompt-injection-d2fe3abd6a1243cc89b073391c4dda9
 
 ## Milestone 5: Usable interfaces, reproducibility, and reporting
 
-**Status: Planned on `feature/milestone-5`.** The goal is a usable **CLI and desktop GUI**, with a choice of interface. Users who prefer the terminal should never need to open a browser; users who prefer a graphical application should be able to work without terminal commands after setup. Both interfaces will use the same evaluation engine, datasets, scoring definitions, and report formats.
+**Status: In progress on `feature/milestone-5`. Initial 5A CLI foundation committed as `f4a8ccf` (183 tests passing, October 24, 2026). Stages 5B–5F are not yet implemented.** The goal is a usable **CLI and desktop GUI**, with a choice of interface. Users who prefer the terminal should never need to open a browser; users who prefer a graphical application should be able to work without terminal commands after setup. Both interfaces will use the same evaluation engine, datasets, scoring definitions, and report formats.
 
 ### Implementation plan
 
-- **5A — Unified CLI:** A discoverable command entry point, help text, dataset/model selection, evaluation modes, basic configuration, and clear exit/error behavior. Preserve existing script entry points.
+- **5A — Unified CLI (initial checkpoint complete):** A discoverable command entry point, help text, dataset/model selection where supported, five evaluation modes, and input/error handling. Existing script entry points are preserved. Broader configuration and shared service extraction remain to be developed.
 - **5B — Reproducibility metadata:** Record available model/version information, decoding options, prompt and scoring-rule identifiers, dataset fingerprints/revisions, timestamps, and environment limitations. Explicitly mark unavailable metadata rather than inventing it.
 - **5C — Compatible run comparisons:** List and inspect reports; compare only runs whose tasks, inputs, scoring rules, and metadata support a meaningful comparison. Show response changes, regressions, improvements, and request errors separately.
 - **5D — Reports and summaries:** Human-readable summaries and exportable evaluation reports with counts, sample sizes, categorized failure examples, and transparent limitations.
 - **5E — Desktop GUI:** A local graphical interface for selecting datasets/models, starting evaluations, inspecting progress and prior reports, and viewing comparisons. **Do not require users to launch a web browser.** Favor a lightweight, free desktop approach suitable for local machines. The GUI must reuse the same core functions as the CLI, not duplicate evaluation/scoring logic. A browser-based dashboard can be considered later but is not required.
 - **5F — Packaging, accessibility, documentation, and release:** Easy installation and first-run guidance, platform considerations, meaningful validation errors, keyboard-accessible interface where practical, examples, tests, and a clear comparison of CLI versus GUI workflows.
+
+### Milestone 5A: Unified CLI, initial checkpoint (implemented)
+
+**Branch and evidence:** `feature/milestone-5`, commit `f4a8ccf` (`feat(cli): add unified TrustBench evaluation commands`), pushed October 24, 2026. All **183 automated tests passed** and the working tree was clean after pushing. The existing Milestone 1–4 `main` branch was not changed.
+
+- [x] Created `trustbench.py` with discoverable argparse subcommands: `offline`, `scorers`, `live`, `consistency`, and `injection`.
+- [x] Preserved original entry points by forwarding to the existing evaluator/experiment scripts instead of rewriting their scoring behavior.
+- [x] Supported `--dataset` for `offline`, `scorers`, and `live`, and `--model` for `live`; rejected missing/unreadable supplied dataset files and empty model names before launching a child process.
+- [x] Made `compare_scorers.py` honor the optional positional dataset argument when run as a script; retained its zero-argument default and Python callable. Missing/malformed scoring datasets return a clean CLI error rather than silently falling back to the default or displaying a traceback.
+- [x] Made `eval_live.py` accept model/dataset flags and Python parameters while preserving its prior defaults. Reference validation and alternative scoring now recognize `eval-read-reference.json` inside a subdirectory by basename.
+- [x] Added `tests/test_trustbench_cli.py` and `tests/test_compare_scorers_cli.py`, plus live evaluator regression tests. Verified subprocess argument forwarding, nonzero error behavior, input validation, custom scoring fixtures, reference paths, and custom model selection.
+- [x] Manually ran the unified `offline`, `scorers`, `live`, `consistency`, and `injection` commands. Local Ollama experiments generated new Git-ignored reports; model responses are nondeterministic and may include evaluation failures.
+
+**Basic CLI usage (from the repository root):**
+
+```bash
+python3 trustbench.py --help
+python3 trustbench.py offline [--dataset PATH]
+python3 trustbench.py scorers [--dataset PATH]
+python3 trustbench.py live [--dataset PATH] [--model NAME]
+python3 trustbench.py consistency
+python3 trustbench.py injection
+python3 -m pytest -q
+```
+
+The bracketed options above are illustrative syntax; omit brackets in real commands, for example `python3 trustbench.py live --model gemma3:1b --dataset eval-read-live.json`.
+
+**Boundary and follow-up:** `consistency` and `injection` still use fixed script-defined experiment parameters; the unified CLI invokes subprocesses rather than shared evaluator services. Reference-dataset mode depends on the file basename. There is no universal model/dataset configuration across all modes, GUI, general report browser, reproducibility fingerprint system, or cross-run comparison yet. The initial 5A CLI is usable and documented but does **not** alone satisfy the full Milestone 5 acceptance criteria. Extraction of shared functions and broader configuration should be planned before/alongside the GUI without regressing the 183-test checkpoint.
+
+**Next:** Begin **5B**, recording provenance and reproducibility fields honestly (dataset fingerprints, model/configuration information, scoring identifiers, runtime/version details where available) with backward-compatible schema changes and focused tests. Do not claim bit-for-bit deterministic model responses from a seed alone.
 
 ### Architecture and scope rules
 
@@ -389,4 +419,4 @@ A new user can choose either the terminal-based CLI or local desktop GUI to run 
 
 ### Near-term next step
 
-Milestones 1–4 are complete and merged into `main` (**155 passing tests**, October 23, 2026). The Milestone 4 fast-forward merge reached commit `72a4842`; the working tree was clean and the push to `origin/main` succeeded. Begin Milestone 5 on `feature/milestone-5`: unified CLI, shared evaluation service, reproducibility metadata, run comparisons, reports, and an optional local desktop GUI. No browser is required for either supported interface.
+Milestones 1–4 remain merged into `main` (155 passing tests at the October 23, 2026 merge, commit `72a4842`). The initial Milestone 5A unified CLI was committed and pushed on `feature/milestone-5` at `f4a8ccf`; **183 automated tests passed** and the working tree was clean. Documentation was refreshed next. Proceed to **5B reproducibility metadata**, then compatible comparisons (5C), human-readable reporting (5D), a browser-free local desktop GUI (5E), and packaging/release work (5F). Maintain separate CLI and GUI workflows while building shared evaluation services.
