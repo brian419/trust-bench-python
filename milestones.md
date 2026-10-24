@@ -339,12 +339,12 @@ Original local source: `reports/prompt-injection-d2fe3abd6a1243cc89b073391c4dda9
 
 ## Milestone 5: Usable interfaces, reproducibility, and reporting
 
-**Status: In progress on `feature/milestone-5`. Initial 5A CLI foundation committed as `f4a8ccf` (183 tests passing, October 24, 2026). Stages 5B–5F are not yet implemented.** The goal is a usable **CLI and desktop GUI**, with a choice of interface. Users who prefer the terminal should never need to open a browser; users who prefer a graphical application should be able to work without terminal commands after setup. Both interfaces will use the same evaluation engine, datasets, scoring definitions, and report formats.
+**Status: In progress on `feature/milestone-5`. Initial 5A CLI foundation: `f4a8ccf` (183 tests). 5B provenance checkpoint: `7f75d53` (200 tests passing, October 24, 2026). Stages 5C–5F are not yet implemented.** The goal is a usable **CLI and desktop GUI**, with a choice of interface. Users who prefer the terminal should never need to open a browser; users who prefer a graphical application should be able to work without terminal commands after setup. Both interfaces will use the same evaluation engine, datasets, scoring definitions, and report formats.
 
 ### Implementation plan
 
 - **5A — Unified CLI (initial checkpoint complete):** A discoverable command entry point, help text, dataset/model selection where supported, five evaluation modes, and input/error handling. Existing script entry points are preserved. Broader configuration and shared service extraction remain to be developed.
-- **5B — Reproducibility metadata:** Record available model/version information, decoding options, prompt and scoring-rule identifiers, dataset fingerprints/revisions, timestamps, and environment limitations. Explicitly mark unavailable metadata rather than inventing it.
+- **5B — Reproducibility metadata (implemented checkpoint):** Added available generation options, input/dataset fingerprints, scoring/prompt identifiers, Python runtime version and honest nulls for uncaptured model versions. Future work: exact model digests and more complete mode coverage.
 - **5C — Compatible run comparisons:** List and inspect reports; compare only runs whose tasks, inputs, scoring rules, and metadata support a meaningful comparison. Show response changes, regressions, improvements, and request errors separately.
 - **5D — Reports and summaries:** Human-readable summaries and exportable evaluation reports with counts, sample sizes, categorized failure examples, and transparent limitations.
 - **5E — Desktop GUI:** A local graphical interface for selecting datasets/models, starting evaluations, inspecting progress and prior reports, and viewing comparisons. **Do not require users to launch a web browser.** Favor a lightweight, free desktop approach suitable for local machines. The GUI must reuse the same core functions as the CLI, not duplicate evaluation/scoring logic. A browser-based dashboard can be considered later but is not required.
@@ -376,9 +376,25 @@ python3 -m pytest -q
 
 The bracketed options above are illustrative syntax; omit brackets in real commands, for example `python3 trustbench.py live --model gemma3:1b --dataset eval-read-live.json`.
 
-**Boundary and follow-up:** `consistency` and `injection` still use fixed script-defined experiment parameters; the unified CLI invokes subprocesses rather than shared evaluator services. Reference-dataset mode depends on the file basename. There is no universal model/dataset configuration across all modes, GUI, general report browser, reproducibility fingerprint system, or cross-run comparison yet. The initial 5A CLI is usable and documented but does **not** alone satisfy the full Milestone 5 acceptance criteria. Extraction of shared functions and broader configuration should be planned before/alongside the GUI without regressing the 183-test checkpoint.
+**Boundary and follow-up:** `consistency` and `injection` still use fixed script-defined experiment parameters; the unified CLI invokes subprocesses rather than shared evaluator services. Reference-dataset mode depends on the file basename. There is no universal model/dataset configuration across all modes, GUI, general report browser, or cross-run comparison yet. A report provenance fingerprint system was subsequently implemented in 5B for three report types. The initial 5A CLI is usable and documented but does **not** alone satisfy the full Milestone 5 acceptance criteria. Extraction of shared functions and broader configuration should be planned before/alongside the GUI without regressing the 183-test checkpoint.
 
-**Next:** Begin **5B**, recording provenance and reproducibility fields honestly (dataset fingerprints, model/configuration information, scoring identifiers, runtime/version details where available) with backward-compatible schema changes and focused tests. Do not claim bit-for-bit deterministic model responses from a seed alone.
+**5A handoff completed:** Milestone 5B followed with backward-compatible provenance fields and focused tests. Do not claim bit-for-bit deterministic model responses from a seed alone.
+
+### Milestone 5B: Reproducibility metadata (implemented checkpoint)
+
+**Branch and evidence:** `feature/milestone-5`, commit `7f75d53` (`feat(provenance): add reproducibility metadata to evaluation reports`), pushed October 24, 2026. **200 automated tests passed**, no unstaged changes after the push. This has not been merged to `main`.
+
+- [x] Added `provenance.py`: SHA-256 of exact dataset file bytes, SHA-256 of already loaded bytes, canonical consistency prompt/repetition fingerprint, scoring identifiers and current Python runtime version.
+- [x] Live reports store `metadata.provenance.dataset_sha256` from the exact loaded bytes, `primary_scoring: normalized-exact-v1`, and `alternative_scoring: accepted-alternatives-v1` only for reference mode (otherwise `null`). Existing main scoring behavior and report fields are preserved.
+- [x] Live reports explicitly set `model_options: null` (not specified in the model request) and `model_version: null` (not captured).
+- [x] Consistency reports store `inputs_sha256` for ordered plain prompts and repetition count, `prompt_format: plain-question-v1`, `scoring_method: null`, and explicit `temperature: 0.7`, `seed: 42`, `num_predict: 64`.
+- [x] Prompt-injection reports store `dataset_sha256` from loaded file bytes, `prompt_format: single_prompt_delimited_document_v1`, `scoring_method: prompt-injection-target-match-v1`, and explicit `temperature: 0`, `seed: 42`, `num_predict: 128`.
+- [x] Live, consistency and injection reports store `metadata.provenance.python_version` while retaining existing timestamp fields and previous top-level metadata.
+- [x] Added targeted tests for content hashing, consistent input fingerprints, scoring IDs, generation option reporting, Python version, persisted JSON contents and preserved model calls. Full suite increased from **183** (5A) to **200** and passed.
+
+**Interpretation and limitations:** Dataset fingerprints detect byte-level changes, including whitespace, not semantic correctness. The consistency `inputs_sha256` fingerprints prompts and repetition count, but not model identity or decoding options: assess those separately. No exact Ollama model digest or runtime/server version has been captured; `model_version: null` represents missing information, and `model_options: null` for live evaluation means that no options were explicitly passed, **not** that Ollama defaults are absent. Even a fixed seed does not guarantee deterministic output. Historical reports remain unchanged and will lack these fields. Offline and scorer modes do not yet save equivalent standardized provenance. There is no report browser or compatibility comparator yet.
+
+**Next:** **5C — Compatible run comparisons.** Start with read-only inspection of saved reports and compatibility rules that reject mismatched experiment types, inputs and scoring definitions. Handle missing/older metadata explicitly rather than assuming compatibility. Keep model request errors separate from incorrect answers. Full model-digest capture and broader provenance standardization remain possible future enhancements, not claimed as finished in this checkpoint.
 
 ### Architecture and scope rules
 
