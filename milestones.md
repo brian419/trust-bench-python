@@ -339,14 +339,14 @@ Original local source: `reports/prompt-injection-d2fe3abd6a1243cc89b073391c4dda9
 
 ## Milestone 5: Usable interfaces, reproducibility, and reporting
 
-**Status: In progress on `feature/milestone-5`. Initial 5A CLI foundation: `f4a8ccf` (183 tests). 5B provenance checkpoint: `7f75d53` (200 tests passing, October 24, 2026). 5C live-report comparison is locally implemented and tested (289 tests); its eight new code/test files are staged but not yet committed/pushed. Stages 5D–5F remain planned.** The goal is a usable **CLI and desktop GUI**, with a choice of interface. Users who prefer the terminal should never need to open a browser; users who prefer a graphical application should be able to work without terminal commands after setup. Both interfaces will use the same evaluation engine, datasets, scoring definitions, and report formats.
+**Status: In progress on `feature/milestone-5`. Initial 5A CLI foundation: `f4a8ccf` (183 tests). 5B provenance checkpoint: `7f75d53` (200 tests passing, October 24, 2026). 5C live-report comparison is committed at `0c742e8` (289 tests). 5D human-readable live-report summaries and text export are implemented and verified locally (315 tests), with the code commit/push pending. Stages 5E–5F remain planned.** The goal is a usable **CLI and desktop GUI**, with a choice of interface. Users who prefer the terminal should never need to open a browser; users who prefer a graphical application should be able to work without terminal commands after setup. Both interfaces will use the same evaluation engine, datasets, scoring definitions, and report formats.
 
 ### Implementation plan
 
 - **5A — Unified CLI (initial checkpoint complete):** A discoverable command entry point, help text, dataset/model selection where supported, five evaluation modes, and input/error handling. Existing script entry points are preserved. Broader configuration and shared service extraction remain to be developed.
 - **5B — Reproducibility metadata (implemented checkpoint):** Added available generation options, input/dataset fingerprints, scoring/prompt identifiers, Python runtime version and honest nulls for uncaptured model versions. Future work: exact model digests and more complete mode coverage.
 - **5C — Compatible run comparisons (local checkpoint complete):** Read existing saved live reports, check recorded experiment type/input fingerprints/scoring definitions and model-configuration warnings, match per-case statuses by ID and summarize changes. A general directory browser, detailed inspection UI, non-live comparison modes and raw-text diffing remain open.
-- **5D — Reports and summaries:** Human-readable summaries and exportable evaluation reports with counts, sample sizes, categorized failure examples, and transparent limitations.
+- **5D — Reports and summaries (local checkpoint complete):** Implemented human-readable live-evaluation summaries, PASS/FAIL/ERROR counts, scored-case denominators, failure/error examples, explicit limitations, CLI rendering and non-overwriting UTF-8 export. Supports historical live reports without 5B provenance. More report types and a browsing interface remain deferred.
 - **5E — Desktop GUI:** A local graphical interface for selecting datasets/models, starting evaluations, inspecting progress and prior reports, and viewing comparisons. **Do not require users to launch a web browser.** Favor a lightweight, free desktop approach suitable for local machines. The GUI must reuse the same core functions as the CLI, not duplicate evaluation/scoring logic. A browser-based dashboard can be considered later but is not required.
 - **5F — Packaging, accessibility, documentation, and release:** Easy installation and first-run guidance, platform considerations, meaningful validation errors, keyboard-accessible interface where practical, examples, tests, and a clear comparison of CLI versus GUI workflows.
 
@@ -398,7 +398,7 @@ The bracketed options above are illustrative syntax; omit brackets in real comma
 
 ### Milestone 5C: Compatible live-report comparisons (local checkpoint complete)
 
-**Branch and evidence:** `feature/milestone-5`; locally verified October 24, 2026. `python3 -m pytest -q`: **289 passed**. `python3 -m compileall -q` succeeded for the four runtime modules, and manual CLI execution on two temporary synthetic reports matched expected output. The eight code/test files are staged locally and **not yet committed or pushed**. This documentation is written ahead of that code commit; 5C is not merged into `main`.
+**Branch and evidence:** `feature/milestone-5`, committed as `0c742e8` on October 24, 2026 (289 passing tests). `python3 -m compileall -q` succeeded for four runtime modules, and a manual CLI test on two temporary synthetic reports matched expected output. Not merged into `main`.
 
 - [x] `report_loader.py`: read existing JSON, validate top-level metadata/results containers and report clear errors for invalid structure.
 - [x] `report_compatibility.py`: classify live, consistency and injection report types; check recorded dataset/input SHA-256, scoring definitions, model names/options and known/unknown versions. Require consistent type, inputs and scoring before allowing comparison, while retaining cross-model warnings.
@@ -406,7 +406,7 @@ The bracketed options above are illustrative syntax; omit brackets in real comma
 - [x] `compare_reports.py`: load two report paths, run live-only compatibility and comparison, display counts, detailed changed cases and provenance warnings; provide concise CLI errors for missing files, invalid JSON and incompatible/malformed reports.
 - [x] Tests added in `tests/test_report_loader.py`, `tests/test_report_compatibility.py`, `tests/test_report_comparison.py`, `tests/test_compare_reports_cli.py`; local full suite reached **289 passing tests**.
 - [x] Manual CLI test with three synthetic shared cases: one `FAIL → PASS` improvement, one `PASS → FAIL` regression, one `ERROR → PASS` recovered request. Printed `PARTIAL_MATCH` and missing model options/version warnings as expected.
-- [ ] Complete final documentation review and make a local code commit under the intended Git author; push when ready. Update this checklist with the actual commit SHA afterward.
+- [x] Completed implementation and committed 5C at `0c742e8`.
 - [ ] Implement the remaining broader 5C scope, if retained as requirements: directory report listing/browsing, inspection of saved reports, explicit comparisons for consistency/injection formats, or record them as deferred before 5C is marked fully complete.
 
 **Usage (after the staged files are committed or available locally):**
@@ -421,6 +421,29 @@ Reports under `reports/` are Git-ignored and are not distributed with the repo. 
 **Compatibility and evidence limits:** `PARTIAL_MATCH` confirms only the recorded experiment type, inputs and scoring rules align; it is not proof of deterministic reproduction. Missing model versions/options are warned about; different model names/configuration settings are reported as warnings so cross-model evaluations remain possible. Mismatched input fingerprints, scoring rules or experiment types are incompatible. Missing/invalid provenance makes the comparison unverified. Fingerprints are recorded data, not an independent integrity attestation. Older reports without 5B metadata may be rejected. The interface presently supports **live-evaluation reports only**, with no general browser, cross-run statistical confidence bounds, semantic answer equivalence, complete model digests or exact runtime replay.
 
 **Next intended handoff:** Review and commit the staged 5C files locally, reconcile documentation with the actual Git commit and remaining scope, then proceed to **5D — Reports and summaries**. Preserve 5A/5B behavior and all 289 tests.
+
+### Milestone 5D: Readable live-report summaries and text export (local checkpoint complete)
+
+**Branch and evidence:** `feature/milestone-5`, October 24, 2026; **315 automated tests passed**, including **12 CLI reporting tests**. Six new implementation/test files are staged locally; their commit and push are pending. Manually verified both terminal rendering and text export from a historical October 23 live-evaluation JSON report.
+
+- [x] `report_summary.py`: count total, scored, PASS, FAIL and ERROR results; compute exact-match accuracy only for scored responses; return `None` when no responses can be scored; extract failed answers and request errors separately; assemble a reusable structured summary.
+- [x] `report_formatter.py`: produce a readable text report with metadata, outcomes, failure/error details and explicit caveats.
+- [x] `generate_report.py`: read and validate saved live-evaluation JSON, print human-readable output, optionally save UTF-8 text via `--output`, refuse existing destination files and handle invalid input/output paths clearly.
+- [x] Support legacy live-evaluation reports missing 5B provenance metadata without modifying 5C compatibility checks.
+- [x] `tests/test_report_summary.py`, `tests/test_report_formatter.py`, `tests/test_generate_report_cli.py` cover summaries, formatting, CLI, error handling, legacy support, validation and no-overwrite behavior.
+- [x] Manual live-report inspection: 2 total cases, 1 PASS, 1 FAIL, 0 ERROR, 50.00% exact-match accuracy. English city-name prompt produced Japanese `パリ` instead of `Paris`, demonstrating why raw output and format mismatches should be reviewed.
+- [ ] Commit and push the six implementation/test files; reconcile documentation with the resulting commit SHA.
+
+**Usage:**
+
+```bash
+python3 generate_report.py reports/evaluation-YOUR-ID.json
+python3 generate_report.py reports/evaluation-YOUR-ID.json --output /tmp/trustbench-summary.txt
+```
+
+No Ollama run is required. The `reports/` directory is ignored by Git and not included in a new clone. The destination folder must already exist. A saved report is never overwritten by `--output`.
+
+**Scope/limits:** This command reports **one saved live-evaluation run** only; it does not provide a browser, aggregate multiple experiments, or summarize consistency/injection formats. Missing 5B provenance is acceptable for standalone descriptive summaries but may make cross-run comparison unverified. Exact-match accuracy excludes request errors and cannot establish semantic correctness, factuality, safety, fairness or general model reliability.
 
 ### Architecture and scope rules
 
