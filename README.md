@@ -8,7 +8,7 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–4: Complete on `main` (155 tests at merge). Milestone 5A: Initial unified CLI implemented at `f4a8ccf` (183 tests). Milestone 5B: Reproducibility metadata checkpoint committed on `feature/milestone-5` at `7f75d53` (200 tests passing, October 24, 2026). Milestone 5C: local implementation and CLI verification complete (289 tests, October 24, 2026); documentation prepared, code commit/push pending. Milestones 5D–5F remain planned.**
+**Milestones 1–4: Complete on `main` (155 tests at merge). Milestone 5A: Unified CLI (`f4a8ccf`, 183 tests). Milestone 5B: Reproducibility metadata (`7f75d53`, 200 tests). Milestone 5C: Live-report comparisons (`0c742e8`, 289 tests). Milestone 5D: Human-readable live-report summaries and text export implemented and manually verified locally (315 tests, October 24, 2026); code commit/push pending. Milestones 5E–5F remain planned.**
 
 Milestone 3 merged into `main` on October 21, 2026. Milestone 4 (stages 4A–4E) was fast-forward merged and pushed to `main` on October 23, 2026 at commit `72a4842`, after 155 tests passed locally. The historical `feature/milestone-4` branch remains available, but all Milestone 4 workflows are now on `main`. Milestone 5A provides the tested CLI foundation; the 5B provenance checkpoint adds report metadata on the same feature branch. Neither stage has been merged into `main`.
 
@@ -30,7 +30,7 @@ Implemented:
 
 ## Comparing saved live reports (Milestone 5C)
 
-**Status (October 24, 2026):** Implemented and manually verified on the local `feature/milestone-5` working tree; **289 automated tests passed**. The eight implementation/test files are staged locally but have not yet been committed or pushed. This documentation may appear on GitHub before those files are published. Milestone 5C is not merged into `main`.
+**Status (October 24, 2026):** Implemented, tested (289 tests), and committed on `feature/milestone-5` (`0c742e8`); not merged into `main`.
 
 From the repository root, compare two previously saved live-evaluation JSON reports:
 
@@ -58,6 +58,30 @@ This reads existing reports **without running Ollama**. Use actual report filena
 **Scope and limitations:** Only **live-evaluation** report comparisons are implemented. Consistency and prompt-injection reports have different result semantics and are rejected by this CLI. Older reports without the Milestone 5B provenance metadata may be unverified. SHA-256 checks compare recorded fingerprints; they do not independently authenticate the source dataset. Exact model digests, runtime settings, semantic answer equality and statistical confidence are not established. Individual `UNCHANGED` outcomes compare status, not raw generated text. The current CLI compares two explicitly provided paths; it does **not** provide a report-directory browser or general report inspection interface yet.
 
 **Validation evidence:** Local `python3 -m pytest -q` completed with **289 passed**; `python3 -m compileall -q` succeeded for the four new runtime modules. A manual terminal run against two synthetic local JSON reports produced one improvement, one regression, one recovered request and both expected model-metadata warnings. Test fixtures require no paid API or local Ollama execution.
+
+## Generating readable live-evaluation reports (Milestone 5D)
+
+**Status (October 24, 2026):** Locally implemented, tested (**315 automated tests passed**) and manually verified with a real historical report. The six new runtime/test files are staged for a local commit and may not yet be published on GitHub.
+
+From the repository root, print a human-readable summary of an existing live evaluation:
+
+```bash
+python3 generate_report.py reports/evaluation-YOUR-ID.json
+```
+
+Or export a UTF-8 text file:
+
+```bash
+python3 generate_report.py reports/evaluation-YOUR-ID.json --output /tmp/trustbench-summary.txt
+```
+
+Replace the example input path with a real report from your local `reports/` folder. The output directory must already exist; **existing output files are not overwritten**. Source JSON reports remain unchanged, and this workflow does **not** call Ollama. The report folder is Git-ignored and not distributed with the repository.
+
+`report_summary.py` counts `PASS`, `FAIL` and `ERROR` and separates incorrect exact-match answers from model-request errors. `report_formatter.py` produces a readable text report with model/dataset/timestamp, total and scored case counts, exact-match accuracy, failed examples, request errors and interpretation limits. `generate_report.py` loads and validates the saved JSON and handles CLI errors and optional text export. Older live reports without Milestone 5B provenance metadata are accepted when their legacy live-evaluation fields are present; **5C cross-run compatibility requirements are unchanged**. Consistency and injection report formats are not supported by this summary command.
+
+**Verified real example:** An October 23, 2026 local `gemma3:1b` evaluation of `eval-read-live.json` produced 2 cases, 1 PASS, 1 FAIL, 0 request errors and 50.00% normalized exact-match accuracy. The failed case expected the English city name `Paris` but generated Japanese `パリ`; this illustrates a requested-format mismatch, not proof of factual ignorance. Terminal rendering and UTF-8 export were both checked, and `python3 -m pytest -q` completed with **315 passed**.
+
+**Limits:** Accuracy is calculated only over scored PASS/FAIL responses; ERROR results are excluded. An exact-match failure does not necessarily imply factual error. These small evaluations do not establish general reliability, factuality, fairness or safety. The CLI summarizes one saved report; it is not yet a general report browser, a GUI, or a cross-run significance test.
 
 ## Requirements
 
