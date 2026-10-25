@@ -1,7 +1,8 @@
 # Milestone 5F-2: Ollama readiness and setup recovery
 
-Status: original readiness checkpoint validated on macOS; model-selection and
-website-transparency follow-up implemented and agent-tested, Mac validation pending.
+Status: readiness and model-selection checkpoints source-validated on macOS.
+Service-unavailable recovery remains unverified manually. The subsequent progress
+and keyboard checkpoint has its own pending Mac validation.
 Branch: `feature/milestone-5f-macos-packaging`.
 Implementation: [`57b466e`](https://github.com/brian419/trust-bench-python/commit/57b466e6d4c6d0f9c195af6ac04b4a66b484a11a).
 
@@ -94,7 +95,7 @@ uses `check_and_start_evaluation` for its readiness step.
 
 HTTP responses were mocked. No actual local Ollama service, model download or
 native GUI rendering was tested by the agent. The original Mac checkpoint is
-recorded below; the latest UX follow-up still needs Mac validation. No app/DMG build, accessibility certification, release publication or
+recorded below; current progress/keyboard Mac validation is tracked separately. No app/DMG build, accessibility certification, release publication or
 parent-branch merge is claimed by this checkpoint.
 
 ## Mac evidence and follow-up validation
@@ -108,6 +109,14 @@ stop/restart and normal closure without traceback. The live run saved
 0 request errors. Service-unavailable recovery and closing during a pending
 check were not reported as manually tested.
 
+The user subsequently passed **532 tests in 6.18 seconds** on macOS/Python
+3.12.12 and manually verified dropdown refresh (including an empty field),
+selection without typing, preview, evaluation, stop/restart and fitting controls.
+Screenshots confirm the visible external-link confirmation. Cancellation of that
+dialog and service-unavailable recovery were not explicitly reported.
+See the [next progress/keyboard checkpoint](milestone-5f-progress-accessibility.md)
+for the current 566-test suite and pending Mac checks.
+
 The user identified model-name typing and external-link trust as usability
 issues. The follow-up adds dropdown discovery and explicit website destination
 information. The agent ran **532 tests in 1.76 seconds** on Linux/Python 3.12.14,
@@ -115,9 +124,9 @@ including 12 additional cases for exact model names, discovery with an empty
 field, empty lists, failed/stale refreshes, selection preservation, cancellation
 and browser failure. No project dependencies were added.
 
-Remaining Mac checks:
+Setup checks to retain for packaged-app validation:
 
-1. Pull the branch, run the full suite with Python 3.12.12; expect 532 tests.
+1. Pull the branch, run the full suite with Python 3.12.12; expect 566 tests with the progress checkpoint.
 2. Launch `python3 app_entry.py`. Choose Refresh Models, then select
    `gemma3:1b` from the dropdown without typing its name. Preview/start and
    confirm normal report saving. Check controls still fit the window.

@@ -608,7 +608,7 @@ errors or regressions. This is source validation, not a native bundle test.
 [5F-1 checkpoint](docs/milestone-5f-1-runtime-foundation.md) and the
 [full 5F plan](docs/milestone-5f-macos-packaging-plan.md).
 
-### Milestone 5F-2 Ollama readiness/setup (Mac checkpoint verified; UX follow-up pending)
+### Milestone 5F-2 Ollama readiness/setup (Mac checkpoints verified)
 
 Commit `57b466e` on `feature/milestone-5f-macos-packaging` adds a read-only
 local model-list check, explicit setup/download help and fresh background
@@ -638,8 +638,31 @@ User feedback prompted an editable installed-model dropdown with Refresh Models,
 plus a visible official HTTPS address and confirmation before external navigation.
 No automatic selection, inference, installation or download is introduced.
 The follow-up passed **532 tests in 1.76 seconds** on Linux/Python 3.12.14,
-including 12 additional regression cases. Mac validation of this follow-up is
-pending. Actual app/DMG builds remain 5F-3. See the [5F-2 checkpoint](docs/milestone-5f-2-ollama-readiness.md).
+including 12 additional regression cases. The user subsequently passed
+**532 tests in 6.18 seconds** on macOS/Python 3.12.12 and manually verified
+dropdown refresh (including an empty field), selection without typing, preview,
+evaluation, stop/restart, fitting controls and the visible external-link dialog. Actual app/DMG builds remain 5F-3. See the [5F-2 checkpoint](docs/milestone-5f-2-ollama-readiness.md).
+
+### Pre-build progress and accessibility checkpoint (implemented; Mac validation pending)
+
+User feedback identified quiet model requests that looked stalled and limited
+output space. The Evaluate tab now has a persistent case-count bar, current
+activity and elapsed time, with textual saving/stopping/final states. A private
+temporary JSONL channel carries evaluator events separately from model/log text.
+No fabricated request percentages, time estimates or model-health claims are made.
+Scoring, reports, CLI output and cancellation remain available.
+
+Dataset controls share a row, the initial window is taller (capped for screen
+height), and read-only text areas support focus traversal and workflow-tab
+switching. No continuous progress animation is introduced. These are focused
+keyboard improvements, not a completed accessibility audit.
+
+The full suite passed **566 tests in 2.06 seconds** on Linux/Python 3.12.14,
+including 34 new regression cases. Source/private-worker subprocess telemetry,
+request-error outcomes, quiet waits, report-save failures, cleanup, elapsed-time
+freezing and restart resets are covered. Mac GUI, keyboard and VoiceOver checks
+remain pending before the app/DMG build. See the
+[checkpoint and validation guide](docs/milestone-5f-progress-accessibility.md).
 
 ### Architecture and scope rules
 

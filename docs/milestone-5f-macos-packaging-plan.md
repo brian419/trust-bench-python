@@ -2,7 +2,9 @@
 
 Status: 5F-1 is source-validated on macOS (468 tests). The original 5F-2 readiness/setup
 checkpoint passed 520 tests on macOS. The model-dropdown and website-transparency
-follow-up passes 532 agent tests; its Mac validation is pending.
+follow-up passed 532 tests on macOS and its main workflows were manually verified.
+The pre-build progress/keyboard checkpoint passes 566 agent tests; Mac validation
+of that checkpoint is pending. Service-unavailable recovery remains a manual check.
 No app/DMG build is claimed. 5F-3 through 5F-5 remain open.
 Branch: `feature/milestone-5f-macos-packaging`.
 Base: `feature/milestone-5` at `c70826ab340288d1cd393e802acb787bd82ed6c4`.

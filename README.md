@@ -128,8 +128,9 @@ See the [5F-1 runtime notes](docs/milestone-5f-1-runtime-foundation.md).
 ### Ollama setup and readiness (5F-2)
 
 The original readiness checkpoint passed **520 tests on macOS/Python 3.12.12**.
-The model-selection follow-up passes **532 agent tests**; its Mac validation is
-pending. The Evaluate tab provides an editable model dropdown, **Refresh Models**,
+The model-selection follow-up passed **532 tests on macOS/Python 3.12.12**;
+dropdown refresh, blank-field recovery, preview, evaluation and stop/restart
+were manually verified. The Evaluate tab provides an editable model dropdown, **Refresh Models**,
 **Check Ollama**, **Setup Help** and **Get Ollama (website)**.
 
 Opening TrustBench makes no automatic service request. Check Ollama only checks
@@ -152,6 +153,23 @@ Ollama and model files remain separate installations.
 
 See the [5F-2 setup and validation notes](docs/milestone-5f-2-ollama-readiness.md).
 The app/DMG build and accessibility/release checks remain later work.
+
+### Evaluation progress and keyboard access
+
+The Evaluate tab now has a persistent status area above Evaluation Output:
+current activity, completed-case bar/count and elapsed time. While Ollama is
+quiet, the status identifies the pending case and the timer continues. Cases
+advance the bar only when finished, including request errors. The bar measures
+completed cases, not remaining time or model health. Report saving, stopping,
+unverified shutdown and process failures have separate textual states.
+
+No continuous activity animation is required. Existing detailed output remains
+available. Tab/Shift-Tab can leave read-only text areas; Control-Tab and
+Control-Shift-Tab switch workflow tabs, including from those text areas.
+
+This checkpoint passes **566 agent tests** on Linux/Python 3.12.14. Mac progress,
+keyboard and VoiceOver checks are pending; screen-reader support is not certified.
+See the [progress and accessibility checkpoint](docs/milestone-5f-progress-accessibility.md).
 
 ## Requirements
 
