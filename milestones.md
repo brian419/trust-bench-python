@@ -497,8 +497,25 @@ at `3b1ef80`. Implementation commits: `f179ae3` (core code and tests) and
   added or removed cases. `PARTIAL_MATCH` warnings identified unrecorded
   generation options and unknown model versions. All planned refactor smoke
   checks are now complete.
-- Merge into `feature/milestone-5` still requires the user's explicit approval.
-  This refactor does not complete Milestone 5F.
+- The user explicitly approved integration. `feature/milestone-5` was
+  fast-forwarded from `3b1ef80` to `921fc26` on October 25, 2026; `main` was
+  not changed. This refactor does not complete Milestone 5F.
+
+### Milestone 5A–5E review before packaging (October 25, 2026)
+
+The [review report](docs/milestone-5-prepackaging-review.md) records four P2
+findings: malformed report statuses bypass expected error handling; null
+required scoring identifiers can be accepted as comparable; malformed Ollama
+responses can abort runs; and GUI subprocess output can be buffered until exit.
+Focused local probes confirmed the reported boundary behavior. The unchanged
+full suite passed **389 tests in 0.99 seconds** on Linux/Python 3.12.14.
+No runtime fixes or new features are included in this review checkpoint.
+
+Fix those cases with focused regression tests and revalidate affected Mac
+workflows before 5F. Packaging still needs supported-platform decisions,
+resource/report path handling, keyboard/accessibility verification, clean
+installation guidance and distribution validation. Broader GUI modes and
+additional model provenance remain separately scoped enhancements.
 
 After integration, review Milestone 5A–5E for correctness, missing requirements,
 documentation consistency and release blockers before implementing 5F packaging,

@@ -227,8 +227,10 @@ offline evaluation, scorer comparison, local Ollama live/consistency/injection
 execution and report saving, readable report generation, and GUI report
 browsing, command preview, start/stop/restart, comparison and normal closure.
 The standalone report-comparison CLI also passed: two unchanged cases,
-zero regressions and zero new errors, with expected missing-metadata warnings. No merge into
-`feature/milestone-5` or `main` is recorded at this checkpoint; 5F remains open.
+zero regressions and zero new errors, with expected missing-metadata warnings. The user subsequently approved integration, and `feature/milestone-5` was
+fast-forwarded to `921fc26` on October 25, 2026. `main` remains unchanged.
+The [5A–5E review](docs/milestone-5-prepackaging-review.md) records four issues
+to fix before packaging; 5F remains open.
 
 ## Offline input format
 
