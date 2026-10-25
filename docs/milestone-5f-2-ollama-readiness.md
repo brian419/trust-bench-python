@@ -1,13 +1,19 @@
 # Milestone 5F-2: Ollama readiness and setup recovery
 
-Status: implemented and agent-tested; Mac validation pending.
+Status: original readiness checkpoint validated on macOS; model-selection and
+website-transparency follow-up implemented and agent-tested, Mac validation pending.
 Branch: `feature/milestone-5f-macos-packaging`.
 Implementation: [`57b466e`](https://github.com/brian419/trust-bench-python/commit/57b466e6d4c6d0f9c195af6ac04b4a66b484a11a).
 
 ## User behavior
 
-The Evaluate tab now includes **Check Ollama**, **Setup Help** and **Get Ollama**,
-plus a textual readiness status. Evaluation actions share a compact button row.
+The Evaluate tab includes an editable model dropdown, **Refresh Models**,
+**Check Ollama**, **Setup Help** and **Get Ollama (website)**, plus a textual status.
+Refresh Models and Check Ollama both populate the dropdown from the returned
+model list. Exact spelling, namespaces and tags are preserved; duplicates are
+removed and choices sorted. Neither action changes the selected/typed name or
+starts inference. An empty field can refresh the list. Start still requires a
+nonempty name and a fresh check. Evaluation actions share a compact button row.
 All existing evaluation, report and comparison controls remain available.
 
 No service request is made just by opening TrustBench. **Check Ollama** inspects
@@ -22,9 +28,16 @@ ready result for the unchanged settings.
 | UNAVAILABLE | The local service could not be reached/read before a socket failure or timeout. Open Ollama if installed, or use Get Ollama to install it, then check again. This does not prove Ollama is uninstalled. |
 | MODEL_MISSING | The service returned a valid model list without the selected model/tag. Download the model explicitly in Ollama or use the displayed ollama pull command, then check again. |
 | CHECK_FAILED | An HTTP failure or unreadable model list prevents verification. Open/update Ollama and retry; do not infer that the model is missing. |
-| INVALID_MODEL | Enter a nonempty model name before checking. |
+| MODELS_AVAILABLE | An empty-field discovery returned choices. Select one before starting. |
+| NO_MODELS | Empty-field discovery returned no models. Download a model in Ollama and refresh. |
+| INVALID_MODEL | Direct readiness calls require a nonempty name unless discovery is explicitly requested. GUI Start requires a nonempty name. |
 
-**Get Ollama** opens the official macOS download page only when clicked.
+**Get Ollama (website)** displays the full official HTTPS destination in a
+confirmation before opening the browser. The same address is visible in the
+Evaluate tab: `https://ollama.com/download/mac`. Cancel performs no navigation.
+A browser failure shows the address for manual navigation. Setup Help directs
+users to **Download manually** on the official website. This transparency is
+not a guarantee about third-party software safety.
 **Setup Help** explains the separate installation, choosing/downloading a local
 model, the `gemma3:1b` default and optional terminal setup. Downloads require
 internet and disk space. TrustBench does not install Ollama, start its service,
@@ -80,32 +93,47 @@ uses `check_and_start_evaluation` for its readiness step.
   actual report reading and comparison run successfully on the main thread.
 
 HTTP responses were mocked. No actual local Ollama service, model download or
-native GUI rendering was tested by the agent. Mac manual validation remains
-required. No app/DMG build, accessibility certification, release publication or
+native GUI rendering was tested by the agent. The original Mac checkpoint is
+recorded below; the latest UX follow-up still needs Mac validation. No app/DMG build, accessibility certification, release publication or
 parent-branch merge is claimed by this checkpoint.
 
-## Mac validation checklist
+## Mac evidence and follow-up validation
 
-1. Pull this branch and run the full suite using Python 3.12.12; expect 520 tests.
-2. Launch `python3 app_entry.py`. Confirm existing reports can be viewed and
-   compared before any check, and the new controls fit the window.
-3. With Ollama running and `gemma3:1b` present, choose **Check Ollama** and
-   confirm ready status. It must not start inference.
-4. Enter a deliberately nonexistent model such as
-   `trustbench-readiness-missing:latest`, check it and confirm a missing-model
-   message. Start Evaluation must not launch inference for that model.
-5. Restore `gemma3:1b`, check/start again and complete a real evaluation.
-   Confirm stop/restart and report saving still work.
-6. If practical, quit the Ollama service/app and check again. Expect an
-   unavailable-service message while report browsing/comparison still work.
-   Reopen Ollama and retry in the same TrustBench window. No uninstall or model
-   deletion is needed. If another Ollama server remains running, a successful
-   check is expected.
-7. Open Setup Help; optionally check that Get Ollama opens the official page
-   without installing anything. Close TrustBench normally and, if possible,
-   during a pending check; confirm no traceback or late window appears.
+The user ran the original checkpoint at `b637373` on macOS/Python 3.12.12:
+**520 passed in 6.57 seconds**, clean working tree. Screenshots and reported
+manual results confirm ready and missing-model messages, setup help, the
+Ollama website, working Reports/Compare, command preview, real evaluation,
+stop/restart and normal closure without traceback. The live run saved
+`evaluation-fd508abe494642ce8c2ab10fb322f777.json` with 2 PASS, 0 FAIL and
+0 request errors. Service-unavailable recovery and closing during a pending
+check were not reported as manually tested.
 
-After this validation, continue to **5F-3: macOS app and DMG build**.
+The user identified model-name typing and external-link trust as usability
+issues. The follow-up adds dropdown discovery and explicit website destination
+information. The agent ran **532 tests in 1.76 seconds** on Linux/Python 3.12.14,
+including 12 additional cases for exact model names, discovery with an empty
+field, empty lists, failed/stale refreshes, selection preservation, cancellation
+and browser failure. No project dependencies were added.
+
+Remaining Mac checks:
+
+1. Pull the branch, run the full suite with Python 3.12.12; expect 532 tests.
+2. Launch `python3 app_entry.py`. Choose Refresh Models, then select
+   `gemma3:1b` from the dropdown without typing its name. Preview/start and
+   confirm normal report saving. Check controls still fit the window.
+3. Clear the field and refresh: choices should still appear without selecting
+   or running a model automatically. Type a missing model, refresh/check and
+   confirm available choices remain selectable and Start blocks the missing one.
+4. Open Get Ollama (website): confirm the full HTTPS address is shown. Cancel
+   must leave the browser alone; accepting opens the official site. Check that
+   Setup Help explains Download manually and dropdown selection.
+5. If practical, quit Ollama and refresh. Expect an unavailable message and
+   cleared choices while Reports/Compare remain usable. Reopen and retry in
+   the same window. An independently running Ollama service can still respond.
+6. Confirm stop/restart and normal closure; if practical, close during a check
+   and confirm no traceback.
+
+After validation, continue to **5F-3: macOS app and DMG build**.
 
 ## Official references
 

@@ -608,7 +608,7 @@ errors or regressions. This is source validation, not a native bundle test.
 [5F-1 checkpoint](docs/milestone-5f-1-runtime-foundation.md) and the
 [full 5F plan](docs/milestone-5f-macos-packaging-plan.md).
 
-### Milestone 5F-2 Ollama readiness/setup (implemented; Mac validation pending)
+### Milestone 5F-2 Ollama readiness/setup (Mac checkpoint verified; UX follow-up pending)
 
 Commit `57b466e` on `feature/milestone-5f-macos-packaging` adds a read-only
 local model-list check, explicit setup/download help and fresh background
@@ -627,9 +627,19 @@ including 52 new backend/GUI cases. Compilation, whitespace and explicit-import
 checks passed; no dependencies were added. Existing source CLI/evaluator APIs,
 worker dispatch, scoring, reports and process-group cleanup remain available.
 
-Next: user runs 520 tests with Python 3.12.12 and checks ready/missing/unavailable
-states, help, retry, live evaluation and stop/restart on macOS. Actual app/DMG
-builds remain 5F-3. See the [5F-2 checkpoint](docs/milestone-5f-2-ollama-readiness.md).
+User verification on macOS/Python 3.12.12: **520 passed in 6.57 seconds**,
+clean working tree, ready/missing-model messages, setup help, official website,
+reports/compare, live evaluation, preview, stop/restart and normal closure.
+The live run saved `evaluation-fd508abe494642ce8c2ab10fb322f777.json` with
+2 PASS, 0 FAIL and 0 request errors. Service-unavailable recovery was not
+reported and remains a manual check.
+
+User feedback prompted an editable installed-model dropdown with Refresh Models,
+plus a visible official HTTPS address and confirmation before external navigation.
+No automatic selection, inference, installation or download is introduced.
+The follow-up passed **532 tests in 1.76 seconds** on Linux/Python 3.12.14,
+including 12 additional regression cases. Mac validation of this follow-up is
+pending. Actual app/DMG builds remain 5F-3. See the [5F-2 checkpoint](docs/milestone-5f-2-ollama-readiness.md).
 
 ### Architecture and scope rules
 

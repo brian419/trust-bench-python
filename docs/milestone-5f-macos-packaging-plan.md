@@ -1,7 +1,8 @@
 # Milestone 5F: macOS packaging, accessibility and sharing
 
-Status: 5F-1 is source-validated on macOS (468 tests). 5F-2 readiness/setup
-recovery is implemented and agent-tested (520 tests); Mac validation is pending.
+Status: 5F-1 is source-validated on macOS (468 tests). The original 5F-2 readiness/setup
+checkpoint passed 520 tests on macOS. The model-dropdown and website-transparency
+follow-up passes 532 agent tests; its Mac validation is pending.
 No app/DMG build is claimed. 5F-3 through 5F-5 remain open.
 Branch: `feature/milestone-5f-macos-packaging`.
 Base: `feature/milestone-5` at `c70826ab340288d1cd393e802acb787bd82ed6c4`.

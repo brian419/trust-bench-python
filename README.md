@@ -127,9 +127,10 @@ See the [5F-1 runtime notes](docs/milestone-5f-1-runtime-foundation.md).
 
 ### Ollama setup and readiness (5F-2)
 
-Implemented on the packaging branch in `57b466e`; **520 agent tests pass**.
-Mac validation is pending. The Evaluate tab provides **Check Ollama**,
-**Setup Help** and **Get Ollama**, with a textual readiness status.
+The original readiness checkpoint passed **520 tests on macOS/Python 3.12.12**.
+The model-selection follow-up passes **532 agent tests**; its Mac validation is
+pending. The Evaluate tab provides an editable model dropdown, **Refresh Models**,
+**Check Ollama**, **Setup Help** and **Get Ollama (website)**.
 
 Opening TrustBench makes no automatic service request. Check Ollama only checks
 the local service/model list. Start Evaluation performs a fresh background
@@ -139,7 +140,13 @@ produce different setup messages. Open/install Ollama, download the requested
 local model explicitly, then check again in the same window.
 
 Reports and Compare work without Ollama, including while a check runs.
-Get Ollama opens its official macOS page on click; TrustBench does not
+Refresh Models fills the dropdown from Ollama, even with an empty model field.
+Exact names and tags are preserved; refreshing never changes your selection or
+starts inference. Manual entry remains available.
+
+The official download URL is visible in the app. Get Ollama (website) shows the
+full HTTPS destination and asks before opening the external browser. Setup Help
+points to Download manually on the official page. TrustBench does not
 automatically install software, run setup commands or download models.
 Ollama and model files remain separate installations.
 
