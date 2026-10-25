@@ -125,8 +125,26 @@ and real-subprocess coverage using simulated frozen settings and mocked HTTP.
 Actual macOS bundle validation remains part of the later build checkpoint.
 See the [5F-1 runtime notes](docs/milestone-5f-1-runtime-foundation.md).
 
-Ollama/model readiness guidance is the next checkpoint. Ollama and models
-remain separate installations; viewing saved reports does not need Ollama.
+### Ollama setup and readiness (5F-2)
+
+Implemented on the packaging branch in `57b466e`; **520 agent tests pass**.
+Mac validation is pending. The Evaluate tab provides **Check Ollama**,
+**Setup Help** and **Get Ollama**, with a textual readiness status.
+
+Opening TrustBench makes no automatic service request. Check Ollama only checks
+the local service/model list. Start Evaluation performs a fresh background
+check and starts inference once the selected model is available and settings
+are unchanged. Unavailable services, missing models and unreadable replies
+produce different setup messages. Open/install Ollama, download the requested
+local model explicitly, then check again in the same window.
+
+Reports and Compare work without Ollama, including while a check runs.
+Get Ollama opens its official macOS page on click; TrustBench does not
+automatically install software, run setup commands or download models.
+Ollama and model files remain separate installations.
+
+See the [5F-2 setup and validation notes](docs/milestone-5f-2-ollama-readiness.md).
+The app/DMG build and accessibility/release checks remain later work.
 
 ## Requirements
 

@@ -608,6 +608,29 @@ errors or regressions. This is source validation, not a native bundle test.
 [5F-1 checkpoint](docs/milestone-5f-1-runtime-foundation.md) and the
 [full 5F plan](docs/milestone-5f-macos-packaging-plan.md).
 
+### Milestone 5F-2 Ollama readiness/setup (implemented; Mac validation pending)
+
+Commit `57b466e` on `feature/milestone-5f-macos-packaging` adds a read-only
+local model-list check, explicit setup/download help and fresh background
+readiness checks for UI-started evaluations. An unreachable service is not
+misreported as an uninstalled application. Invalid responses are not
+misreported as missing models.
+
+Reports/Compare stay usable without Ollama and during pending checks. No
+automatic requests occur on startup and no software/model installation is
+performed. Retry works in the same window. Request IDs, settings snapshots,
+duplicate-result guards, poll deduplication and close-time callback cancellation
+prevent late checks from starting unintended evaluations.
+
+The full suite passed **520 tests in 1.91 seconds** on Linux/Python 3.12.14,
+including 52 new backend/GUI cases. Compilation, whitespace and explicit-import
+checks passed; no dependencies were added. Existing source CLI/evaluator APIs,
+worker dispatch, scoring, reports and process-group cleanup remain available.
+
+Next: user runs 520 tests with Python 3.12.12 and checks ready/missing/unavailable
+states, help, retry, live evaluation and stop/restart on macOS. Actual app/DMG
+builds remain 5F-3. See the [5F-2 checkpoint](docs/milestone-5f-2-ollama-readiness.md).
+
 ### Architecture and scope rules
 
 - Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.

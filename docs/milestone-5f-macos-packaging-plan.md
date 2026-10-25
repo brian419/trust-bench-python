@@ -1,8 +1,8 @@
 # Milestone 5F: macOS packaging, accessibility and sharing
 
-Status: 5F-1 implemented and source-validated on macOS (468 tests in 5.56
-seconds, Python 3.12.12, plus GUI/Ollama smoke checks). No app/DMG build is
-claimed. 5F-2 through 5F-5 remain open.
+Status: 5F-1 is source-validated on macOS (468 tests). 5F-2 readiness/setup
+recovery is implemented and agent-tested (520 tests); Mac validation is pending.
+No app/DMG build is claimed. 5F-3 through 5F-5 remain open.
 Branch: `feature/milestone-5f-macos-packaging`.
 Base: `feature/milestone-5` at `c70826ab340288d1cd393e802acb787bd82ed6c4`.
 Baseline: 450 tests passed on the user's Mac with Python 3.12.12, with
@@ -77,6 +77,11 @@ Test working directories outside the repository, resource lookup, writable
 report paths, retained source behavior and process dispatch.
 
 ### 5F-2: Ollama readiness and first-run guidance
+
+**Implemented in `57b466e`; 520 tests passed on Linux/Python 3.12.14.**
+See the [5F-2 checkpoint](milestone-5f-2-ollama-readiness.md) for behavior,
+thread/lifecycle tests and the pending Mac validation. Opening TrustBench and
+using Reports/Compare do not require an Ollama check.
 
 Implement the readiness and recovery requirements above using bounded local
 checks. Keep HTTP/model work off Tkinter's event thread. Do not make report-only
