@@ -2,7 +2,7 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestones 1–4 are merged into `main` (155 tests at the October 23, 2026 merge, commit `72a4842`). On `feature/milestone-5`, stages 5A–5E are implemented, including a local Tkinter desktop GUI committed and pushed as `8ebd025` on October 25, 2026. Full automated regression testing passed **389 tests**, and real macOS desktop and Ollama workflows were manually validated. Milestone 5F packaging, accessibility and release readiness remain open; Milestone 5 is not yet merged into `main`.
+**Current status:** Milestones 1–4 are merged into `main` (155 tests at the October 23, 2026 merge, commit `72a4842`). On `feature/milestone-5`, stages 5A–5E are implemented, including a local Tkinter desktop GUI committed and pushed as `8ebd025` on October 25, 2026. The latest prepackaging fixes passed **450 tests** on Linux/Python 3.12.14. The earlier 389-test baseline and real macOS desktop/Ollama workflows were validated by the user; Mac validation of the fixes remains pending. Milestone 5F packaging, accessibility and release readiness remain open; Milestone 5 is not yet merged into `main`.
 
 ## Guiding principles
 
@@ -339,7 +339,7 @@ Original local source: `reports/prompt-injection-d2fe3abd6a1243cc89b073391c4dda9
 
 ## Milestone 5: Usable interfaces, reproducibility, and reporting
 
-**Status: Stages 5A–5E implemented on `feature/milestone-5`; the 5E desktop code was pushed at `8ebd025` on October 25, 2026. The feature branch passed 389 automated tests and completed macOS GUI smoke tests, local Ollama execution, cancellation and restart. 5F packaging, accessibility and release readiness remain planned.** The CLI and native desktop GUI offer separate interfaces for shared live evaluation and report functionality. The GUI is source-run and currently exposes live mode only; broader GUI evaluation modes and a packaged installer are not claimed complete.
+**Status: Stages 5A–5E implemented on `feature/milestone-5`; the 5E desktop code was pushed at `8ebd025` on October 25, 2026. The latest fix checkpoint passed 450 automated tests on Linux. The prior 389-test baseline completed macOS GUI smoke tests, local Ollama execution, cancellation and restart; the fixes still need Mac revalidation. 5F packaging, accessibility and release readiness remain planned.** The CLI and native desktop GUI offer separate interfaces for shared live evaluation and report functionality. The GUI is source-run and currently exposes live mode only; broader GUI evaluation modes and a packaged installer are not claimed complete.
 
 ### Implementation plan
 
@@ -521,6 +521,32 @@ After integration, review Milestone 5A–5E for correctness, missing requirement
 documentation consistency and release blockers before implementing 5F packaging,
 accessibility, installation/sharing guidance and release validation. Keep new
 feature ideas separate from fixes needed to satisfy the existing milestone.
+
+### Prepackaging fixes (implemented; Mac revalidation pending)
+
+Implementation commit: `eb8a0f9` on `feature/milestone-5`. All four issues
+identified in the 5A–5E review are now addressed:
+
+- Malformed report statuses raise the expected ValueError before set/dictionary
+  membership, preserving clean CLI/GUI errors and the existing report display.
+- Required scoring identifiers must be nonempty strings before comparison;
+  invalid/unknown values return UNVERIFIED. Legitimate optional nulls remain.
+- The Ollama client raises a narrow MalformedResponseError for invalid JSON,
+  encoding or response structure. Live, consistency and injection runners record
+  request ERROR outcomes, continue subsequent requests and save reports.
+- GUI launches pass a copied environment with PYTHONUNBUFFERED=1 through the CLI
+  wrapper to the evaluator. Existing process-group handling is preserved.
+
+Added 61 regression cases in `tests/test_prepackaging_regressions.py` and
+updated the launcher test to verify environment preservation. The initial
+regression set exposed 52 failures before implementation. The final full suite
+passed **450 tests in 1.44 seconds** on Linux/Python 3.12.14. Compilation,
+whitespace and explicit-import checks also passed. No new dependencies, 5F
+implementation, main-branch merge or release publication occurred.
+
+Next: user runs the full suite with Python 3.12.12 and repeats affected macOS
+GUI/Ollama/report workflows. See the [review and resolution record](docs/milestone-5-prepackaging-review.md).
+After that checkpoint, proceed to 5F packaging, accessibility and sharing.
 
 ### Architecture and scope rules
 

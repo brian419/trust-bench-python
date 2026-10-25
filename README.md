@@ -8,7 +8,7 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–4 are complete on `main` (155 tests at merge). On `feature/milestone-5`, milestones 5A–5E provide the unified CLI, provenance metadata, live-report comparisons, readable reports, and a native Tkinter desktop GUI. The GUI implementation was committed and pushed as `8ebd025` on October 25, 2026. The feature branch passed 389 automated tests and the GUI was manually tested with local Ollama. Milestone 5F (packaging, accessibility, and release readiness) remains open.**
+**Milestones 1–4 are complete on `main` (155 tests at merge). On `feature/milestone-5`, milestones 5A–5E provide the unified CLI, provenance metadata, live-report comparisons, readable reports, and a native Tkinter desktop GUI. The GUI implementation was committed and pushed as `8ebd025` on October 25, 2026. The latest prepackaging fix checkpoint passed 450 automated tests on Linux/Python 3.12.14. The prior 389-test baseline and real GUI/Ollama workflows were validated on macOS; Mac revalidation of the fixes is pending. Milestone 5F (packaging, accessibility, and release readiness) remains open.**
 
 Milestone 3 merged into `main` on October 21, 2026. Milestone 4 (stages 4A–4E) was fast-forward merged and pushed to `main` on October 23, 2026 at commit `72a4842`, after 155 tests passed locally. The historical `feature/milestone-4` branch remains available, but all Milestone 4 workflows are now on `main`. Milestone 5A provides the tested CLI foundation; the 5B provenance checkpoint adds report metadata on the same feature branch. Neither stage has been merged into `main`.
 
@@ -229,8 +229,11 @@ browsing, command preview, start/stop/restart, comparison and normal closure.
 The standalone report-comparison CLI also passed: two unchanged cases,
 zero regressions and zero new errors, with expected missing-metadata warnings. The user subsequently approved integration, and `feature/milestone-5` was
 fast-forwarded to `921fc26` on October 25, 2026. `main` remains unchanged.
-The [5A–5E review](docs/milestone-5-prepackaging-review.md) records four issues
-to fix before packaging; 5F remains open.
+The [5A–5E review](docs/milestone-5-prepackaging-review.md) records the four
+findings and their fixes in `eb8a0f9`: invalid report-status handling,
+required scoring metadata validation, malformed Ollama response handling and
+unbuffered GUI evaluation output. The full agent suite now passes **450 tests**
+(61 new regression cases). Mac revalidation is pending; 5F remains open.
 
 ## Offline input format
 

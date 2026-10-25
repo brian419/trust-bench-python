@@ -5,7 +5,37 @@ Reviewed integration: `921fc26` on `feature/milestone-5`.
 The user approved integration of `refactor/standardize-imports`; the feature
 branch was fast-forwarded from `3b1ef80` to `921fc26`. `main` was not changed.
 
-## Outcome
+## Fix checkpoint
+
+All four findings below are addressed by [`eb8a0f9`](https://github.com/brian419/trust-bench-python/commit/eb8a0f9d597be6171a24247997ead5ce237fc476)
+on `feature/milestone-5`. This section supersedes the original open-finding
+status; the original observations remain below as review history.
+
+| Finding | Implemented correction | Regression evidence |
+| --- | --- | --- |
+| Invalid report statuses | Check status types before set/dictionary membership in report generation and summary helpers; report invalid data through existing ValueError handling. | List/dictionary statuses are rejected cleanly by helpers and CLI; GUI preserves the existing display and cannot claim verified completion. |
+| Unknown required scoring | Validate nonempty string identifiers before comparison; return UNVERIFIED for invalid metadata. | Required identifiers are checked for live, injection and consistency reports, on either operand and when both contain the same invalid value. Legitimate optional nulls remain accepted. |
+| Malformed Ollama responses | Add the narrow MalformedResponseError client exception; validate JSON object/string response shape and handle that error in all three request runners. | Invalid JSON/encoding/payload shapes are rejected. Live, consistency and injection workflows continue after a malformed response and save ERROR records. Live reference scoring retains ERROR classification and duration. Empty response strings and unrelated exceptions retain their previous semantics. |
+| Buffered GUI output | Copy the launch environment and set PYTHONUNBUFFERED=1 so the actual evaluator inherits it through the CLI wrapper. | A real launcher-to-CLI-to-evaluator test receives a progress line before evaluator exit; the caller environment remains unchanged and existing settings are preserved. |
+
+**Executed validation:** The unchanged starting snapshot passed 389 tests. The
+initial 55-case regression module then exposed 52 failures before implementation
+(3 preservation cases passed). The final suite, including 61 new regression
+cases, passed **450 tests in 1.44 seconds** on Linux with Python 3.12.14.
+`python3 -m compileall -q .`, whitespace checks and the explicit-import audit
+also passed. No third-party dependencies were added. Tests used temporary files,
+mocked HTTP responses and local subprocesses; they did not require paid services
+or model inference.
+
+**User validation pending:** Pull the fix and run the 450-test suite on macOS
+with Python 3.12.12. Recheck live GUI progress, stop/restart and normal closure,
+then open and compare completed saved reports. The earlier Mac evidence below
+applies to the pre-fix runtime, not this fix checkpoint.
+
+5F packaging, accessibility, installation and sharing remain open. Fix
+implementation is complete; Mac revalidation is the next checkpoint.
+
+## Original review outcome
 
 The import refactor is integrated and its planned regression and manual checks
 are complete. The broader 5A–5E review found four issues to address before
@@ -144,6 +174,6 @@ Keep these release tasks distinct from the four fixes:
 - Do not claim signing, installer behavior, screen-reader accessibility,
   Windows support or release readiness without the corresponding validation.
 
-Recommended order: fix the four findings with focused tests, rerun the full
-suite and affected Mac workflows, then implement and validate 5F. Do not merge
+Current order: the four fixes and automated regression checks are complete;
+revalidate affected Mac workflows, then implement and validate 5F. Do not merge
 Milestone 5 into `main` or publish a release as part of this review.
