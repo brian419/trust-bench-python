@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from answer_scorer import score_answer
 from eval import calculate_accuracy, compare_answers, validate_dataset
+from evaluation_progress import emit_progress
 from ollama_client import generate_response, MalformedResponseError
 from provenance import (
     ALTERNATIVE_SCORING_ID,
@@ -53,6 +54,7 @@ def main(
     else:
         print("Live dataset validation passed!")
 
+    emit_progress("started", total=len(data))
     run_timestamp = datetime.now(timezone.utc).isoformat()
 
     print("Run timestamp:", run_timestamp)
@@ -80,7 +82,8 @@ def main(
     error_count = 0
     results = []
 
-    for item in data:
+    for index, item in enumerate(data, start=1):
+        emit_progress("case_started", index=index)
         print("Test ID:", item["id"])
 
         request_start = perf_counter()
@@ -172,6 +175,9 @@ def main(
 
             if result is not None:
                 result["duration_seconds"] = round(request_duration, 3)
+                emit_progress(
+                    "case_completed", completed=len(results), outcome=result["status"]
+                )
 
         print("Expected:", item["expected"])
         print("Generated:", generated)
@@ -195,7 +201,9 @@ def main(
         }
 
         results.append(result)
+        emit_progress("case_completed", completed=len(results), outcome=result["status"])
 
+    emit_progress("saving")
     print("Collected results:", results)
 
     for item, result in zip(data, results):
@@ -240,6 +248,7 @@ def main(
         print("Error saving report:", e)
         exit(1)
 
+    emit_progress("saved")
     print("Report saved to:", report_path)
 
     print("Passed:", passed_count)

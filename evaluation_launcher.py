@@ -8,6 +8,7 @@ from sys import executable
 from time import monotonic, sleep
 
 from app_entry import WORKER_FLAG
+from evaluation_progress import PROGRESS_FILE_ENV
 from runtime_paths import is_packaged, reports_directory, resource_directory
 
 
@@ -56,13 +57,15 @@ def build_live_command(dataset: str, model: str) -> list[str]:
     ]
 
 
-def run_live_command(command: list[str]) -> Popen:
+def run_live_command(command: list[str], *, progress_file: Path | None = None) -> Popen:
     """Start a live evaluation without blocking the caller."""
 
     # The CLI wrapper launches another interpreter. Inheriting this setting
     # makes the evaluator flush too, without changing the caller's environment.
     environment = environ.copy()
     environment["PYTHONUNBUFFERED"] = "1"
+    if progress_file is not None:
+        environment[PROGRESS_FILE_ENV] = str(progress_file)
 
     working_directory = PROJECT_ROOT
 

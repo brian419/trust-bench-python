@@ -4,12 +4,23 @@ from pathlib import Path
 from queue import Empty, Queue
 from shlex import join
 from subprocess import TimeoutExpired
+from tempfile import TemporaryDirectory
 from threading import Lock, Thread
+from time import monotonic
 from tkinter import END, Listbox, StringVar, Tk, WORD
 from tkinter.filedialog import askopenfilename
 from tkinter.messagebox import askyesno, showerror, showinfo, showwarning
 from tkinter.scrolledtext import ScrolledText
-from tkinter.ttk import Button, Combobox, Entry, Frame, Label, LabelFrame, Notebook
+from tkinter.ttk import (
+    Button,
+    Combobox,
+    Entry,
+    Frame,
+    Label,
+    LabelFrame,
+    Notebook,
+    Progressbar,
+)
 from webbrowser import open as open_browser
 
 from comparison_formatter import generate_comparison_text
@@ -18,6 +29,7 @@ from evaluation_launcher import (
     run_live_command,
     stop_evaluation_group,
 )
+from evaluation_progress import EvaluationProgress, ProgressReader
 from generate_report import generate_text_report
 from ollama_readiness import check_ollama_readiness, OllamaReadiness
 from report_browser import list_saved_reports
@@ -37,8 +49,9 @@ class TrustBenchDesktop:
     def __init__(self, root: Tk):
         self.root = root
         self.root.title("TrustBench Desktop")
-        self.root.geometry("850x600")
-        self.root.minsize(600, 400)
+        height = min(740, max(640, self.root.winfo_screenheight() - 120))
+        self.root.geometry(f"900x{height}")
+        self.root.minsize(760, 640)
 
         self.report_path = StringVar(value="No report selected")
 
@@ -60,6 +73,7 @@ class TrustBenchDesktop:
         self.event_poll_scheduled = False
         self.event_poll_id = None
         self.window_closed = False
+        self.progress = EvaluationProgress()
         self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
 
         self.build_interface()
@@ -94,6 +108,7 @@ class TrustBenchDesktop:
         self.notebook.add(self.reports_tab, text="Reports")
         self.notebook.add(self.compare_tab, text="Compare")
         self.notebook.add(self.evaluate_tab, text="Evaluate")
+        self.notebook.enable_traversal()
 
         # --------------------
         # Reports tab
@@ -225,16 +240,18 @@ class TrustBenchDesktop:
             value=str(PROJECT_ROOT / "eval-read-live.json")
         )
 
+        dataset_controls = Frame(evaluation_frame)
+        dataset_controls.pack(fill="x", pady=(0, 10))
         Entry(
-            evaluation_frame,
+            dataset_controls,
             textvariable=self.dataset_path,
-        ).pack(fill="x", pady=(0, 8))
+        ).pack(side="left", fill="x", expand=True)
 
         Button(
-            evaluation_frame,
+            dataset_controls,
             text="Browse Dataset",
             command=self.browse_dataset,
-        ).pack(anchor="w", pady=(0, 10))
+        ).pack(side="left", padx=(8, 0))
 
         Label(
             evaluation_frame,
@@ -317,6 +334,22 @@ class TrustBenchDesktop:
         )
         self.stop_button.pack(side="left", padx=(8, 0))
 
+        self.progress_status = StringVar(value=self.progress.status)
+        self.progress_counts = StringVar(value=self.progress.count_text())
+        self.progress_elapsed = StringVar(value=self.progress.elapsed_text())
+        progress_frame = Frame(self.evaluate_tab)
+        progress_frame.pack(fill="x", pady=(0, 8))
+        Label(
+            progress_frame, textvariable=self.progress_status,
+            wraplength=680, justify="left",
+        ).pack(anchor="w")
+        self.progress_bar = Progressbar(progress_frame, mode="determinate", maximum=1)
+        self.progress_bar.pack(fill="x", pady=(4, 4))
+        details = Frame(progress_frame)
+        details.pack(fill="x")
+        Label(details, textvariable=self.progress_counts).pack(side="left")
+        Label(details, textvariable=self.progress_elapsed).pack(side="right")
+
         Label(
             self.evaluate_tab,
             text="Evaluation Output",
@@ -330,8 +363,39 @@ class TrustBenchDesktop:
             height=8,
         )
         self.evaluation_display.pack(fill="both", expand=True)
+        for display in (
+            self.report_display, self.comparison_display, self.evaluation_display,
+        ):
+            display.bind("<Tab>", self._focus_next)
+            display.bind("<Shift-Tab>", self._focus_previous)
+            display.bind("<Control-Tab>", lambda event: self._switch_tab(1))
+            display.bind("<Control-Shift-Tab>", lambda event: self._switch_tab(-1))
 
         self.refresh_reports()
+
+    def _focus_next(self, event):
+        event.widget.tk_focusNext().focus_set()
+        return "break"
+
+    def _focus_previous(self, event):
+        event.widget.tk_focusPrev().focus_set()
+        return "break"
+
+    def _switch_tab(self, direction):
+        current = self.notebook.index("current")
+        count = self.notebook.index("end")
+        self.notebook.select((current + direction) % count)
+        return "break"
+
+    def _render_progress(self):
+        """Update persistent text and case counts without inferring model health."""
+        self.progress.tick(monotonic())
+        self.progress_status.set(self.progress.status)
+        self.progress_counts.set(self.progress.count_text())
+        self.progress_elapsed.set(self.progress.elapsed_text())
+        self.progress_bar.configure(
+            maximum=max(1, self.progress.total or 0), value=self.progress.completed,
+        )
 
     def browse_dataset(self):
         """Select a JSON dataset for live evaluation."""
@@ -550,6 +614,8 @@ class TrustBenchDesktop:
             return False
 
         self.evaluation_running = True
+        self.progress.start(monotonic())
+        self._render_progress()
         self.latest_evaluation_report = None
         self.active_evaluation_process = None
         self.stop_requested = False
@@ -575,7 +641,10 @@ class TrustBenchDesktop:
             args=(command,),
             daemon=True,
         )
-        worker.start()
+        try:
+            worker.start()
+        except RuntimeError as error:
+            self.evaluation_events.put(("error", str(error)))
 
         self._schedule_event_poll()
         return True
@@ -640,6 +709,8 @@ class TrustBenchDesktop:
             return False
 
         self.stop_requested = True
+        self.progress.request_stop()
+        self._render_progress()
         self.stop_button.configure(state="disabled")
 
         self.evaluation_display.configure(state="normal")
@@ -699,13 +770,20 @@ class TrustBenchDesktop:
         """Run the subprocess and place its output into a queue."""
 
         process = None
+        progress_directory = None
 
         try:
-            process = run_live_command(command)
+            progress_directory = TemporaryDirectory(prefix="trustbench-progress-")
+            progress_file = Path(progress_directory.name) / "events.jsonl"
+            progress_file.touch()
+            reader = ProgressReader(progress_file)
+            process = run_live_command(command, progress_file=progress_file)
             self.evaluation_events.put(("process", process))
 
             if process.stdout is not None:
                 for line in process.stdout:
+                    for event in reader.read():
+                        self.evaluation_events.put(("progress", event))
                     self.evaluation_events.put(("output", line))
 
                     if line.startswith("Report saved to: "):
@@ -713,6 +791,8 @@ class TrustBenchDesktop:
                         self.evaluation_events.put(("report_path", report_path))
 
             return_code = process.wait()
+            for event in reader.read():
+                self.evaluation_events.put(("progress", event))
             self.evaluation_finished = True
             self.evaluation_events.put(("done", return_code))
 
@@ -729,6 +809,12 @@ class TrustBenchDesktop:
                         )
 
             self.evaluation_events.put(("error", str(error)))
+        finally:
+            if progress_directory is not None:
+                try:
+                    progress_directory.cleanup()
+                except OSError:
+                    pass
 
     def _evaluation_completion_message(self, return_code: int) -> str:
         """Describe process completion and recorded evaluation outcomes."""
@@ -792,9 +878,14 @@ class TrustBenchDesktop:
 
             elif event_type == "process":
                 self.active_evaluation_process = value
+                if self.progress.total is None and not self.stop_requested:
+                    self.progress.status = "Evaluation running; waiting for progress details"
 
                 if self.stop_requested and not self.evaluation_finished:
                     self._begin_evaluation_shutdown(value)
+
+            elif event_type == "progress":
+                self.progress.apply(value)
 
             elif event_type == "output":
                 self.evaluation_display.configure(state="normal")
@@ -863,6 +954,7 @@ class TrustBenchDesktop:
 
                 if value == 0:
                     self.refresh_reports()
+                self.progress.finish(message.strip().splitlines()[0], monotonic())
 
             elif event_type == "error":
                 self.evaluation_running = False
@@ -882,7 +974,16 @@ class TrustBenchDesktop:
                     f"\nEvaluation startup/read error: {value}\n",
                 )
                 self.evaluation_display.configure(state="disabled")
+                self.progress.finish("Evaluation failed; see Evaluation Output", monotonic())
 
+        if not self.window_closed:
+            if self.shutdown_unverified:
+                self.progress.status = "Shutdown not verified; evaluation may still be running"
+            elif self.shutdown_pending:
+                self.progress.status = "Stopping evaluation; waiting for process cleanup"
+            elif self.stop_requested and not self.evaluation_running:
+                self.progress.status = "Evaluation stopped"
+            self._render_progress()
         self._finish_window_close()
 
         if not self.window_closed:

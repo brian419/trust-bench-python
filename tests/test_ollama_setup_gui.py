@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 from pytest import fixture, mark
 
 from desktop_gui import TrustBenchDesktop
+from evaluation_progress import EvaluationProgress
 from ollama_readiness import OllamaReadiness
 
 
@@ -15,10 +16,14 @@ from ollama_readiness import OllamaReadiness
 def app(tmp_path):
     desktop = TrustBenchDesktop.__new__(TrustBenchDesktop)
     desktop.root = MagicMock()
+    desktop.progress = EvaluationProgress()
+    for name in ("progress_status", "progress_counts", "progress_elapsed", "progress_bar"):
+        setattr(desktop, name, MagicMock())
     desktop.evaluation_events = Queue()
     for name in (
         "evaluation_running", "shutdown_pending", "shutdown_unverified",
         "close_requested", "readiness_pending", "window_closed", "event_poll_scheduled",
+        "stop_requested",
     ):
         setattr(desktop, name, False)
     desktop.readiness_request_id = 0
@@ -228,6 +233,7 @@ def test_interface_wires_ui_start_to_preflight_without_startup_network(app):
         patch("desktop_gui.Combobox"), patch("desktop_gui.Notebook"),
         patch("desktop_gui.Listbox"), patch("desktop_gui.StringVar"),
         patch("desktop_gui.ScrolledText"), patch("desktop_gui.Button") as button,
+        patch("desktop_gui.Progressbar"),
         patch("desktop_gui.Thread") as thread,
         patch("desktop_gui.check_ollama_readiness") as check,
     ):

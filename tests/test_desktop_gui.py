@@ -5,6 +5,7 @@ from threading import Event, Lock, Thread
 from unittest.mock import MagicMock, patch
 
 from desktop_gui import PROJECT_ROOT, TrustBenchDesktop
+from evaluation_progress import EvaluationProgress
 
 
 def make_test_app():
@@ -44,6 +45,9 @@ def make_test_app():
     app.refresh_models_button = MagicMock()
     app.model_selector = MagicMock()
     app.ollama_status = MagicMock()
+    app.progress = EvaluationProgress()
+    for name in ("progress_status", "progress_counts", "progress_elapsed", "progress_bar"):
+        setattr(app, name, MagicMock())
     return app
 
 
