@@ -576,6 +576,30 @@ Reviewing the separate Ollama/model setup before release is an explicit
 requirement. Do not defer confusing first-run behavior beyond 5F without
 addressing it. Packaging implementation has not started at this checkpoint.
 
+### Milestone 5F-1 runtime foundation (implemented; Mac validation pending)
+
+On `feature/milestone-5f-macos-packaging`, commit `ec4396b` adds
+`runtime_paths.py` and `app_entry.py`, integrates resource/report locations
+with the GUI/launcher, and adds the optional `report_dir` live-evaluator
+parameter. Existing source defaults and CLI flags are retained.
+
+Packaged workers dispatch through an explicit app flag without starting a GUI
+or treating the bundle executable as a Python interpreter. Packaged reports
+use `~/Library/Application Support/TrustBench/reports/`; existing source
+reports remain in place and can be opened through the existing report dialog.
+Pipe output and process-group stop/restart behavior are preserved.
+
+The full suite passed **468 tests in 1.53 seconds** on Linux/Python 3.12.14,
+including 18 new runtime cases. Compilation, whitespace and explicit-import
+checks passed. Frozen/resource paths were simulated; worker subprocesses ran
+with mocked HTTP and no available GUI module. No macOS app/DMG was built, and
+no dependencies, release or merge were added.
+
+Next: user runs 468 tests with Python 3.12.12 and smoke-tests `app_entry.py`
+on the Mac. Then continue to 5F-2 Ollama readiness/setup recovery. See the
+[5F-1 checkpoint](docs/milestone-5f-1-runtime-foundation.md) and the
+[full 5F plan](docs/milestone-5f-macos-packaging-plan.md).
+
 ### Architecture and scope rules
 
 - Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.

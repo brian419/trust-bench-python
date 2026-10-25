@@ -1,6 +1,7 @@
 # Milestone 5F: macOS packaging, accessibility and sharing
 
-Status: scope agreed; implementation not started.
+Status: 5F-1 implemented and agent-tested (468 tests); Mac source validation
+pending. No app/DMG build is claimed. 5F-2 through 5F-5 remain open.
 Branch: `feature/milestone-5f-macos-packaging`.
 Base: `feature/milestone-5` at `c70826ab340288d1cd393e802acb787bd82ed6c4`.
 Baseline: 450 tests passed on the user's Mac with Python 3.12.12, with
@@ -55,6 +56,10 @@ problem to ignore until after packaging:
 ## Incremental implementation checkpoints
 
 ### 5F-1: Application resources, report storage and packaged execution
+
+**Implemented in `ec4396b`; 468 tests passed on Linux/Python 3.12.14.**
+See the [runtime checkpoint](milestone-5f-1-runtime-foundation.md) for paths,
+worker dispatch, executed evidence and the remaining Mac/build validation.
 
 Audit and separate bundled read-only resources from writable user reports.
 Choose a macOS user-data location and preserve existing source-run paths and

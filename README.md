@@ -105,6 +105,27 @@ The application has three tabs:
 
 **Validation and limitations:** A controlled macOS live test recorded 2 PASS, 0 FAIL, and 0 request errors (100% exact-match accuracy **on those two questions only**). Another test stopped a live run with process exit code `-15` (SIGTERM) and successfully started a fresh run. Automated tests cover GUI events, subprocess shutdown coordination, macOS process-group termination and parent/child group behavior. Cancellation can interrupt a run without saving a complete report. The live output pane still displays verbose evaluator output. No signed installer, accessibility audit, or cross-platform release testing has been completed.
 
+## macOS packaging runtime foundation (5F-1)
+
+Work continues on `feature/milestone-5f-macos-packaging`. The runtime foundation
+is implemented in `ec4396b` with **468 passing agent tests**. Mac source
+validation is pending; an installable app/DMG has not been built yet.
+
+`python3 app_entry.py` opens the same source GUI as `python3 desktop_gui.py`.
+Source GUI reports remain in the checkout's `reports/` folder; source CLI
+defaults are unchanged. The future packaged app uses bundled datasets and
+writes reports outside the application to
+`~/Library/Application Support/TrustBench/reports/`. Older reports remain
+untouched and can be opened with **Open Evaluation Report**.
+
+The packaged worker dispatch and output/report path behavior have automated
+and real-subprocess coverage using simulated frozen settings and mocked HTTP.
+Actual macOS bundle validation remains part of the later build checkpoint.
+See the [5F-1 runtime notes](docs/milestone-5f-1-runtime-foundation.md).
+
+Ollama/model readiness guidance is the next checkpoint. Ollama and models
+remain separate installations; viewing saved reports does not need Ollama.
+
 ## Requirements
 
 - Python 3.12 (developed/tested with Python 3.12; desktop GUI manually tested on macOS with Python 3.12.12).
