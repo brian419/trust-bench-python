@@ -1,11 +1,11 @@
 """Build commands for TrustBench desktop evaluations."""
 
-import os
-import signal
-import subprocess
-import sys
-import time
+from os import killpg
 from pathlib import Path
+from signal import SIGKILL, SIGTERM
+from subprocess import PIPE, Popen, STDOUT
+from sys import executable
+from time import monotonic, sleep
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -31,7 +31,7 @@ def build_live_command(dataset: str, model: str) -> list[str]:
         raise ValueError(f"Dataset file does not exist: {dataset_path}")
 
     return [
-        sys.executable,
+        executable,
         str(PROJECT_ROOT / "trustbench.py"),
         "live",
         "--dataset",
@@ -41,14 +41,14 @@ def build_live_command(dataset: str, model: str) -> list[str]:
     ]
 
 
-def run_live_command(command: list[str]) -> subprocess.Popen:
+def run_live_command(command: list[str]) -> Popen:
     """Start a live evaluation without blocking the caller."""
 
-    return subprocess.Popen(
+    return Popen(
         command,
         cwd=PROJECT_ROOT,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+        stdout=PIPE,
+        stderr=STDOUT,
         text=True,
         encoding="utf-8",
         bufsize=1,
@@ -56,7 +56,7 @@ def run_live_command(command: list[str]) -> subprocess.Popen:
     )
 
 
-def request_evaluation_stop(process: subprocess.Popen) -> bool:
+def request_evaluation_stop(process: Popen) -> bool:
     """Request termination of a running evaluation process group.
 
     Only use with a process created by run_live_command().
@@ -67,7 +67,7 @@ def request_evaluation_stop(process: subprocess.Popen) -> bool:
         return False
 
     try:
-        os.killpg(process.pid, signal.SIGTERM)
+        killpg(process.pid, SIGTERM)
     except ProcessLookupError:
         return False
 
@@ -78,7 +78,7 @@ def evaluation_group_exists(group_id: int) -> bool:
     """Check whether an evaluation process group still exists."""
 
     try:
-        os.killpg(group_id, 0)
+        killpg(group_id, 0)
     except ProcessLookupError:
         return False
     except PermissionError:
@@ -89,7 +89,7 @@ def evaluation_group_exists(group_id: int) -> bool:
 
 
 def stop_evaluation_group(
-    process: subprocess.Popen,
+    process: Popen,
     grace_seconds: float = 3.0,
     force_wait_seconds: float = 1.0,
 ) -> bool:
@@ -107,37 +107,37 @@ def stop_evaluation_group(
     group_id = process.pid
 
     try:
-        os.killpg(group_id, signal.SIGTERM)
+        killpg(group_id, SIGTERM)
     except ProcessLookupError:
         return True
 
-    deadline = time.monotonic() + grace_seconds
+    deadline = monotonic() + grace_seconds
 
-    while time.monotonic() < deadline:
+    while monotonic() < deadline:
         process.poll()
 
         if not evaluation_group_exists(group_id):
             return True
 
-        time.sleep(0.1)
+        sleep(0.1)
 
     if not evaluation_group_exists(group_id):
         return True
 
     try:
-        os.killpg(group_id, signal.SIGKILL)
+        killpg(group_id, SIGKILL)
     except ProcessLookupError:
         return True
 
-    deadline = time.monotonic() + force_wait_seconds
+    deadline = monotonic() + force_wait_seconds
 
-    while time.monotonic() < deadline:
+    while monotonic() < deadline:
         process.poll()
 
         if not evaluation_group_exists(group_id):
             return True
 
-        time.sleep(0.1)
+        sleep(0.1)
 
     process.poll()
 

@@ -1,12 +1,15 @@
 """Native desktop interface for TrustBench."""
 
-import queue
-import shlex
-import threading
-import tkinter as tk
-import subprocess
 from pathlib import Path
-from tkinter import filedialog, messagebox, scrolledtext, ttk
+from queue import Empty, Queue
+from shlex import join
+from subprocess import TimeoutExpired
+from threading import Lock, Thread
+from tkinter import END, Listbox, StringVar, Tk, WORD
+from tkinter.filedialog import askopenfilename
+from tkinter.messagebox import showerror, showwarning
+from tkinter.scrolledtext import ScrolledText
+from tkinter.ttk import Button, Combobox, Entry, Frame, Label, LabelFrame, Notebook
 
 from comparison_formatter import generate_comparison_text
 from evaluation_launcher import (
@@ -27,16 +30,16 @@ REPORTS_DIRECTORY = PROJECT_ROOT / "reports"
 class TrustBenchDesktop:
     """Display saved TrustBench live-evaluation reports."""
 
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root: Tk):
         self.root = root
         self.root.title("TrustBench Desktop")
         self.root.geometry("850x600")
         self.root.minsize(600, 400)
 
-        self.report_path = tk.StringVar(value="No report selected")
+        self.report_path = StringVar(value="No report selected")
 
         self.evaluation_running = False
-        self.evaluation_events = queue.Queue()
+        self.evaluation_events = Queue()
         self.latest_evaluation_report = None
         self.active_evaluation_process = None
         self.stop_requested = False
@@ -44,7 +47,7 @@ class TrustBenchDesktop:
         self.shutdown_unverified = False
         self.close_requested = False
         self.evaluation_finished = False
-        self.shutdown_lock = threading.Lock()
+        self.shutdown_lock = Lock()
         self.shutdown_attempted = False
         self.shutdown_verified = False
         self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
@@ -54,29 +57,29 @@ class TrustBenchDesktop:
     def build_interface(self):
         """Create separate report and comparison tabs."""
 
-        frame = ttk.Frame(self.root, padding=15)
+        frame = Frame(self.root, padding=15)
         frame.pack(fill="both", expand=True)
 
-        title = ttk.Label(
+        title = Label(
             frame,
             text="TrustBench",
             font=("Helvetica", 22, "bold"),
         )
         title.pack(anchor="w")
 
-        subtitle = ttk.Label(
+        subtitle = Label(
             frame,
             text="AI Evaluation and Reliability Testing",
         )
         subtitle.pack(anchor="w", pady=(0, 12))
 
         # Tabs keep each workflow in its own space.
-        self.notebook = ttk.Notebook(frame)
+        self.notebook = Notebook(frame)
         self.notebook.pack(fill="both", expand=True)
 
-        self.reports_tab = ttk.Frame(self.notebook, padding=10)
-        self.compare_tab = ttk.Frame(self.notebook, padding=10)
-        self.evaluate_tab = ttk.Frame(self.notebook, padding=10)
+        self.reports_tab = Frame(self.notebook, padding=10)
+        self.compare_tab = Frame(self.notebook, padding=10)
+        self.evaluate_tab = Frame(self.notebook, padding=10)
 
         self.notebook.add(self.reports_tab, text="Reports")
         self.notebook.add(self.compare_tab, text="Compare")
@@ -86,20 +89,20 @@ class TrustBenchDesktop:
         # Reports tab
         # --------------------
 
-        browser_frame = ttk.LabelFrame(
+        browser_frame = LabelFrame(
             self.reports_tab,
             text="Saved Evaluation Reports",
             padding=10,
         )
         browser_frame.pack(fill="x", pady=(0, 10))
 
-        ttk.Button(
+        Button(
             browser_frame,
             text="Refresh Reports",
             command=self.refresh_reports,
         ).pack(anchor="w", pady=(0, 8))
 
-        self.report_list = tk.Listbox(
+        self.report_list = Listbox(
             browser_frame,
             height=5,
             exportselection=False,
@@ -111,27 +114,27 @@ class TrustBenchDesktop:
             self.open_selected_report,
         )
 
-        ttk.Button(
+        Button(
             browser_frame,
             text="View Selected Report",
             command=self.open_selected_report,
         ).pack(anchor="w", pady=(8, 0))
 
-        ttk.Button(
+        Button(
             self.reports_tab,
             text="Open Evaluation Report",
             command=self.open_report,
         ).pack(anchor="w", pady=(0, 8))
 
-        ttk.Label(
+        Label(
             self.reports_tab,
             textvariable=self.report_path,
             wraplength=740,
         ).pack(anchor="w", pady=(0, 8))
 
-        self.report_display = scrolledtext.ScrolledText(
+        self.report_display = ScrolledText(
             self.reports_tab,
-            wrap=tk.WORD,
+            wrap=WORD,
             font=("Menlo", 12),
             state="disabled",
             height=8,
@@ -142,49 +145,49 @@ class TrustBenchDesktop:
         # Compare tab
         # --------------------
 
-        comparison_frame = ttk.LabelFrame(
+        comparison_frame = LabelFrame(
             self.compare_tab,
             text="Compare Evaluation Reports",
             padding=10,
         )
         comparison_frame.pack(fill="x", pady=(0, 10))
 
-        ttk.Label(
+        Label(
             comparison_frame,
             text="Previous report:",
         ).pack(anchor="w")
 
-        self.previous_report = ttk.Combobox(
+        self.previous_report = Combobox(
             comparison_frame,
             state="readonly",
         )
         self.previous_report.pack(fill="x", pady=(0, 8))
 
-        ttk.Label(
+        Label(
             comparison_frame,
             text="Current report:",
         ).pack(anchor="w")
 
-        self.current_report = ttk.Combobox(
+        self.current_report = Combobox(
             comparison_frame,
             state="readonly",
         )
         self.current_report.pack(fill="x", pady=(0, 8))
 
-        ttk.Button(
+        Button(
             comparison_frame,
             text="Compare Reports",
             command=self.compare_selected_reports,
         ).pack(anchor="w")
 
-        ttk.Label(
+        Label(
             self.compare_tab,
             text="Comparison Results",
         ).pack(anchor="w", pady=(0, 8))
 
-        self.comparison_display = scrolledtext.ScrolledText(
+        self.comparison_display = ScrolledText(
             self.compare_tab,
-            wrap=tk.WORD,
+            wrap=WORD,
             font=("Menlo", 12),
             state="disabled",
             height=8,
@@ -196,59 +199,59 @@ class TrustBenchDesktop:
         # Evaluate tab
         # --------------------
 
-        evaluation_frame = ttk.LabelFrame(
+        evaluation_frame = LabelFrame(
             self.evaluate_tab,
             text="Live Ollama Evaluation",
             padding=10,
         )
         evaluation_frame.pack(fill="x", pady=(0, 10))
 
-        ttk.Label(
+        Label(
             evaluation_frame,
             text="Dataset:",
         ).pack(anchor="w")
 
-        self.dataset_path = tk.StringVar(
+        self.dataset_path = StringVar(
             value=str(PROJECT_ROOT / "eval-read-live.json")
         )
 
-        ttk.Entry(
+        Entry(
             evaluation_frame,
             textvariable=self.dataset_path,
         ).pack(fill="x", pady=(0, 8))
 
-        ttk.Button(
+        Button(
             evaluation_frame,
             text="Browse Dataset",
             command=self.browse_dataset,
         ).pack(anchor="w", pady=(0, 10))
 
-        ttk.Label(
+        Label(
             evaluation_frame,
             text="Ollama model:",
         ).pack(anchor="w")
 
-        self.model_name = tk.StringVar(value="gemma3:1b")
+        self.model_name = StringVar(value="gemma3:1b")
 
-        ttk.Entry(
+        Entry(
             evaluation_frame,
             textvariable=self.model_name,
         ).pack(fill="x", pady=(0, 10))
 
-        ttk.Button(
+        Button(
             evaluation_frame,
             text="Preview Command",
             command=self.preview_evaluation,
         ).pack(anchor="w", pady=(0, 8))
 
-        self.start_button = ttk.Button(
+        self.start_button = Button(
             evaluation_frame,
             text="Start Evaluation",
             command=self.start_evaluation,
         )
         self.start_button.pack(anchor="w", pady=(0, 8))
 
-        self.stop_button = ttk.Button(
+        self.stop_button = Button(
             evaluation_frame,
             text="Stop Evaluation",
             command=self.stop_evaluation,
@@ -256,14 +259,14 @@ class TrustBenchDesktop:
         )
         self.stop_button.pack(anchor="w")
 
-        ttk.Label(
+        Label(
             self.evaluate_tab,
             text="Evaluation Output",
         ).pack(anchor="w", pady=(0, 8))
 
-        self.evaluation_display = scrolledtext.ScrolledText(
+        self.evaluation_display = ScrolledText(
             self.evaluate_tab,
-            wrap=tk.WORD,
+            wrap=WORD,
             font=("Menlo", 12),
             state="disabled",
             height=8,
@@ -275,7 +278,7 @@ class TrustBenchDesktop:
     def browse_dataset(self):
         """Select a JSON dataset for live evaluation."""
 
-        filename = filedialog.askopenfilename(
+        filename = askopenfilename(
             title="Select Evaluation Dataset",
             initialdir=str(PROJECT_ROOT),
             filetypes=[
@@ -296,17 +299,17 @@ class TrustBenchDesktop:
                 self.model_name.get(),
             )
         except ValueError as error:
-            messagebox.showerror(
+            showerror(
                 "Invalid Evaluation Settings",
                 str(error),
             )
             return False
 
-        output = shlex.join(command)
+        output = join(command)
 
         self.evaluation_display.configure(state="normal")
-        self.evaluation_display.delete("1.0", tk.END)
-        self.evaluation_display.insert(tk.END, output)
+        self.evaluation_display.delete("1.0", END)
+        self.evaluation_display.insert(END, output)
         self.evaluation_display.configure(state="disabled")
         self.evaluation_display.see("1.0")
 
@@ -329,7 +332,7 @@ class TrustBenchDesktop:
                 self.model_name.get(),
             )
         except ValueError as error:
-            messagebox.showerror(
+            showerror(
                 "Invalid Evaluation Settings",
                 str(error),
             )
@@ -347,14 +350,14 @@ class TrustBenchDesktop:
         self.stop_button.configure(state="normal")
 
         self.evaluation_display.configure(state="normal")
-        self.evaluation_display.delete("1.0", tk.END)
+        self.evaluation_display.delete("1.0", END)
         self.evaluation_display.insert(
-            tk.END,
+            END,
             "Starting live evaluation...\n",
         )
         self.evaluation_display.configure(state="disabled")
 
-        worker = threading.Thread(
+        worker = Thread(
             target=self._run_evaluation_worker,
             args=(command,),
             daemon=True,
@@ -368,7 +371,7 @@ class TrustBenchDesktop:
         """Close safely, stopping an active evaluation first."""
 
         if self.shutdown_unverified:
-            messagebox.showwarning(
+            showwarning(
                 "Shutdown Not Verified",
                 "The previous evaluation may still be running. "
                 "The window will remain open.",
@@ -393,7 +396,7 @@ class TrustBenchDesktop:
 
         if self.shutdown_unverified:
             self.close_requested = False
-            messagebox.showwarning(
+            showwarning(
                 "Shutdown Not Verified",
                 "Evaluation shutdown could not be verified. "
                 "The window will remain open.",
@@ -421,11 +424,11 @@ class TrustBenchDesktop:
 
         self.evaluation_display.configure(state="normal")
         self.evaluation_display.insert(
-            tk.END,
+            END,
             "\nStop requested. Ending evaluation...\n",
         )
         self.evaluation_display.configure(state="disabled")
-        self.evaluation_display.see(tk.END)
+        self.evaluation_display.see(END)
 
         if self.active_evaluation_process is not None:
             self._begin_evaluation_shutdown(self.active_evaluation_process)
@@ -440,7 +443,7 @@ class TrustBenchDesktop:
 
         self.shutdown_pending = True
 
-        worker = threading.Thread(
+        worker = Thread(
             target=self._shutdown_evaluation_worker,
             args=(process,),
             daemon=True,
@@ -500,7 +503,7 @@ class TrustBenchDesktop:
                 if verified:
                     try:
                         process.wait(timeout=1.0)
-                    except (OSError, subprocess.TimeoutExpired) as shutdown_error:
+                    except (OSError, TimeoutExpired) as shutdown_error:
                         self.evaluation_events.put(
                             ("shutdown_error", str(shutdown_error))
                         )
@@ -556,7 +559,7 @@ class TrustBenchDesktop:
         while True:
             try:
                 event_type, value = self.evaluation_events.get_nowait()
-            except queue.Empty:
+            except Empty:
                 break
 
             if event_type == "process":
@@ -567,9 +570,9 @@ class TrustBenchDesktop:
 
             elif event_type == "output":
                 self.evaluation_display.configure(state="normal")
-                self.evaluation_display.insert(tk.END, value)
+                self.evaluation_display.insert(END, value)
                 self.evaluation_display.configure(state="disabled")
-                self.evaluation_display.see(tk.END)
+                self.evaluation_display.see(END)
 
             elif event_type == "report_path":
                 self.latest_evaluation_report = value
@@ -581,7 +584,7 @@ class TrustBenchDesktop:
                 if not value:
                     self.evaluation_display.configure(state="normal")
                     self.evaluation_display.insert(
-                        tk.END,
+                        END,
                         "\nShutdown could not be verified. "
                         "The evaluation process group may still be running. "
                         "Starting another evaluation is disabled.\n",
@@ -599,7 +602,7 @@ class TrustBenchDesktop:
 
                 self.evaluation_display.configure(state="normal")
                 self.evaluation_display.insert(
-                    tk.END,
+                    END,
                     f"\nShutdown signaling error: {value}\n",
                 )
                 self.evaluation_display.configure(state="disabled")
@@ -627,7 +630,7 @@ class TrustBenchDesktop:
                     message = self._evaluation_completion_message(value)
 
                 self.evaluation_display.configure(state="normal")
-                self.evaluation_display.insert(tk.END, message)
+                self.evaluation_display.insert(END, message)
                 self.evaluation_display.configure(state="disabled")
 
                 if value == 0:
@@ -647,7 +650,7 @@ class TrustBenchDesktop:
 
                 self.evaluation_display.configure(state="normal")
                 self.evaluation_display.insert(
-                    tk.END,
+                    END,
                     f"\nEvaluation startup/read error: {value}\n",
                 )
                 self.evaluation_display.configure(state="disabled")
@@ -663,7 +666,7 @@ class TrustBenchDesktop:
         try:
             reports = list_saved_reports(str(REPORTS_DIRECTORY))
         except (OSError, ValueError) as error:
-            messagebox.showerror(
+            showerror(
                 "Unable to List Reports",
                 str(error),
             )
@@ -671,7 +674,7 @@ class TrustBenchDesktop:
 
         self.saved_reports = reports
 
-        self.report_list.delete(0, tk.END)
+        self.report_list.delete(0, END)
 
         report_names = [Path(path).name for path in reports]
 
@@ -683,7 +686,7 @@ class TrustBenchDesktop:
 
         for path in reports:
             self.report_list.insert(
-                tk.END,
+                END,
                 Path(path).name,
             )
 
@@ -709,14 +712,14 @@ class TrustBenchDesktop:
         current_index = self.current_report.current()
 
         if previous_index < 0 or current_index < 0:
-            messagebox.showwarning(
+            showwarning(
                 "Select Two Reports",
                 "Choose a previous and current report first.",
             )
             return False
 
         if previous_index == current_index:
-            messagebox.showwarning(
+            showwarning(
                 "Select Two Reports",
                 "Choose two different reports to compare.",
             )
@@ -731,15 +734,15 @@ class TrustBenchDesktop:
                 current_path,
             )
         except (OSError, ValueError) as error:
-            messagebox.showerror(
+            showerror(
                 "Unable to Compare Reports",
                 str(error),
             )
             return False
 
         self.comparison_display.configure(state="normal")
-        self.comparison_display.delete("1.0", tk.END)
-        self.comparison_display.insert(tk.END, output)
+        self.comparison_display.delete("1.0", END)
+        self.comparison_display.insert(END, output)
         self.comparison_display.configure(state="disabled")
         self.comparison_display.see("1.0")
 
@@ -748,7 +751,7 @@ class TrustBenchDesktop:
     def open_report(self):
         """Ask the user to select a JSON evaluation report."""
 
-        filename = filedialog.askopenfilename(
+        filename = askopenfilename(
             title="Select TrustBench Evaluation Report",
             filetypes=[
                 ("JSON reports", "*.json"),
@@ -767,7 +770,7 @@ class TrustBenchDesktop:
         try:
             output = generate_text_report(filename)
         except (OSError, ValueError) as error:
-            messagebox.showerror(
+            showerror(
                 "Unable to Open Report",
                 str(error),
             )
@@ -776,8 +779,8 @@ class TrustBenchDesktop:
         self.report_path.set(filename)
 
         self.report_display.configure(state="normal")
-        self.report_display.delete("1.0", tk.END)
-        self.report_display.insert(tk.END, output)
+        self.report_display.delete("1.0", END)
+        self.report_display.insert(END, output)
         self.report_display.configure(state="disabled")
         self.report_display.see("1.0")
 
@@ -785,7 +788,7 @@ class TrustBenchDesktop:
 
 
 def main():
-    root = tk.Tk()
+    root = Tk()
     TrustBenchDesktop(root)
     root.mainloop()
 

@@ -1,10 +1,10 @@
-import queue
-import threading
-import subprocess
+from json import dumps
+from queue import Queue
+from subprocess import TimeoutExpired
+from threading import Event, Lock, Thread
 from unittest.mock import MagicMock, patch
-from pathlib import Path
-import desktop_gui
-from desktop_gui import TrustBenchDesktop
+
+from desktop_gui import PROJECT_ROOT, TrustBenchDesktop
 
 
 def make_test_app():
@@ -23,7 +23,7 @@ def make_test_app():
     app.start_button = MagicMock()
     app.stop_button = MagicMock()
     app.evaluation_running = False
-    app.evaluation_events = queue.Queue()
+    app.evaluation_events = Queue()
     app.latest_evaluation_report = None
     app.active_evaluation_process = None
     app.stop_requested = False
@@ -31,7 +31,7 @@ def make_test_app():
     app.shutdown_unverified = False
     app.close_requested = False
     app.evaluation_finished = False
-    app.shutdown_lock = threading.Lock()
+    app.shutdown_lock = Lock()
     app.shutdown_attempted = False
     app.shutdown_verified = False
     return app
@@ -62,7 +62,7 @@ def test_load_report_error_preserves_display():
             "desktop_gui.generate_text_report",
             side_effect=ValueError("Invalid report"),
         ),
-        patch("desktop_gui.messagebox.showerror") as error_dialog,
+        patch("desktop_gui.showerror") as error_dialog,
     ):
         result = app.load_report("invalid.json")
 
@@ -80,7 +80,7 @@ def test_open_report_cancel():
     app.load_report = MagicMock()
 
     with patch(
-        "desktop_gui.filedialog.askopenfilename",
+        "desktop_gui.askopenfilename",
         return_value="",
     ):
         app.open_report()
@@ -93,7 +93,7 @@ def test_open_report_selection():
     app.load_report = MagicMock()
 
     with patch(
-        "desktop_gui.filedialog.askopenfilename",
+        "desktop_gui.askopenfilename",
         return_value="evaluation.json",
     ):
         app.open_report()
@@ -116,7 +116,7 @@ def test_refresh_reports():
     assert result is True
 
     browser.assert_called_once_with(
-        str(Path(desktop_gui.__file__).resolve().parent / "reports")
+        str(PROJECT_ROOT / "reports")
     )
 
     assert app.saved_reports == [
@@ -191,7 +191,7 @@ def test_compare_requires_both_reports():
     app.previous_report.current.return_value = -1
     app.current_report.current.return_value = 0
 
-    with patch("desktop_gui.messagebox.showwarning") as warning:
+    with patch("desktop_gui.showwarning") as warning:
         result = app.compare_selected_reports()
 
     assert result is False
@@ -205,7 +205,7 @@ def test_compare_rejects_same_report():
     app.previous_report.current.return_value = 0
     app.current_report.current.return_value = 0
 
-    with patch("desktop_gui.messagebox.showwarning") as warning:
+    with patch("desktop_gui.showwarning") as warning:
         result = app.compare_selected_reports()
 
     assert result is False
@@ -228,7 +228,7 @@ def test_compare_error_preserves_display():
             "desktop_gui.generate_comparison_text",
             side_effect=ValueError("Reports are incompatible"),
         ),
-        patch("desktop_gui.messagebox.showerror") as error_dialog,
+        patch("desktop_gui.showerror") as error_dialog,
     ):
         result = app.compare_selected_reports()
 
@@ -249,17 +249,17 @@ def test_build_interface_creates_separate_tabs():
     evaluation_view = MagicMock()
 
     with (
-        patch("desktop_gui.ttk.Frame"),
-        patch("desktop_gui.ttk.Label"),
-        patch("desktop_gui.ttk.LabelFrame"),
-        patch("desktop_gui.ttk.Button"),
-        patch("desktop_gui.ttk.Combobox"),
-        patch("desktop_gui.ttk.Entry"),
-        patch("desktop_gui.ttk.Notebook") as notebook,
-        patch("desktop_gui.tk.Listbox"),
-        patch("desktop_gui.tk.StringVar"),
+        patch("desktop_gui.Frame"),
+        patch("desktop_gui.Label"),
+        patch("desktop_gui.LabelFrame"),
+        patch("desktop_gui.Button"),
+        patch("desktop_gui.Combobox"),
+        patch("desktop_gui.Entry"),
+        patch("desktop_gui.Notebook") as notebook,
+        patch("desktop_gui.Listbox"),
+        patch("desktop_gui.StringVar"),
         patch(
-            "desktop_gui.scrolledtext.ScrolledText",
+            "desktop_gui.ScrolledText",
             side_effect=[report_view, comparison_view, evaluation_view],
         ) as text_widgets,
         patch.object(app, "refresh_reports"),
@@ -315,7 +315,7 @@ def test_preview_evaluation_invalid_settings():
             "desktop_gui.build_live_command",
             side_effect=ValueError("Choose an evaluation dataset."),
         ),
-        patch("desktop_gui.messagebox.showerror") as error_dialog,
+        patch("desktop_gui.showerror") as error_dialog,
     ):
         result = app.preview_evaluation()
 
@@ -332,7 +332,7 @@ def test_browse_dataset_cancel():
     app = make_test_app()
 
     with patch(
-        "desktop_gui.filedialog.askopenfilename",
+        "desktop_gui.askopenfilename",
         return_value="",
     ):
         app.browse_dataset()
@@ -352,7 +352,7 @@ def test_start_evaluation_starts_worker():
             "desktop_gui.build_live_command",
             return_value=command,
         ),
-        patch("desktop_gui.threading.Thread") as thread,
+        patch("desktop_gui.Thread") as thread,
     ):
         result = app.start_evaluation()
 
@@ -464,13 +464,11 @@ def test_drain_evaluation_completion():
 
 
 def test_completion_reports_request_errors(tmp_path):
-    import json
-
     app = make_test_app()
     path = tmp_path / "evaluation-errors.json"
 
     path.write_text(
-        json.dumps(
+        dumps(
             {
                 "metadata": {},
                 "results": [
@@ -492,13 +490,11 @@ def test_completion_reports_request_errors(tmp_path):
 
 
 def test_completion_reports_clean_run(tmp_path):
-    import json
-
     app = make_test_app()
     path = tmp_path / "evaluation-clean.json"
 
     path.write_text(
-        json.dumps(
+        dumps(
             {
                 "metadata": {},
                 "results": [
@@ -593,7 +589,7 @@ def test_shutdown_runs_in_background_thread():
     app = make_test_app()
     process = MagicMock()
 
-    with patch("desktop_gui.threading.Thread") as thread:
+    with patch("desktop_gui.Thread") as thread:
         app._begin_evaluation_shutdown(process)
 
     assert app.shutdown_pending is True
@@ -732,7 +728,7 @@ def test_window_close_rejects_unverified_shutdown():
     app.close_requested = True
     app.shutdown_unverified = True
 
-    with patch("desktop_gui.messagebox.showwarning") as warning:
+    with patch("desktop_gui.showwarning") as warning:
         app._finish_window_close()
 
     app.root.destroy.assert_not_called()
@@ -880,7 +876,7 @@ def test_worker_unverified_cleanup_blocks_restart_and_close():
             "desktop_gui.stop_evaluation_group",
             return_value=False,
         ) as stop,
-        patch("desktop_gui.messagebox.showwarning") as warning,
+        patch("desktop_gui.showwarning") as warning,
     ):
         app._run_evaluation_worker(["python3", "trustbench.py", "live"])
         app._drain_evaluation_events()
@@ -918,7 +914,7 @@ def test_worker_cleanup_error_blocks_restart_and_close():
             "desktop_gui.stop_evaluation_group",
             side_effect=OSError("Permission denied"),
         ) as stop,
-        patch("desktop_gui.messagebox.showwarning") as warning,
+        patch("desktop_gui.showwarning") as warning,
     ):
         app._run_evaluation_worker(["python3", "trustbench.py", "live"])
         app._drain_evaluation_events()
@@ -988,8 +984,8 @@ def test_concurrent_shutdown_requests_run_only_once():
     app = make_test_app()
     process = MagicMock()
 
-    shutdown_started = threading.Event()
-    allow_shutdown_to_finish = threading.Event()
+    shutdown_started = Event()
+    allow_shutdown_to_finish = Event()
     results = []
 
     def slow_shutdown(target):
@@ -1008,8 +1004,8 @@ def test_concurrent_shutdown_requests_run_only_once():
         "desktop_gui.stop_evaluation_group",
         side_effect=slow_shutdown,
     ) as stop:
-        first_thread = threading.Thread(target=request_shutdown)
-        second_thread = threading.Thread(target=request_shutdown)
+        first_thread = Thread(target=request_shutdown)
+        second_thread = Thread(target=request_shutdown)
 
         try:
             first_thread.start()
@@ -1053,7 +1049,7 @@ def test_worker_preserves_original_error_when_wait_fails():
         yield
 
     process.stdout = broken_output()
-    process.wait.side_effect = subprocess.TimeoutExpired(cmd=["python3"], timeout=1.0)
+    process.wait.side_effect = TimeoutExpired(cmd=["python3"], timeout=1.0)
 
     with (
         patch("desktop_gui.run_live_command", return_value=process),
