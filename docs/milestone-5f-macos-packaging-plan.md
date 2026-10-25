@@ -1,7 +1,8 @@
 # Milestone 5F: macOS packaging, accessibility and sharing
 
-Status: 5F-1 implemented and agent-tested (468 tests); Mac source validation
-pending. No app/DMG build is claimed. 5F-2 through 5F-5 remain open.
+Status: 5F-1 implemented and source-validated on macOS (468 tests in 5.56
+seconds, Python 3.12.12, plus GUI/Ollama smoke checks). No app/DMG build is
+claimed. 5F-2 through 5F-5 remain open.
 Branch: `feature/milestone-5f-macos-packaging`.
 Base: `feature/milestone-5` at `c70826ab340288d1cd393e802acb787bd82ed6c4`.
 Baseline: 450 tests passed on the user's Mac with Python 3.12.12, with

@@ -108,8 +108,10 @@ The application has three tabs:
 ## macOS packaging runtime foundation (5F-1)
 
 Work continues on `feature/milestone-5f-macos-packaging`. The runtime foundation
-is implemented in `ec4396b` with **468 passing agent tests**. Mac source
-validation is pending; an installable app/DMG has not been built yet.
+is implemented in `ec4396b`. The agent passed **468 tests** on Linux; the
+user passed **468 tests in 5.56 seconds** on macOS/Python 3.12.12 and verified
+source entry-point launch, report viewing/comparison, live evaluation,
+stop/restart and normal closure. An installable app/DMG has not been built yet.
 
 `python3 app_entry.py` opens the same source GUI as `python3 desktop_gui.py`.
 Source GUI reports remain in the checkout's `reports/` folder; source CLI

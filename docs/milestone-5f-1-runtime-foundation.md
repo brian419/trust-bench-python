@@ -1,6 +1,7 @@
 # Milestone 5F-1: runtime foundation
 
-Status: implementation and agent checks complete; Mac source validation pending.
+Status: implementation, agent checks and Mac source validation complete.
+An actual macOS bundle still requires the later 5F-3 build validation.
 Branch: `feature/milestone-5f-macos-packaging`.
 Implementation: [`ec4396b`](https://github.com/brian419/trust-bench-python/commit/ec4396b7114f9f60f52406ab8a7b1ff880d9de0b).
 
@@ -91,16 +92,35 @@ Frozen mode and bundle locations were simulated for these checks. No macOS
 bundle has been built or run in the agent environment. HTTP responses were
 mocked; no paid service or real inference was needed.
 
-## User checkpoint and next step
+## Mac source validation and next step
 
-On the user's Mac, pull this branch and run the full suite with Python 3.12.12;
-expect 468 tests. Launch `app_entry.py` from source, verify the normal GUI
-starts, then complete a live run, view the saved report, stop/restart and close.
+On October 25, 2026, the user pulled `b3ce0a8` and ran the full suite with
+Python 3.12.12 on macOS: **468 passed in 5.56 seconds**, with a clean working
+tree. The user then launched `app_entry.py` and explicitly confirmed all five
+smoke checks:
 
-Source validation still uses the checkout reports/ directory. The packaged
-Application Support path is covered by simulated tests now and must be checked
-in an actual native build later.
+- The normal TrustBench window opened.
+- Existing reports appeared and opened in the formatted viewer.
+- A real `eval-read-live.json` / `gemma3:1b` evaluation completed and saved
+  `evaluation-3374aa567c434de4b1775766a88f48d4.json`.
+- Stop followed by a fresh start worked.
+- Normal window closure produced no traceback.
 
-After source validation, continue to 5F-2 Ollama readiness and setup recovery.
-App/DMG builds, accessibility validation and release preparation remain open.
-Do not merge either parent branch or publish a release at this checkpoint.
+The completed run had 1 PASS, 1 FAIL and 0 request errors. It expected the English
+name `Paris` but received `Parigi`; the normalized exact-match scorer correctly
+recorded FAIL. This is a model output/format observation, not a runtime error or
+a general accuracy measurement.
+
+Screenshots also show the new report opened in the Reports tab and a comparison
+against `evaluation-bc339d445631492f8f18a13ee683340c.json`: 1 unchanged case,
+1 FAIL-to-PASS status change, no regressions or new errors, and expected
+missing-model-metadata warnings. Those changes describe the selected
+previous/current ordering, not a chronological claim of model improvement.
+
+5F-1 is complete for its source/runtime checkpoint. Source validation uses the
+checkout reports/ directory; the Application Support path and frozen settings
+have simulated test coverage and still require validation in a native app build.
+
+Next is **5F-2: Ollama readiness, setup guidance and recovery**. App/DMG builds,
+accessibility validation and release preparation remain open. Neither parent
+branch was merged and no release was published as part of this checkpoint.

@@ -576,7 +576,7 @@ Reviewing the separate Ollama/model setup before release is an explicit
 requirement. Do not defer confusing first-run behavior beyond 5F without
 addressing it. Packaging implementation has not started at this checkpoint.
 
-### Milestone 5F-1 runtime foundation (implemented; Mac validation pending)
+### Milestone 5F-1 runtime foundation (implemented and source-validated on macOS)
 
 On `feature/milestone-5f-macos-packaging`, commit `ec4396b` adds
 `runtime_paths.py` and `app_entry.py`, integrates resource/report locations
@@ -595,8 +595,16 @@ checks passed. Frozen/resource paths were simulated; worker subprocesses ran
 with mocked HTTP and no available GUI module. No macOS app/DMG was built, and
 no dependencies, release or merge were added.
 
-Next: user runs 468 tests with Python 3.12.12 and smoke-tests `app_entry.py`
-on the Mac. Then continue to 5F-2 Ollama readiness/setup recovery. See the
+**Mac validation complete:** At `b3ce0a8`, the user passed **468 tests in 5.56
+seconds** with Python 3.12.12 and a clean working tree. `app_entry.py` opened
+the normal GUI; existing reports appeared/opened; a real Ollama evaluation
+completed and saved a report; stop/restart worked; and closure caused no
+traceback. The run recorded 1 PASS, 1 FAIL (`Parigi` instead of requested English
+`Paris`) and 0 request errors. A saved-report comparison showed 1 unchanged
+case and 1 improvement according to the chosen report ordering, with no new
+errors or regressions. This is source validation, not a native bundle test.
+
+5F-1 is complete. Next is 5F-2 Ollama readiness/setup recovery. See the
 [5F-1 checkpoint](docs/milestone-5f-1-runtime-foundation.md) and the
 [full 5F plan](docs/milestone-5f-macos-packaging-plan.md).
 
