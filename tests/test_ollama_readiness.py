@@ -123,3 +123,32 @@ def test_retry_recovers_after_service_and_model_become_available():
     ]):
         statuses = [check_ollama_readiness("gemma3:1b").status for _ in range(3)]
     assert statuses == ["UNAVAILABLE", "MODEL_MISSING", "READY"]
+
+
+def test_model_choices_preserve_names_remove_duplicates_and_sort():
+    payload = dumps({"models": [
+        {"name": "z-team/model:Q4_K_M"}, {"model": "Alpha:latest"},
+        {"name": "z-team/model:Q4_K_M"}, {"name": "gemma3:1b"},
+    ]}).encode()
+    with patch("ollama_readiness.urlopen", return_value=BytesIO(payload)):
+        result = check_ollama_readiness("missing:latest")
+    assert result.status == "MODEL_MISSING"
+    assert result.models == ("Alpha:latest", "gemma3:1b", "z-team/model:Q4_K_M")
+
+
+@mark.parametrize("models, status", [([], "NO_MODELS"),
+                                   ([{"name": "gemma3:1b"}], "MODELS_AVAILABLE")])
+def test_discovery_does_not_require_a_known_model_name(models, status):
+    with patch("ollama_readiness.urlopen", return_value=BytesIO(
+        dumps({"models": models}).encode()
+    )):
+        result = check_ollama_readiness(" ", allow_empty=True)
+    assert result.status == status
+    assert result.models == tuple(item["name"] for item in models)
+
+
+def test_failed_discovery_does_not_supply_a_verified_empty_list():
+    with patch("ollama_readiness.urlopen", side_effect=URLError("refused")):
+        result = check_ollama_readiness("", allow_empty=True)
+    assert result.status == "UNAVAILABLE"
+    assert result.models is None

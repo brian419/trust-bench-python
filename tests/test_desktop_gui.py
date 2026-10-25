@@ -41,6 +41,8 @@ def make_test_app():
     app.event_poll_id = None
     app.window_closed = False
     app.check_ollama_button = MagicMock()
+    app.refresh_models_button = MagicMock()
+    app.model_selector = MagicMock()
     app.ollama_status = MagicMock()
     return app
 

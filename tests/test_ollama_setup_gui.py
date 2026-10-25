@@ -33,7 +33,8 @@ def app(tmp_path):
     desktop.ollama_status = MagicMock()
     desktop.ollama_status.get.return_value = "Not checked"
     for name in (
-        "start_button", "stop_button", "check_ollama_button", "report_path",
+        "start_button", "stop_button", "check_ollama_button", "refresh_models_button",
+        "model_selector", "report_path",
         "report_display", "comparison_display", "report_list", "previous_report",
         "current_report", "evaluation_display",
     ):
@@ -173,10 +174,10 @@ def test_thread_start_failure_restores_controls(app):
     app.check_ollama_button.configure.assert_called_with(state="normal")
 
 
-def test_blank_model_check_and_invalid_dataset_start_do_not_launch_threads(app):
+def test_blank_model_start_and_invalid_dataset_start_do_not_launch_threads(app):
     with patch("desktop_gui.Thread") as thread, patch("desktop_gui.showerror"):
         app.model_name.get.return_value = " "
-        assert app.check_ollama() is False
+        assert app.check_and_start_evaluation() is False
         app.model_name.get.return_value = "gemma3:1b"
         app.dataset_path.get.return_value = "/missing/cases.json"
         assert app.check_and_start_evaluation() is False
@@ -236,7 +237,8 @@ def test_interface_wires_ui_start_to_preflight_without_startup_network(app):
     assert commands["Start Evaluation"] == app.check_and_start_evaluation
     assert commands["Check Ollama"] == app.check_ollama
     assert commands["Setup Help"] == app.show_ollama_setup
-    assert commands["Get Ollama"] == app.open_ollama_download
+    assert commands["Get Ollama (website)"] == app.open_ollama_download
+    assert commands["Refresh Models"] == app.check_ollama
     assert commands["Stop Evaluation"] == app.stop_evaluation
     thread.assert_not_called()
     check.assert_not_called()
@@ -246,6 +248,7 @@ def test_help_and_download_are_explicit_user_actions(app):
     with (
         patch("desktop_gui.open_browser") as browser,
         patch("desktop_gui.showinfo") as help_dialog,
+        patch("desktop_gui.askyesno", return_value=True),
     ):
         app.show_ollama_setup()
         browser.assert_not_called()
@@ -307,3 +310,71 @@ def test_reports_and_comparison_work_while_check_is_blocked(app, tmp_path):
         release.set()
         for worker in workers:
             worker.join(timeout=2)
+
+
+def test_empty_field_can_refresh_models_without_starting_or_changing_selection(app):
+    app.model_name.get.return_value = ""
+    with patch("desktop_gui.Thread"):
+        assert app.check_ollama() is True
+    result = OllamaReadiness("MODELS_AVAILABLE", "", "Choose a model.", ("gemma3:1b",))
+    app._handle_ollama_result(app.readiness_request_id, "", result)
+    app.model_selector.configure.assert_called_once_with(values=("gemma3:1b",))
+    app.model_name.set.assert_not_called()
+    app.start_evaluation.assert_not_called()
+
+
+def test_empty_model_worker_requests_discovery_without_touching_widgets(app):
+    with patch("desktop_gui.check_ollama_readiness") as check:
+        app._check_ollama_worker(3, "")
+    check.assert_called_once_with("", allow_empty=True)
+    app.model_selector.configure.assert_not_called()
+
+
+def test_missing_model_populates_choices_without_replacing_typed_name(app):
+    begin_start(app)
+    result = OllamaReadiness("MODEL_MISSING", "gemma3:1b", "Choose another.",
+                             ("other:latest",))
+    app._handle_ollama_result(app.readiness_request_id, "gemma3:1b", result)
+    app.model_selector.configure.assert_called_once_with(values=("other:latest",))
+    app.model_name.set.assert_not_called()
+    app.start_evaluation.assert_not_called()
+
+
+def test_failed_refresh_clears_old_choices_and_allows_retry(app):
+    with patch("desktop_gui.Thread"):
+        app.check_ollama()
+        queue_result(app, "UNAVAILABLE")
+        app._drain_evaluation_events()
+        app.model_selector.configure.assert_called_with(values=())
+        app.refresh_models_button.configure.assert_called_with(state="normal")
+        assert app.check_ollama() is True
+
+
+def test_stale_refresh_cannot_replace_model_choices(app):
+    begin_start(app)
+    result = OllamaReadiness("READY", "gemma3:1b", "Ready", ("old:latest",))
+    app._handle_ollama_result(app.readiness_request_id - 1, "gemma3:1b", result)
+    app.model_selector.configure.assert_not_called()
+
+
+def test_cancel_external_link_does_not_open_browser(app):
+    with patch("desktop_gui.askyesno", return_value=False) as confirm, \
+            patch("desktop_gui.open_browser") as browser:
+        assert app.open_ollama_download() is False
+    assert "https://ollama.com/download/mac" in confirm.call_args.args[1]
+    assert "separate software" in confirm.call_args.args[1]
+    browser.assert_not_called()
+
+
+@mark.parametrize("outcome", [False, OSError("browser unavailable")])
+def test_browser_failure_shows_address_for_manual_navigation(app, outcome):
+    with (
+        patch("desktop_gui.askyesno", return_value=True),
+        patch("desktop_gui.open_browser", **(
+            {"side_effect": outcome} if isinstance(outcome, OSError)
+            else {"return_value": outcome}
+        )),
+        patch("desktop_gui.showerror") as error,
+    ):
+        assert app.open_ollama_download() is False
+    assert "https://ollama.com/download/mac" in error.call_args.args[1]

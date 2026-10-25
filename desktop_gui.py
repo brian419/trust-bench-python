@@ -7,7 +7,7 @@ from subprocess import TimeoutExpired
 from threading import Lock, Thread
 from tkinter import END, Listbox, StringVar, Tk, WORD
 from tkinter.filedialog import askopenfilename
-from tkinter.messagebox import showerror, showinfo, showwarning
+from tkinter.messagebox import askyesno, showerror, showinfo, showwarning
 from tkinter.scrolledtext import ScrolledText
 from tkinter.ttk import Button, Combobox, Entry, Frame, Label, LabelFrame, Notebook
 from webbrowser import open as open_browser
@@ -28,6 +28,7 @@ from runtime_paths import reports_directory, resource_directory
 
 PROJECT_ROOT = resource_directory()
 REPORTS_DIRECTORY = reports_directory(source_root=PROJECT_ROOT)
+OLLAMA_DOWNLOAD_URL = "https://ollama.com/download/mac"
 
 
 class TrustBenchDesktop:
@@ -242,10 +243,20 @@ class TrustBenchDesktop:
 
         self.model_name = StringVar(value="gemma3:1b")
 
-        Entry(
-            evaluation_frame,
+        model_controls = Frame(evaluation_frame)
+        model_controls.pack(fill="x", pady=(0, 10))
+        self.model_selector = Combobox(
+            model_controls,
             textvariable=self.model_name,
-        ).pack(fill="x", pady=(0, 10))
+            state="normal",
+        )
+        self.model_selector.pack(side="left", fill="x", expand=True)
+        self.refresh_models_button = Button(
+            model_controls,
+            text="Refresh Models",
+            command=self.check_ollama,
+        )
+        self.refresh_models_button.pack(side="left", padx=(8, 0))
 
         readiness_controls = Frame(evaluation_frame)
         readiness_controls.pack(fill="x", pady=(0, 6))
@@ -262,15 +273,23 @@ class TrustBenchDesktop:
         ).pack(side="left", padx=(8, 0))
         Button(
             readiness_controls,
-            text="Get Ollama",
+            text="Get Ollama (website)",
             command=self.open_ollama_download,
         ).pack(side="left", padx=(8, 0))
         self.ollama_status = StringVar(
-            value="Ollama not checked. Choose Check Ollama or Start Evaluation."
+            value="Choose Refresh Models to list models from Ollama on this computer. "
+            "You can also type a model name."
         )
         Label(
             evaluation_frame,
             textvariable=self.ollama_status,
+            wraplength=680,
+            justify="left",
+        ).pack(fill="x", pady=(0, 8))
+
+        Label(
+            evaluation_frame,
+            text=f"Official Ollama download: {OLLAMA_DOWNLOAD_URL}",
             wraplength=680,
             justify="left",
         ).pack(fill="x", pady=(0, 8))
@@ -356,16 +375,39 @@ class TrustBenchDesktop:
 
     def open_ollama_download(self):
         """Open the official download page only when the user requests it."""
-        return open_browser("https://ollama.com/download/mac")
+        if not askyesno(
+            "Open Ollama Website?",
+            "Open the official Ollama download page in your browser?\n\n"
+            f"{OLLAMA_DOWNLOAD_URL}\n\n"
+            "Ollama is separate software maintained by the Ollama project. "
+            "On its website, choose Download manually for the macOS installer. "
+            "TrustBench will not run an installer or a shell command.",
+            parent=self.root,
+        ):
+            return False
+        try:
+            opened = open_browser(OLLAMA_DOWNLOAD_URL)
+        except OSError:
+            opened = False
+        if not opened:
+            showerror(
+                "Browser Could Not Open",
+                f"Open this address in your browser: {OLLAMA_DOWNLOAD_URL}",
+                parent=self.root,
+            )
+        return opened
 
     def show_ollama_setup(self):
         """Explain separate setup without installing software or models."""
         showinfo(
             "Ollama Setup",
-            "1. Use Get Ollama to download the macOS app, then install and open it.\n"
-            "2. Choose a local model in Ollama and download it if needed. "
-            "Use the same model name here (the default is gemma3:1b).\n"
-            "3. Choose Check Ollama, then Start Evaluation.\n\n"
+            "1. Use Get Ollama (website) to open the official download page:\n"
+            f"{OLLAMA_DOWNLOAD_URL}\n"
+            "Choose Download manually for the macOS installer, then install and open it.\n"
+            "2. Choose a local model in Ollama and download it if needed.\n"
+            "3. In TrustBench, choose Refresh Models and select a model from the "
+            "dropdown. You can also type a model name.\n"
+            "4. Choose Start Evaluation.\n\n"
             "You can also download a model in Terminal: ollama pull gemma3:1b\n"
             "Model downloads need internet and disk space. TrustBench does not "
             "install Ollama or download models automatically.\n\n"
@@ -398,15 +440,13 @@ class TrustBenchDesktop:
         if self._evaluation_controls_busy():
             return False
         model = self.model_name.get().strip()
-        if not model:
-            showerror("Invalid Evaluation Settings", "Enter an Ollama model name.")
-            return False
         self.readiness_request_id += 1
         request_id = self.readiness_request_id
         self.readiness_pending = True
         self.pending_readiness_command = command
         self.start_button.configure(state="disabled")
         self.check_ollama_button.configure(state="disabled")
+        self.refresh_models_button.configure(state="disabled")
         self.ollama_status.set("Checking Ollama and the selected model...")
         worker = Thread(
             target=self._check_ollama_worker, args=(request_id, model), daemon=True,
@@ -418,6 +458,7 @@ class TrustBenchDesktop:
             self.pending_readiness_command = None
             self.start_button.configure(state="normal")
             self.check_ollama_button.configure(state="normal")
+            self.refresh_models_button.configure(state="normal")
             self.ollama_status.set(
                 "Could not start the Ollama check. Please try again."
             )
@@ -428,7 +469,10 @@ class TrustBenchDesktop:
     def _check_ollama_worker(self, request_id, model):
         """Only enqueue data here; every Tkinter operation stays on its thread."""
         try:
-            result = check_ollama_readiness(model)
+            result = (
+                check_ollama_readiness(model) if model
+                else check_ollama_readiness(model, allow_empty=True)
+            )
         except Exception:
             result = OllamaReadiness(
                 "CHECK_FAILED", model, "Could not verify Ollama. Please check again.",
@@ -447,8 +491,10 @@ class TrustBenchDesktop:
         self.readiness_pending = False
         self.start_button.configure(state="normal")
         self.check_ollama_button.configure(state="normal")
+        self.refresh_models_button.configure(state="normal")
         if self.close_requested:
             return
+        self.model_selector.configure(values=result.models or ())
         if model != self.model_name.get().strip():
             self.ollama_status.set("The model changed. Choose Check Ollama again.")
             return
@@ -513,6 +559,7 @@ class TrustBenchDesktop:
 
         self.start_button.configure(state="disabled")
         self.check_ollama_button.configure(state="disabled")
+        self.refresh_models_button.configure(state="disabled")
         self.stop_button.configure(state="normal")
 
         self.evaluation_display.configure(state="normal")
@@ -840,6 +887,9 @@ class TrustBenchDesktop:
 
         if not self.window_closed:
             self.check_ollama_button.configure(
+                state=("disabled" if self._evaluation_controls_busy() else "normal")
+            )
+            self.refresh_models_button.configure(
                 state=("disabled" if self._evaluation_controls_busy() else "normal")
             )
         if self.evaluation_running or self.shutdown_pending or self.readiness_pending:
