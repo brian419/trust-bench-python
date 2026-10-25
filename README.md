@@ -226,7 +226,8 @@ macOS with Python 3.12.12: **389 passed in 5.63 seconds**. Manual checks confirm
 offline evaluation, scorer comparison, local Ollama live/consistency/injection
 execution and report saving, readable report generation, and GUI report
 browsing, command preview, start/stop/restart, comparison and normal closure.
-The standalone report-comparison CLI smoke test remains pending. No merge into
+The standalone report-comparison CLI also passed: two unchanged cases,
+zero regressions and zero new errors, with expected missing-metadata warnings. No merge into
 `feature/milestone-5` or `main` is recorded at this checkpoint; 5F remains open.
 
 ## Offline input format

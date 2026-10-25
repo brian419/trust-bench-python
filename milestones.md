@@ -492,9 +492,13 @@ at `3b1ef80`. Implementation commits: `f179ae3` (core code and tests) and
 - The screenshots show two unchanged cases when comparing the completed CLI
   and GUI reports. The displayed `PARTIAL_MATCH` warning identifies missing
   generation options and model-version metadata; it is not an import error.
-- Remaining validation: run the standalone `compare_reports.py` CLI on the
-  completed CLI and GUI reports. Merge into `feature/milestone-5` requires the
-  user's explicit approval. This refactor does not complete Milestone 5F.
+- Final user CLI validation: `compare_reports.py` compared the completed CLI
+  and GUI reports with 2 unchanged cases, 0 regressions, 0 new errors and no
+  added or removed cases. `PARTIAL_MATCH` warnings identified unrecorded
+  generation options and unknown model versions. All planned refactor smoke
+  checks are now complete.
+- Merge into `feature/milestone-5` still requires the user's explicit approval.
+  This refactor does not complete Milestone 5F.
 
 After integration, review Milestone 5A–5E for correctness, missing requirements,
 documentation consistency and release blockers before implementing 5F packaging,
