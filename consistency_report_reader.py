@@ -1,5 +1,5 @@
-import hashlib
-import json
+from hashlib import sha256
+from json import loads
 from pathlib import Path
 
 
@@ -9,12 +9,12 @@ def load_verified_report(
 ) -> dict:
     raw_data = report_path.read_bytes()
 
-    actual_sha256 = hashlib.sha256(raw_data).hexdigest()
+    actual_sha256 = sha256(raw_data).hexdigest()
 
     if actual_sha256 != expected_sha256:
         raise ValueError("Report SHA-256 mismatch.")
 
-    report = json.loads(raw_data)
+    report = loads(raw_data)
 
     if not isinstance(report, dict):
         raise ValueError("Report must be a JSON object.")

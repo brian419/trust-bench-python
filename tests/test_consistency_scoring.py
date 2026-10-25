@@ -1,4 +1,4 @@
-import pytest
+from pytest import raises
 
 from consistency_scoring import score_consistency_responses
 
@@ -88,7 +88,7 @@ def test_unknown_status():
         }
     ]
 
-    with pytest.raises(ValueError, match="Unknown attempt status"):
+    with raises(ValueError, match="Unknown attempt status"):
         score_consistency_responses(attempts, "Paris")
 
 
@@ -101,5 +101,5 @@ def test_invalid_generated_response():
         }
     ]
 
-    with pytest.raises(ValueError, match="Generated response"):
+    with raises(ValueError, match="Generated response"):
         score_consistency_responses(attempts, "Paris")

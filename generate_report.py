@@ -1,10 +1,11 @@
 """Generate readable TrustBench reports from saved evaluations."""
 
-import argparse
-import json
+from argparse import ArgumentParser
+from json import JSONDecodeError
 from pathlib import Path
-from report_loader import load_report
+
 from report_formatter import format_live_report
+from report_loader import load_report
 
 
 def generate_text_report(filename: str) -> str:
@@ -65,7 +66,7 @@ def generate_text_report(filename: str) -> str:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
+    parser = ArgumentParser(
         description="Generate a readable TrustBench evaluation report."
     )
 
@@ -85,7 +86,7 @@ def main() -> None:
         output = generate_text_report(args.report)
     except FileNotFoundError as error:
         parser.error(f"Report file not found: {error.filename}")
-    except json.JSONDecodeError as error:
+    except JSONDecodeError as error:
         parser.error(
             f"Invalid JSON report: {error.msg} "
             f"(line {error.lineno}, column {error.colno})"

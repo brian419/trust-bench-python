@@ -1,15 +1,15 @@
-import json
-import argparse
-import sys
+from argparse import ArgumentParser
+from json import JSONDecodeError, load
 from pathlib import Path
+from sys import exit, stderr
 
-from eval import compare_answers
 from answer_scorer import score_answer
+from eval import compare_answers
 
 
 def compare_scorers(filename="scoring-examples.json"):
     with Path(filename).open("r", encoding="utf-8") as file:
-        examples = json.load(file)
+        examples = load(file)
 
     results = []
     exact_passes = 0
@@ -69,7 +69,7 @@ def compare_scorers(filename="scoring-examples.json"):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
+    parser = ArgumentParser(
         description="Compare exact and alternative answer scoring."
     )
     parser.add_argument(
@@ -83,6 +83,6 @@ if __name__ == "__main__":
 
     try:
         compare_scorers(args.dataset)
-    except (OSError, json.JSONDecodeError) as error:
-        print(f"Error reading scoring dataset: {error}", file=sys.stderr)
-        sys.exit(1)
+    except (OSError, JSONDecodeError) as error:
+        print(f"Error reading scoring dataset: {error}", file=stderr)
+        exit(1)

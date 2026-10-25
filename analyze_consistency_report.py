@@ -1,6 +1,6 @@
-import json
 from collections import Counter
 from datetime import datetime, timezone
+from json import dump
 from pathlib import Path
 from uuid import uuid4
 
@@ -108,7 +108,7 @@ def main(
     output_path = output_dir / f"consistency-analysis-{uuid4().hex}.json"
 
     with output_path.open("x", encoding="utf-8") as file:
-        json.dump(analysis, file, indent=2, ensure_ascii=False)
+        dump(analysis, file, indent=2, ensure_ascii=False)
         file.write("\n")
 
     print(f"Saved analyzed report: {output_path}")

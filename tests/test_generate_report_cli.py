@@ -1,7 +1,6 @@
-import json
-import sys
+from json import dumps
 
-import pytest
+from pytest import raises
 
 from generate_report import generate_text_report, main
 
@@ -36,7 +35,7 @@ def test_generate_text_report(tmp_path):
     report_path = tmp_path / "evaluation.json"
 
     report_path.write_text(
-        json.dumps(make_live_report()),
+        dumps(make_live_report()),
         encoding="utf-8",
     )
 
@@ -53,13 +52,12 @@ def test_generate_report_cli_prints_output(tmp_path, monkeypatch, capsys):
     report_path = tmp_path / "evaluation.json"
 
     report_path.write_text(
-        json.dumps(make_live_report()),
+        dumps(make_live_report()),
         encoding="utf-8",
     )
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         ["generate_report.py", str(report_path)],
     )
 
@@ -76,12 +74,11 @@ def test_generate_report_cli_rejects_invalid_json(tmp_path, monkeypatch, capsys)
     report_path.write_text("{invalid-json", encoding="utf-8")
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         ["generate_report.py", str(report_path)],
     )
 
-    with pytest.raises(SystemExit) as error:
+    with raises(SystemExit) as error:
         main()
 
     assert error.value.code == 2
@@ -105,11 +102,11 @@ def test_generate_report_rejects_non_live_report(tmp_path):
     }
 
     report_path.write_text(
-        json.dumps(report),
+        dumps(report),
         encoding="utf-8",
     )
 
-    with pytest.raises(ValueError, match="requires a recognized live-evaluation"):
+    with raises(ValueError, match="requires a recognized live-evaluation"):
         generate_text_report(str(report_path))
 
 
@@ -118,13 +115,12 @@ def test_generate_report_cli_saves_text_file(tmp_path, monkeypatch, capsys):
     output_path = tmp_path / "summary.txt"
 
     report_path.write_text(
-        json.dumps(make_live_report()),
+        dumps(make_live_report()),
         encoding="utf-8",
     )
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         [
             "generate_report.py",
             str(report_path),
@@ -152,7 +148,7 @@ def test_generate_report_cli_refuses_to_overwrite(tmp_path, monkeypatch, capsys)
     output_path = tmp_path / "summary.txt"
 
     report_path.write_text(
-        json.dumps(make_live_report()),
+        dumps(make_live_report()),
         encoding="utf-8",
     )
 
@@ -162,8 +158,7 @@ def test_generate_report_cli_refuses_to_overwrite(tmp_path, monkeypatch, capsys)
     )
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         [
             "generate_report.py",
             str(report_path),
@@ -172,7 +167,7 @@ def test_generate_report_cli_refuses_to_overwrite(tmp_path, monkeypatch, capsys)
         ],
     )
 
-    with pytest.raises(SystemExit) as error:
+    with raises(SystemExit) as error:
         main()
 
     assert error.value.code == 2
@@ -188,13 +183,12 @@ def test_generate_report_cli_rejects_missing_output_directory(
     output_path = tmp_path / "missing-directory" / "summary.txt"
 
     report_path.write_text(
-        json.dumps(make_live_report()),
+        dumps(make_live_report()),
         encoding="utf-8",
     )
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         [
             "generate_report.py",
             str(report_path),
@@ -203,7 +197,7 @@ def test_generate_report_cli_rejects_missing_output_directory(
         ],
     )
 
-    with pytest.raises(SystemExit) as error:
+    with raises(SystemExit) as error:
         main()
 
     assert error.value.code == 2
@@ -218,7 +212,7 @@ def test_generate_text_report_supports_legacy_live_report(tmp_path):
     del report["metadata"]["provenance"]
 
     report_path.write_text(
-        json.dumps(report),
+        dumps(report),
         encoding="utf-8",
     )
 
@@ -238,11 +232,11 @@ def test_generate_text_report_rejects_missing_live_metadata(tmp_path):
     del report["metadata"]["dataset"]
 
     report_path.write_text(
-        json.dumps(report),
+        dumps(report),
         encoding="utf-8",
     )
 
-    with pytest.raises(ValueError, match="recognized live-evaluation"):
+    with raises(ValueError, match="recognized live-evaluation"):
         generate_text_report(str(report_path))
 
 
@@ -253,11 +247,11 @@ def test_generate_text_report_rejects_missing_result_fields(tmp_path):
     del report["results"][0]["expected"]
 
     report_path.write_text(
-        json.dumps(report),
+        dumps(report),
         encoding="utf-8",
     )
 
-    with pytest.raises(ValueError, match="missing required fields"):
+    with raises(ValueError, match="missing required fields"):
         generate_text_report(str(report_path))
 
 
@@ -267,9 +261,9 @@ def test_generate_text_report_rejects_invalid_expected_type(tmp_path):
     report = make_live_report()
     report["results"][0]["expected"] = 4
 
-    report_path.write_text(json.dumps(report), encoding="utf-8")
+    report_path.write_text(dumps(report), encoding="utf-8")
 
-    with pytest.raises(ValueError, match="field 'expected'"):
+    with raises(ValueError, match="field 'expected'"):
         generate_text_report(str(report_path))
 
 
@@ -279,7 +273,7 @@ def test_generate_text_report_rejects_missing_generated_response(tmp_path):
     report = make_live_report()
     del report["results"][0]["generated"]
 
-    report_path.write_text(json.dumps(report), encoding="utf-8")
+    report_path.write_text(dumps(report), encoding="utf-8")
 
-    with pytest.raises(ValueError, match="string generated response"):
+    with raises(ValueError, match="string generated response"):
         generate_text_report(str(report_path))

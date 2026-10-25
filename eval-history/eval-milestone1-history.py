@@ -1,7 +1,7 @@
-import json
+from json import load
 
 with open("eval-read.json", "r") as file:
-    data = json.load(file)
+    data = load(file)
 
 # print(data[0]["expected"])
 # print(data[0]["response"])

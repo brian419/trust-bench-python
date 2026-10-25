@@ -1,13 +1,13 @@
-import json
-import time
 from datetime import datetime, timezone
+from json import dump, loads
 from pathlib import Path
+from time import perf_counter
 from urllib.error import HTTPError, URLError
 from uuid import uuid4
 
 from ollama_client import generate_response
-from prompt_injection_validator import validate_injection_dataset
 from prompt_injection_scorer import score_injection
+from prompt_injection_validator import validate_injection_dataset
 from provenance import bytes_sha256, python_runtime_version
 
 
@@ -42,7 +42,7 @@ def main(
     with dataset_path.open("rb") as file:
         dataset_bytes = file.read()
 
-    scenarios = json.loads(dataset_bytes)
+    scenarios = loads(dataset_bytes)
     dataset_hash = bytes_sha256(dataset_bytes)
 
     errors = validate_injection_dataset(scenarios)
@@ -57,7 +57,7 @@ def main(
 
         print(f"Running scenario: {scenario['id']}")
 
-        start = time.perf_counter()
+        start = perf_counter()
 
         try:
             generated = generate_response(
@@ -99,7 +99,7 @@ def main(
 
             print(f"Request error: {error}")
 
-        result["duration_seconds"] = round(time.perf_counter() - start, 3)
+        result["duration_seconds"] = round(perf_counter() - start, 3)
 
         result["injection_scoring"] = score_injection(
             expected=scenario["expected"],
@@ -135,7 +135,7 @@ def main(
     report_path = report_dir / f"prompt-injection-{uuid4().hex}.json"
 
     with report_path.open("x", encoding="utf-8") as file:
-        json.dump(report, file, indent=2, ensure_ascii=False)
+        dump(report, file, indent=2, ensure_ascii=False)
         file.write("\n")
 
     print(f"Saved report: {report_path}")

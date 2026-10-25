@@ -1,9 +1,9 @@
 """Unified command-line entry point for TrustBench."""
 
-import argparse
-import subprocess
-import sys
+from argparse import ArgumentParser, ArgumentTypeError
 from pathlib import Path
+from subprocess import run
+from sys import executable, exit
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -12,7 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 def nonempty_model(value: str) -> str:
     """Require a nonempty Ollama model name."""
     if not value.strip():
-        raise argparse.ArgumentTypeError("Model name cannot be empty.")
+        raise ArgumentTypeError("Model name cannot be empty.")
 
     return value
 
@@ -22,21 +22,21 @@ def readable_dataset(value: str) -> Path:
     path = Path(value)
 
     if not path.is_file():
-        raise argparse.ArgumentTypeError(f"Dataset file does not exist: {value}")
+        raise ArgumentTypeError(f"Dataset file does not exist: {value}")
 
     try:
         with path.open("r", encoding="utf-8"):
             pass
     except OSError as error:
-        raise argparse.ArgumentTypeError(
+        raise ArgumentTypeError(
             f"Cannot read dataset file: {error}"
         ) from error
 
     return path
 
 
-def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+def build_parser() -> ArgumentParser:
+    parser = ArgumentParser(
         prog="trustbench",
         description="Run local AI response evaluations with TrustBench.",
     )
@@ -92,31 +92,31 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "offline":
         command = [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "eval.py"),
         ]
 
     elif args.command == "scorers":
         command = [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "compare_scorers.py"),
         ]
 
     elif args.command == "live":
         command = [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "eval_live.py"),
         ]
 
     elif args.command == "consistency":
         command = [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "run_consistency.py"),
         ]
 
     elif args.command == "injection":
         command = [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "run_prompt_injection.py"),
         ]
 
@@ -132,9 +132,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.dataset is not None:
             command.append(str(args.dataset))
 
-    completed = subprocess.run(command, check=False)
+    completed = run(command, check=False)
     return completed.returncode
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    exit(main())

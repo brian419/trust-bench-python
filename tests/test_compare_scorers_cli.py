@@ -1,7 +1,7 @@
-import json
-import subprocess
-import sys
+from json import dumps
 from pathlib import Path
+from subprocess import run
+from sys import executable
 
 
 SCRIPT = Path(__file__).resolve().parent.parent / "compare_scorers.py"
@@ -10,7 +10,7 @@ SCRIPT = Path(__file__).resolve().parent.parent / "compare_scorers.py"
 def test_custom_dataset_used(tmp_path):
     dataset = tmp_path / "custom.json"
     dataset.write_text(
-        json.dumps(
+        dumps(
             [
                 {
                     "id": "custom_001",
@@ -24,8 +24,8 @@ def test_custom_dataset_used(tmp_path):
         encoding="utf-8",
     )
 
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), str(dataset)],
+    result = run(
+        [executable, str(SCRIPT), str(dataset)],
         capture_output=True,
         text=True,
         check=False,
@@ -39,8 +39,8 @@ def test_custom_dataset_used(tmp_path):
 def test_missing_dataset_returns_failure(tmp_path):
     missing = tmp_path / "missing.json"
 
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), str(missing)],
+    result = run(
+        [executable, str(SCRIPT), str(missing)],
         capture_output=True,
         text=True,
         check=False,
@@ -56,8 +56,8 @@ def test_malformed_dataset_returns_clean_error(tmp_path):
     dataset = tmp_path / "invalid.json"
     dataset.write_text('{"broken": ', encoding="utf-8")
 
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), str(dataset)],
+    result = run(
+        [executable, str(SCRIPT), str(dataset)],
         capture_output=True,
         text=True,
         check=False,

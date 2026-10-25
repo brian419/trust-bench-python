@@ -1,9 +1,9 @@
-import pytest
+from pytest import raises
 
 from report_summary import (
-    summarize_live_report,
-    extract_failure_examples,
     build_live_report_summary,
+    extract_failure_examples,
+    summarize_live_report,
 )
 
 
@@ -56,7 +56,7 @@ def test_summarize_all_errors():
 def test_reject_invalid_results():
     report = {"results": "invalid"}
 
-    with pytest.raises(ValueError, match="results list"):
+    with raises(ValueError, match="results list"):
         summarize_live_report(report)
 
 
@@ -67,7 +67,7 @@ def test_reject_unknown_status():
         ]
     }
 
-    with pytest.raises(ValueError, match="Unknown result status"):
+    with raises(ValueError, match="Unknown result status"):
         summarize_live_report(report)
 
 
@@ -146,7 +146,7 @@ def test_extract_failure_examples_rejects_invalid_status():
         ]
     }
 
-    with pytest.raises(ValueError, match="Unknown result status"):
+    with raises(ValueError, match="Unknown result status"):
         extract_failure_examples(report)
 
 
@@ -211,5 +211,5 @@ def test_build_live_report_summary_rejects_invalid_metadata():
         "results": [],
     }
 
-    with pytest.raises(ValueError, match="metadata must be an object"):
+    with raises(ValueError, match="metadata must be an object"):
         build_live_report_summary(report)

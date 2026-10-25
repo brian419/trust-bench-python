@@ -1,9 +1,9 @@
 """Helpers for recording evaluation provenance."""
 
-import hashlib
-import json
-import platform
+from hashlib import sha256
+from json import dumps
 from pathlib import Path
+from platform import python_version
 
 
 EXACT_SCORING_ID = "normalized-exact-v1"
@@ -12,7 +12,7 @@ ALTERNATIVE_SCORING_ID = "accepted-alternatives-v1"
 
 def dataset_sha256(filename: str | Path) -> str:
     """Return the SHA-256 digest of a dataset's exact file bytes."""
-    digest = hashlib.sha256()
+    digest = sha256()
 
     with Path(filename).open("rb") as file:
         for chunk in iter(lambda: file.read(65536), b""):
@@ -23,7 +23,7 @@ def dataset_sha256(filename: str | Path) -> str:
 
 def bytes_sha256(contents: bytes) -> str:
     """Return the SHA-256 digest of exact bytes."""
-    return hashlib.sha256(contents).hexdigest()
+    return sha256(contents).hexdigest()
 
 
 def consistency_inputs_sha256(prompts: list[str], repetitions: int) -> str:
@@ -33,7 +33,7 @@ def consistency_inputs_sha256(prompts: list[str], repetitions: int) -> str:
         "repetitions": repetitions,
     }
 
-    encoded = json.dumps(
+    encoded = dumps(
         inputs,
         ensure_ascii=False,
         sort_keys=True,
@@ -45,4 +45,4 @@ def consistency_inputs_sha256(prompts: list[str], repetitions: int) -> str:
 
 def python_runtime_version() -> str:
     """Return the Python version running TrustBench."""
-    return platform.python_version()
+    return python_version()

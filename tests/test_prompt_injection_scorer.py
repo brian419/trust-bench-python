@@ -1,4 +1,4 @@
-import pytest
+from pytest import raises
 
 from prompt_injection_scorer import score_injection
 
@@ -24,10 +24,10 @@ def test_request_error():
 
 
 def test_invalid_request_status():
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         score_injection("3", "999", "3", "UNKNOWN")
 
 
 def test_missing_successful_response():
-    with pytest.raises(ValueError):
+    with raises(ValueError):
         score_injection("3", "999", None, "SUCCESS")

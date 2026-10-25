@@ -1,15 +1,15 @@
-import pytest
+from pytest import mark, raises
 
 from report_comparison import (
     classify_status_change,
-    index_results_by_id,
-    compare_live_results,
-    summarize_live_comparison,
     compare_live_reports,
+    compare_live_results,
+    index_results_by_id,
+    summarize_live_comparison,
 )
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "previous,current,expected",
     [
         ("PASS", "PASS", "UNCHANGED"),
@@ -28,12 +28,12 @@ def test_classify_status_change(previous, current, expected):
 
 
 def test_invalid_previous_status():
-    with pytest.raises(ValueError, match="Unknown previous status"):
+    with raises(ValueError, match="Unknown previous status"):
         classify_status_change("UNKNOWN", "PASS")
 
 
 def test_invalid_current_status():
-    with pytest.raises(ValueError, match="Unknown current status"):
+    with raises(ValueError, match="Unknown current status"):
         classify_status_change("PASS", "UNKNOWN")
 
 
@@ -59,19 +59,19 @@ def test_duplicate_case_ids_are_rejected():
         {"id": "fact_001", "status": "FAIL"},
     ]
 
-    with pytest.raises(ValueError, match="Duplicate case ID"):
+    with raises(ValueError, match="Duplicate case ID"):
         index_results_by_id(results)
 
 
 def test_missing_case_id_is_rejected():
     results = [{"status": "PASS"}]
 
-    with pytest.raises(ValueError, match="non-empty string ID"):
+    with raises(ValueError, match="non-empty string ID"):
         index_results_by_id(results)
 
 
 def test_invalid_results_list_is_rejected():
-    with pytest.raises(ValueError, match="Results must be a list"):
+    with raises(ValueError, match="Results must be a list"):
         index_results_by_id({"id": "fact_001"})
 
 
@@ -150,7 +150,7 @@ def test_added_case_with_invalid_status_is_rejected():
         {"id": "fact_001", "status": "UNKNOWN"},
     ]
 
-    with pytest.raises(ValueError, match="Invalid current status"):
+    with raises(ValueError, match="Invalid current status"):
         compare_live_results(previous, current)
 
 
@@ -161,7 +161,7 @@ def test_removed_case_with_invalid_status_is_rejected():
 
     current = []
 
-    with pytest.raises(ValueError, match="Invalid previous status"):
+    with raises(ValueError, match="Invalid previous status"):
         compare_live_results(previous, current)
 
 
@@ -172,7 +172,7 @@ def test_added_case_with_missing_status_is_rejected():
         {"id": "fact_001"},
     ]
 
-    with pytest.raises(ValueError, match="Invalid current status"):
+    with raises(ValueError, match="Invalid current status"):
         compare_live_results(previous, current)
 
 
@@ -183,7 +183,7 @@ def test_removed_case_with_missing_status_is_rejected():
 
     current = []
 
-    with pytest.raises(ValueError, match="Invalid previous status"):
+    with raises(ValueError, match="Invalid previous status"):
         compare_live_results(previous, current)
 
 
@@ -233,7 +233,7 @@ def test_summarize_unknown_change_is_rejected():
         {"id": "fact_001", "change": "UNKNOWN"},
     ]
 
-    with pytest.raises(ValueError, match="Unknown comparison change"):
+    with raises(ValueError, match="Unknown comparison change"):
         summarize_live_comparison(comparisons)
 
 
@@ -286,7 +286,7 @@ def test_compare_live_reports_rejects_different_datasets():
         dataset_hash="b" * 64,
     )
 
-    with pytest.raises(ValueError, match="Reports cannot be compared"):
+    with raises(ValueError, match="Reports cannot be compared"):
         compare_live_reports(previous, current)
 
 
@@ -326,7 +326,7 @@ def test_compare_live_reports_rejects_consistency_reports():
         "results": [],
     }
 
-    with pytest.raises(ValueError, match="requires two live-evaluation"):
+    with raises(ValueError, match="requires two live-evaluation"):
         compare_live_reports(report, report)
 
 
@@ -345,7 +345,7 @@ def test_compare_live_reports_rejects_injection_reports():
         "results": [],
     }
 
-    with pytest.raises(ValueError, match="requires two live-evaluation"):
+    with raises(ValueError, match="requires two live-evaluation"):
         compare_live_reports(report, report)
 
 
@@ -368,7 +368,7 @@ def test_compare_live_reports_rejects_mixed_report_types():
         "results": [],
     }
 
-    with pytest.raises(ValueError, match="requires two live-evaluation"):
+    with raises(ValueError, match="requires two live-evaluation"):
         compare_live_reports(live_report, injection_report)
 
 
@@ -378,7 +378,7 @@ def test_compare_live_reports_rejects_missing_previous_results():
 
     del previous["results"]
 
-    with pytest.raises(ValueError, match="previous report must contain"):
+    with raises(ValueError, match="previous report must contain"):
         compare_live_reports(previous, current)
 
 
@@ -388,7 +388,7 @@ def test_compare_live_reports_rejects_missing_current_results():
 
     del current["results"]
 
-    with pytest.raises(ValueError, match="current report must contain"):
+    with raises(ValueError, match="current report must contain"):
         compare_live_reports(previous, current)
 
 
@@ -398,7 +398,7 @@ def test_compare_live_reports_rejects_invalid_previous_results():
 
     previous["results"] = {}
 
-    with pytest.raises(ValueError, match="previous report must contain"):
+    with raises(ValueError, match="previous report must contain"):
         compare_live_reports(previous, current)
 
 
@@ -408,5 +408,5 @@ def test_compare_live_reports_rejects_invalid_current_results():
 
     current["results"] = "invalid"
 
-    with pytest.raises(ValueError, match="current report must contain"):
+    with raises(ValueError, match="current report must contain"):
         compare_live_reports(previous, current)

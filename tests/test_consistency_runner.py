@@ -1,7 +1,7 @@
 from unittest.mock import patch
 from urllib.error import URLError
 
-import pytest
+from pytest import mark, raises
 
 from consistency_runner import run_consistency_experiment
 
@@ -46,7 +46,7 @@ def test_request_error():
     assert results[0]["consistency"]["consistent"] is True
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "prompts, repetitions",
     [
         ([], 3),
@@ -60,7 +60,7 @@ def test_request_error():
 def test_invalid_experiment(prompts, repetitions):
     with (
         patch("consistency_runner.generate_response") as mock_generate,
-        pytest.raises(ValueError),
+        raises(ValueError),
     ):
         run_consistency_experiment(prompts, repetitions)
 
@@ -70,7 +70,7 @@ def test_invalid_experiment(prompts, repetitions):
 def test_invalid_model():
     with (
         patch("consistency_runner.generate_response") as mock_generate,
-        pytest.raises(ValueError, match="Model must"),
+        raises(ValueError, match="Model must"),
     ):
         run_consistency_experiment(
             ["What is the capital of France?"],
@@ -86,7 +86,7 @@ def test_invalid_model_response():
             "consistency_runner.generate_response",
             return_value=None,
         ),
-        pytest.raises(TypeError, match="Model response"),
+        raises(TypeError, match="Model response"),
     ):
         run_consistency_experiment(["What is the capital of France?"])
 
@@ -118,7 +118,7 @@ def test_generation_options_forwarded():
 def test_invalid_generation_options():
     with (
         patch("consistency_runner.generate_response") as mock_generate,
-        pytest.raises(ValueError, match="Options must"),
+        raises(ValueError, match="Options must"),
     ):
         run_consistency_experiment(
             ["What is the capital of France?"],
@@ -128,13 +128,13 @@ def test_invalid_generation_options():
     mock_generate.assert_not_called()
 
 
-@pytest.mark.parametrize("invalid_response", [None, 123, {"response": "hello"}])
+@mark.parametrize("invalid_response", [None, 123, {"response": "hello"}])
 def test_invalid_model_response_type_raises(invalid_response):
     with patch(
         "consistency_runner.generate_response",
         return_value=invalid_response,
     ):
-        with pytest.raises(
+        with raises(
             TypeError,
             match="Model response must be a string",
         ):

@@ -1,11 +1,12 @@
-import hashlib
-import platform
-import pytest
+from hashlib import sha256
+from platform import python_version
+
+from pytest import raises
 
 from provenance import (
     bytes_sha256,
-    dataset_sha256,
     consistency_inputs_sha256,
+    dataset_sha256,
     python_runtime_version,
 )
 
@@ -16,7 +17,7 @@ def test_dataset_sha256_matches_known_digest(tmp_path):
 
     dataset.write_bytes(contents)
 
-    expected = hashlib.sha256(contents).hexdigest()
+    expected = sha256(contents).hexdigest()
 
     assert dataset_sha256(dataset) == expected
 
@@ -49,14 +50,14 @@ def test_modified_dataset_changes_hash(tmp_path):
 def test_missing_dataset_raises_file_not_found(tmp_path):
     missing = tmp_path / "missing.json"
 
-    with pytest.raises(FileNotFoundError):
+    with raises(FileNotFoundError):
         dataset_sha256(missing)
 
 
 def test_bytes_sha256_matches_known_digest():
     contents = b'{"expected": "Paris"}'
 
-    assert bytes_sha256(contents) == hashlib.sha256(contents).hexdigest()
+    assert bytes_sha256(contents) == sha256(contents).hexdigest()
 
 
 def test_bytes_sha256_detects_whitespace_changes():
@@ -91,4 +92,4 @@ def test_consistency_inputs_change_when_repetitions_change():
 
 
 def test_python_runtime_version_matches_environment():
-    assert python_runtime_version() == platform.python_version()
+    assert python_runtime_version() == python_version()

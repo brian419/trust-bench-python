@@ -1,9 +1,6 @@
 from unittest.mock import patch
 
-from comparison_formatter import (
-    format_comparison,
-    generate_comparison_text,
-)
+from comparison_formatter import format_comparison, generate_comparison_text
 
 
 def make_comparison():

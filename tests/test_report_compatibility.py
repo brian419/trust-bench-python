@@ -1,17 +1,16 @@
-import pytest
-import hashlib
+from hashlib import sha256
 
 from report_compatibility import (
     compare_input_fingerprints,
-    detect_report_type,
+    compare_model_configuration,
     compare_report_compatibility,
     compare_scoring_rules,
-    compare_model_configuration,
+    detect_report_type,
 )
 
 
 def fingerprint(value: str) -> str:
-    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+    return sha256(value.encode("utf-8")).hexdigest()
 
 
 def make_report(fingerprint_key=None, fingerprint=None):

@@ -1,5 +1,5 @@
-import json
-import sys
+from json import JSONDecodeError, load
+from sys import argv, exit
 
 def compare_answers(expected: str, response: str) -> bool:
     return expected.lower().strip() == response.lower().strip()
@@ -51,18 +51,18 @@ def validate_dataset(data: object, require_response: bool = True) -> list[str]:
 if __name__ == "__main__":
     filename = "eval-read-valid.json"
 
-    if len(sys.argv) > 1:
-        filename = sys.argv[1]
+    if len(argv) > 1:
+        filename = argv[1]
 
     try:
         with open(filename, "r") as file:
-            data = json.load(file)
+            data = load(file)
     except FileNotFoundError as e:
         print("Error:", e)
-        sys.exit(1)
-    except json.JSONDecodeError as e:
+        exit(1)
+    except JSONDecodeError as e:
         print("Error:", e)
-        sys.exit(1)
+        exit(1)
 
     validation_errors = validate_dataset(data)
 
@@ -71,7 +71,7 @@ if __name__ == "__main__":
             print(error)
 
         print("Validation failed:", len(validation_errors), "error(s) found.")
-        sys.exit(1)
+        exit(1)
 
     passed_count = 0
     failed_count = 0

@@ -1,22 +1,22 @@
-import argparse
-import sys
-import json
-import time
-import uuid
-from eval import validate_dataset, compare_answers, calculate_accuracy
-from reference_validator import validate_reference_dataset
-from answer_scorer import score_answer
-from ollama_client import generate_response
-from urllib.error import HTTPError, URLError
+from argparse import ArgumentParser
 from datetime import datetime, timezone
+from json import dump, JSONDecodeError, loads
 from pathlib import Path
+from sys import exit
+from time import perf_counter
+from urllib.error import HTTPError, URLError
+from uuid import uuid4
 
+from answer_scorer import score_answer
+from eval import calculate_accuracy, compare_answers, validate_dataset
+from ollama_client import generate_response
 from provenance import (
+    ALTERNATIVE_SCORING_ID,
     bytes_sha256,
     EXACT_SCORING_ID,
-    ALTERNATIVE_SCORING_ID,
     python_runtime_version,
 )
+from reference_validator import validate_reference_dataset
 
 
 def main(filename="eval-read-live.json", model="gemma3:1b"):
@@ -26,16 +26,16 @@ def main(filename="eval-read-live.json", model="gemma3:1b"):
         with open(filename, "rb") as file:
             dataset_bytes = file.read()
 
-        data = json.loads(dataset_bytes)
+        data = loads(dataset_bytes)
         dataset_hash = bytes_sha256(dataset_bytes)
 
     except FileNotFoundError as e:
         print("Error:", e)
-        sys.exit(1)
+        exit(1)
 
-    except json.JSONDecodeError as e:
+    except JSONDecodeError as e:
         print("Error:", e)
-        sys.exit(1)
+        exit(1)
 
     if is_reference_dataset:
         validation_errors = validate_reference_dataset(data)
@@ -45,7 +45,7 @@ def main(filename="eval-read-live.json", model="gemma3:1b"):
     if validation_errors:
         for error in validation_errors:
             print(error)
-        sys.exit(1)
+        exit(1)
     else:
         print("Live dataset validation passed!")
 
@@ -79,7 +79,7 @@ def main(filename="eval-read-live.json", model="gemma3:1b"):
     for item in data:
         print("Test ID:", item["id"])
 
-        request_start = time.perf_counter()
+        request_start = perf_counter()
         result = None
 
         try:
@@ -146,7 +146,7 @@ def main(filename="eval-read-live.json", model="gemma3:1b"):
             continue
 
         finally:
-            request_duration = time.perf_counter() - request_start
+            request_duration = perf_counter() - request_start
             print("Request duration:", round(request_duration, 3), "seconds")
 
             if result is not None:
@@ -206,18 +206,18 @@ def main(filename="eval-read-live.json", model="gemma3:1b"):
     report = {"metadata": metadata, "summary": summary, "results": results}
 
     reports_dir = Path("reports")
-    report_filename = f"evaluation-{uuid.uuid4().hex}.json"
+    report_filename = f"evaluation-{uuid4().hex}.json"
     report_path = reports_dir / report_filename
 
     try:
         reports_dir.mkdir(parents=True, exist_ok=True)
 
         with report_path.open("x", encoding="utf-8") as file:
-            json.dump(report, file, indent=4)
+            dump(report, file, indent=4)
 
     except OSError as e:
         print("Error saving report:", e)
-        sys.exit(1)
+        exit(1)
 
     print("Report saved to:", report_path)
 
@@ -235,7 +235,7 @@ def main(filename="eval-read-live.json", model="gemma3:1b"):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
+    parser = ArgumentParser(
         description="Evaluate answers using a local Ollama model."
     )
     parser.add_argument(

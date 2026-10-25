@@ -1,10 +1,10 @@
 """Command-line interface for comparing TrustBench reports."""
 
-import argparse
-import json
+from argparse import ArgumentParser
+from json import JSONDecodeError
 
-from report_loader import load_report
 from report_comparison import compare_live_reports
+from report_loader import load_report
 
 
 def compare_report_files(previous_path: str, current_path: str) -> dict:
@@ -17,7 +17,7 @@ def compare_report_files(previous_path: str, current_path: str) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
+    parser = ArgumentParser(
         description="Compare two TrustBench live-evaluation reports."
     )
 
@@ -37,7 +37,7 @@ def main() -> None:
         result = compare_report_files(args.previous, args.current)
     except FileNotFoundError as error:
         parser.error(f"Report file not found: {error.filename}")
-    except json.JSONDecodeError as error:
+    except JSONDecodeError as error:
         parser.error(
             f"Invalid JSON report: {error.msg} "
             f"(line {error.lineno}, column {error.colno})"

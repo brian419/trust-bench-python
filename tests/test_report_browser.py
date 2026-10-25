@@ -1,4 +1,4 @@
-import pytest
+from pytest import raises
 
 from report_browser import list_saved_reports
 
@@ -42,5 +42,5 @@ def test_list_saved_reports_rejects_file_path(tmp_path):
     file_path = tmp_path / "not-a-directory"
     file_path.write_text("data", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="not a directory"):
+    with raises(ValueError, match="not a directory"):
         list_saved_reports(str(file_path))

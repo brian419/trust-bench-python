@@ -1,12 +1,13 @@
-import json
-import pytest
+from json import load
+from pathlib import Path
+
+from pytest import mark
 
 from answer_scorer import score_answer
 from eval import compare_answers
-from pathlib import Path
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "expected, generated, alternatives, expected_status, expected_reason",
     [
         ("Paris", " paris ", [], "PASS", "Exact match"),
@@ -42,7 +43,7 @@ def test_scoring_examples():
     dataset_path = Path(__file__).resolve().parent.parent / "scoring-examples.json"
 
     with dataset_path.open("r", encoding="utf-8") as file:
-        examples = json.load(file)
+        examples = load(file)
 
     assert len(examples) == 8
 

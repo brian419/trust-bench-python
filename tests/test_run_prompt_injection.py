@@ -1,16 +1,12 @@
-import json
-from urllib.error import URLError
+from hashlib import sha256
+from json import dumps, load, loads
+from platform import python_version
 from unittest.mock import patch
-import hashlib
-import pytest
-import platform
+from urllib.error import URLError
 
-from run_prompt_injection import (
-    MODEL,
-    OPTIONS,
-    build_prompt,
-    main,
-)
+from pytest import mark, raises
+
+from run_prompt_injection import build_prompt, main, MODEL, OPTIONS
 
 
 def scenario():
@@ -26,7 +22,7 @@ def scenario():
 
 def write_dataset(tmp_path, data):
     path = tmp_path / "cases.json"
-    path.write_text(json.dumps(data), encoding="utf-8")
+    path.write_text(dumps(data), encoding="utf-8")
     return path
 
 
@@ -50,7 +46,7 @@ def test_successful_run(tmp_path):
     ) as mock_model:
         report_path = main(path, report_dir)
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = loads(report_path.read_text(encoding="utf-8"))
     result = report["results"][0]
 
     assert report["metadata"]["model"] == MODEL
@@ -78,7 +74,7 @@ def test_injection_output_preserved(tmp_path):
     ):
         report_path = main(path, tmp_path / "reports")
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = loads(report_path.read_text(encoding="utf-8"))
     result = report["results"][0]
 
     assert result["generated"] == "999\n"
@@ -96,7 +92,7 @@ def test_request_error_recorded(tmp_path):
     ):
         report_path = main(path, tmp_path / "reports")
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = loads(report_path.read_text(encoding="utf-8"))
     result = report["results"][0]
 
     assert result["status"] == "ERROR"
@@ -110,7 +106,7 @@ def test_invalid_dataset_rejected(tmp_path):
     path = write_dataset(tmp_path, [{}])
 
     with patch("run_prompt_injection.generate_response") as mock_model:
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             main(path, tmp_path / "reports")
 
     mock_model.assert_not_called()
@@ -133,7 +129,7 @@ def test_reports_not_overwritten(tmp_path):
     assert second.exists()
 
 
-@pytest.mark.parametrize("invalid_response", [None, 123, {"response": "hello"}])
+@mark.parametrize("invalid_response", [None, 123, {"response": "hello"}])
 def test_invalid_model_response_type_raises(tmp_path, invalid_response):
     path = write_dataset(tmp_path, [scenario()])
     report_dir = tmp_path / "reports"
@@ -142,7 +138,7 @@ def test_invalid_model_response_type_raises(tmp_path, invalid_response):
         "run_prompt_injection.generate_response",
         return_value=invalid_response,
     ):
-        with pytest.raises(
+        with raises(
             TypeError,
             match="Model response must be a string",
         ):
@@ -164,7 +160,7 @@ def test_injection_report_records_model_provenance(tmp_path):
         )
 
     with report_path.open("r", encoding="utf-8") as file:
-        report = json.load(file)
+        report = load(file)
 
     metadata = report["metadata"]
 
@@ -182,7 +178,7 @@ def test_injection_report_records_model_provenance(tmp_path):
         options=OPTIONS,
     )
 
-    assert metadata["provenance"]["python_version"] == platform.python_version()
+    assert metadata["provenance"]["python_version"] == python_version()
 
 
 def test_injection_report_records_dataset_fingerprint(tmp_path):
@@ -199,11 +195,11 @@ def test_injection_report_records_dataset_fingerprint(tmp_path):
         )
 
     with report_path.open("r", encoding="utf-8") as file:
-        report = json.load(file)
+        report = load(file)
 
     provenance = report["metadata"]["provenance"]
 
-    assert provenance["dataset_sha256"] == (hashlib.sha256(contents).hexdigest())
+    assert provenance["dataset_sha256"] == (sha256(contents).hexdigest())
     assert provenance["scoring_method"] == ("prompt-injection-target-match-v1")
     assert provenance["prompt_format"] == ("single_prompt_delimited_document_v1")
     assert report["metadata"]["prompt_format"] == provenance["prompt_format"]

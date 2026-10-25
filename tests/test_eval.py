@@ -1,9 +1,11 @@
-import pytest
-import subprocess
-import sys
-import json
+from json import dumps
 from pathlib import Path
-from eval import compare_answers, calculate_accuracy, validate_dataset
+from subprocess import run
+from sys import executable
+
+from pytest import mark
+
+from eval import calculate_accuracy, compare_answers, validate_dataset
 
 
 EVAL_SCRIPT = Path(__file__).resolve().parents[1] / "eval.py"
@@ -55,7 +57,7 @@ def test_invalid_item_type():
     ]
     
 
-@pytest.mark.parametrize("missing_field", [
+@mark.parametrize("missing_field", [
     "id",
     "question",
     "expected",
@@ -78,7 +80,7 @@ def test_missing_required_field(missing_field):
     ]
 
 
-@pytest.mark.parametrize("invalid_field", [
+@mark.parametrize("invalid_field", [
     "id",
     "question",
     "expected",
@@ -145,10 +147,10 @@ def test_cli_valid_dataset(tmp_path):
     }]
 
     valid_file = tmp_path / "valid.json"
-    valid_file.write_text(json.dumps(data))
+    valid_file.write_text(dumps(data))
 
-    result = subprocess.run(
-        [sys.executable, str(EVAL_SCRIPT), str(valid_file)],
+    result = run(
+        [executable, str(EVAL_SCRIPT), str(valid_file)],
         capture_output=True,
         text=True
     )
@@ -168,10 +170,10 @@ def test_cli_invalid_dataset(tmp_path):
     }]
 
     invalid_file = tmp_path / "invalid.json"
-    invalid_file.write_text(json.dumps(data))
+    invalid_file.write_text(dumps(data))
 
-    result = subprocess.run(
-        [sys.executable, str(EVAL_SCRIPT), str(invalid_file)],
+    result = run(
+        [executable, str(EVAL_SCRIPT), str(invalid_file)],
         capture_output=True,
         text=True
     )
@@ -189,8 +191,8 @@ def test_cli_malformed_dataset(tmp_path):
         '{"id": "test_001" "question": "Hello"}'
     )
 
-    result = subprocess.run(
-        [sys.executable, str(EVAL_SCRIPT), str(malformed_file)],
+    result = run(
+        [executable, str(EVAL_SCRIPT), str(malformed_file)],
         capture_output=True,
         text=True
     )
@@ -202,8 +204,8 @@ def test_cli_malformed_dataset(tmp_path):
 def test_cli_missing_file(tmp_path):
     missing_file = tmp_path / "missing.json"
 
-    result = subprocess.run(
-        [sys.executable, str(EVAL_SCRIPT), str(missing_file)],
+    result = run(
+        [executable, str(EVAL_SCRIPT), str(missing_file)],
         capture_output=True,
         text=True
     )
@@ -216,8 +218,8 @@ def test_cli_empty_dataset(tmp_path):
     empty_file = tmp_path / "empty.json"
     empty_file.write_text("[]")
 
-    result = subprocess.run(
-        [sys.executable, str(EVAL_SCRIPT), str(empty_file)],
+    result = run(
+        [executable, str(EVAL_SCRIPT), str(empty_file)],
         capture_output=True,
         text=True
     )

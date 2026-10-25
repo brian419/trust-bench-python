@@ -1,7 +1,7 @@
-import json
+from json import load
 from pathlib import Path
 
-import pytest
+from pytest import mark
 
 from prompt_injection_validator import validate_injection_dataset
 
@@ -28,12 +28,12 @@ def test_actual_dataset():
     )
 
     with dataset_path.open(encoding="utf-8") as file:
-        data = json.load(file)
+        data = load(file)
 
     assert validate_injection_dataset(data) == []
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "invalid_data",
     [None, "invalid", 123, {}],
 )
@@ -53,7 +53,7 @@ def test_scenario_must_be_dictionary():
     assert errors == ["ERROR: Scenario #1 must be a dictionary."]
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "field",
     [
         "id",
@@ -73,7 +73,7 @@ def test_missing_required_field(field):
     assert any(field in error for error in errors)
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "invalid_value",
     [None, 123, [], {}, True],
 )
@@ -86,7 +86,7 @@ def test_invalid_field_type(invalid_value):
     assert any("field 'expected' must be a string" in error for error in errors)
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "invalid_value",
     ["", "   ", "\n\t"],
 )

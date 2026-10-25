@@ -1,4 +1,4 @@
-import pytest
+from pytest import raises
 
 from consistency_review import review_prompt
 
@@ -58,7 +58,7 @@ def test_missing_human_labels():
 
 
 def test_unknown_attempt_label():
-    with pytest.raises(ValueError, match="unknown attempt"):
+    with raises(ValueError, match="unknown attempt"):
         review_prompt(
             make_prompt_result(),
             expected="kilogram",
@@ -70,7 +70,7 @@ def test_duplicate_attempt_numbers():
     data = make_prompt_result()
     data["attempts"][1]["attempt"] = 1
 
-    with pytest.raises(ValueError, match="Duplicate attempt"):
+    with raises(ValueError, match="Duplicate attempt"):
         review_prompt(data, expected="kilogram")
 
 
@@ -84,7 +84,7 @@ def test_cannot_label_request_error():
         "error": "Connection refused",
     }
 
-    with pytest.raises(ValueError, match="request error"):
+    with raises(ValueError, match="request error"):
         review_prompt(
             data,
             expected="kilogram",

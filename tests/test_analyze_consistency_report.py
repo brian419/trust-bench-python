@@ -1,11 +1,10 @@
-import hashlib
-import json
-
-import pytest
-
-import analyze_consistency_report as analysis_module
-
 from collections import Counter
+from hashlib import sha256
+from json import dumps, loads
+
+from pytest import raises
+
+from analyze_consistency_report import main, REVIEW_SPEC
 
 
 def make_source_report():
@@ -18,7 +17,7 @@ def make_source_report():
     results = []
 
     for specification, responses in zip(
-        analysis_module.REVIEW_SPEC,
+        REVIEW_SPEC,
         generated_groups,
     ):
         results.append(
@@ -65,9 +64,9 @@ def make_source_report():
 
 def write_source(tmp_path, report):
     source_path = tmp_path / "source.json"
-    raw = json.dumps(report).encode("utf-8")
+    raw = dumps(report).encode("utf-8")
     source_path.write_bytes(raw)
-    return source_path, hashlib.sha256(raw).hexdigest()
+    return source_path, sha256(raw).hexdigest()
 
 
 def test_analyze_verified_report(tmp_path, monkeypatch):
@@ -75,15 +74,15 @@ def test_analyze_verified_report(tmp_path, monkeypatch):
         tmp_path,
         make_source_report(),
     )
-    monkeypatch.setattr(analysis_module, "SOURCE_SHA256", digest)
+    monkeypatch.setattr("analyze_consistency_report.SOURCE_SHA256", digest)
 
     original_bytes = source_path.read_bytes()
-    output_path = analysis_module.main(
+    output_path = main(
         report_path=source_path,
         output_dir=tmp_path,
     )
 
-    analysis = json.loads(output_path.read_text(encoding="utf-8"))
+    analysis = loads(output_path.read_text(encoding="utf-8"))
 
     assert analysis["metadata"]["source_sha256"] == digest
     assert analysis["summary"]["total_attempts"] == 9
@@ -101,12 +100,12 @@ def test_rejects_modified_source(tmp_path, monkeypatch):
         tmp_path,
         make_source_report(),
     )
-    monkeypatch.setattr(analysis_module, "SOURCE_SHA256", digest)
+    monkeypatch.setattr("analyze_consistency_report.SOURCE_SHA256", digest)
 
     source_path.write_bytes(source_path.read_bytes() + b" ")
 
-    with pytest.raises(ValueError, match="SHA-256 mismatch"):
-        analysis_module.main(source_path, tmp_path)
+    with raises(ValueError, match="SHA-256 mismatch"):
+        main(source_path, tmp_path)
 
 
 def test_rejects_wrong_prompt(tmp_path, monkeypatch):
@@ -114,7 +113,7 @@ def test_rejects_wrong_prompt(tmp_path, monkeypatch):
     source["results"][0]["prompt"] = "Different question"
 
     source_path, digest = write_source(tmp_path, source)
-    monkeypatch.setattr(analysis_module, "SOURCE_SHA256", digest)
+    monkeypatch.setattr("analyze_consistency_report.SOURCE_SHA256", digest)
 
-    with pytest.raises(ValueError, match="prompts do not match"):
-        analysis_module.main(source_path, tmp_path)
+    with raises(ValueError, match="prompts do not match"):
+        main(source_path, tmp_path)

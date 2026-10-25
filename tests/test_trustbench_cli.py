@@ -1,21 +1,20 @@
-import sys
-from pathlib import Path
+from sys import executable
 from unittest.mock import patch
 
-import pytest
+from pytest import mark, raises
 
-from trustbench import PROJECT_ROOT, main
+from trustbench import main, PROJECT_ROOT
 
 
 def test_offline_default():
-    with patch("trustbench.subprocess.run") as mock_run:
+    with patch("trustbench.run") as mock_run:
         mock_run.return_value.returncode = 0
 
         result = main(["offline"])
 
     assert result == 0
     mock_run.assert_called_once_with(
-        [sys.executable, str(PROJECT_ROOT / "eval.py")],
+        [executable, str(PROJECT_ROOT / "eval.py")],
         check=False,
     )
 
@@ -24,7 +23,7 @@ def test_offline_custom_dataset(tmp_path):
     dataset = tmp_path / "custom.json"
     dataset.write_text("[]", encoding="utf-8")
 
-    with patch("trustbench.subprocess.run") as mock_run:
+    with patch("trustbench.run") as mock_run:
         mock_run.return_value.returncode = 0
 
         result = main(
@@ -38,7 +37,7 @@ def test_offline_custom_dataset(tmp_path):
     assert result == 0
     mock_run.assert_called_once_with(
         [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "eval.py"),
             str(dataset),
         ],
@@ -47,7 +46,7 @@ def test_offline_custom_dataset(tmp_path):
 
 
 def test_scorers_default():
-    with patch("trustbench.subprocess.run") as mock_run:
+    with patch("trustbench.run") as mock_run:
         mock_run.return_value.returncode = 0
 
         result = main(["scorers"])
@@ -55,7 +54,7 @@ def test_scorers_default():
     assert result == 0
     mock_run.assert_called_once_with(
         [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "compare_scorers.py"),
         ],
         check=False,
@@ -66,7 +65,7 @@ def test_scorers_custom_dataset(tmp_path):
     dataset = tmp_path / "examples.json"
     dataset.write_text("[]", encoding="utf-8")
 
-    with patch("trustbench.subprocess.run") as mock_run:
+    with patch("trustbench.run") as mock_run:
         mock_run.return_value.returncode = 0
 
         result = main(
@@ -80,7 +79,7 @@ def test_scorers_custom_dataset(tmp_path):
     assert result == 0
     mock_run.assert_called_once_with(
         [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "compare_scorers.py"),
             str(dataset),
         ],
@@ -89,7 +88,7 @@ def test_scorers_custom_dataset(tmp_path):
 
 
 def test_error_exit_code_preserved():
-    with patch("trustbench.subprocess.run") as mock_run:
+    with patch("trustbench.run") as mock_run:
         mock_run.return_value.returncode = 1
 
         result = main(["offline"])
@@ -97,7 +96,7 @@ def test_error_exit_code_preserved():
     assert result == 1
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "arguments",
     [
         [],
@@ -106,14 +105,14 @@ def test_error_exit_code_preserved():
     ],
 )
 def test_invalid_commands_exit(arguments):
-    with pytest.raises(SystemExit) as error:
+    with raises(SystemExit) as error:
         main(arguments)
 
     assert error.value.code == 2
 
 
 def test_help_lists_commands(capsys):
-    with pytest.raises(SystemExit) as error:
+    with raises(SystemExit) as error:
         main(["--help"])
 
     assert error.value.code == 0
@@ -128,7 +127,7 @@ def test_help_lists_commands(capsys):
 
 
 def test_live_default():
-    with patch("trustbench.subprocess.run") as mock_run:
+    with patch("trustbench.run") as mock_run:
         mock_run.return_value.returncode = 0
 
         result = main(["live"])
@@ -136,7 +135,7 @@ def test_live_default():
     assert result == 0
     mock_run.assert_called_once_with(
         [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "eval_live.py"),
         ],
         check=False,
@@ -147,7 +146,7 @@ def test_live_custom_dataset_and_model(tmp_path):
     dataset = tmp_path / "custom.json"
     dataset.write_text("[]", encoding="utf-8")
 
-    with patch("trustbench.subprocess.run") as mock_run:
+    with patch("trustbench.run") as mock_run:
         mock_run.return_value.returncode = 0
 
         result = main(
@@ -163,7 +162,7 @@ def test_live_custom_dataset_and_model(tmp_path):
     assert result == 0
     mock_run.assert_called_once_with(
         [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "eval_live.py"),
             "--dataset",
             str(dataset),
@@ -175,7 +174,7 @@ def test_live_custom_dataset_and_model(tmp_path):
 
 
 def test_live_custom_model_only():
-    with patch("trustbench.subprocess.run") as mock_run:
+    with patch("trustbench.run") as mock_run:
         mock_run.return_value.returncode = 0
 
         result = main(["live", "--model", "gemma3:1b"])
@@ -183,7 +182,7 @@ def test_live_custom_model_only():
     assert result == 0
     mock_run.assert_called_once_with(
         [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "eval_live.py"),
             "--model",
             "gemma3:1b",
@@ -193,7 +192,7 @@ def test_live_custom_model_only():
 
 
 def test_consistency_default():
-    with patch("trustbench.subprocess.run") as mock_run:
+    with patch("trustbench.run") as mock_run:
         mock_run.return_value.returncode = 0
 
         result = main(["consistency"])
@@ -201,7 +200,7 @@ def test_consistency_default():
     assert result == 0
     mock_run.assert_called_once_with(
         [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "run_consistency.py"),
         ],
         check=False,
@@ -209,7 +208,7 @@ def test_consistency_default():
 
 
 def test_injection_default():
-    with patch("trustbench.subprocess.run") as mock_run:
+    with patch("trustbench.run") as mock_run:
         mock_run.return_value.returncode = 0
 
         result = main(["injection"])
@@ -217,28 +216,28 @@ def test_injection_default():
     assert result == 0
     mock_run.assert_called_once_with(
         [
-            sys.executable,
+            executable,
             str(PROJECT_ROOT / "run_prompt_injection.py"),
         ],
         check=False,
     )
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     "command",
     ["consistency", "injection"],
 )
 def test_experiment_commands_reject_unsupported_dataset_argument(command):
-    with pytest.raises(SystemExit) as error:
+    with raises(SystemExit) as error:
         main([command, "--dataset", "custom.json"])
 
     assert error.value.code == 2
 
 
-@pytest.mark.parametrize("model", ["", "   "])
+@mark.parametrize("model", ["", "   "])
 def test_live_rejects_empty_model(model):
-    with patch("trustbench.subprocess.run") as mock_run:
-        with pytest.raises(SystemExit) as error:
+    with patch("trustbench.run") as mock_run:
+        with raises(SystemExit) as error:
             main(["live", "--model", model])
 
     assert error.value.code == 2
@@ -248,20 +247,20 @@ def test_live_rejects_empty_model(model):
 def test_scorers_missing_dataset_exits_before_subprocess(tmp_path):
     dataset = tmp_path / "missing-scoring-examples.json"
 
-    with patch("trustbench.subprocess.run") as mock_run:
-        with pytest.raises(SystemExit) as error:
+    with patch("trustbench.run") as mock_run:
+        with raises(SystemExit) as error:
             main(["scorers", "--dataset", str(dataset)])
 
     assert error.value.code == 2
     mock_run.assert_not_called()
 
 
-@pytest.mark.parametrize("command", ["offline", "scorers", "live"])
+@mark.parametrize("command", ["offline", "scorers", "live"])
 def test_missing_dataset_rejected_before_subprocess(command, tmp_path):
     missing = tmp_path / "missing.json"
 
-    with patch("trustbench.subprocess.run") as mock_run:
-        with pytest.raises(SystemExit) as error:
+    with patch("trustbench.run") as mock_run:
+        with raises(SystemExit) as error:
             main([command, "--dataset", str(missing)])
 
     assert error.value.code == 2
@@ -272,7 +271,7 @@ def test_existing_dataset_accepted(tmp_path):
     dataset = tmp_path / "custom.json"
     dataset.write_text("[]", encoding="utf-8")
 
-    with patch("trustbench.subprocess.run") as mock_run:
+    with patch("trustbench.run") as mock_run:
         mock_run.return_value.returncode = 0
         result = main(["offline", "--dataset", str(dataset)])
 

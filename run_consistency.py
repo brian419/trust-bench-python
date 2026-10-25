@@ -1,5 +1,5 @@
-import json
 from datetime import datetime, timezone
+from json import dump
 from pathlib import Path
 from uuid import uuid4
 
@@ -55,7 +55,7 @@ def main(report_dir: Path = Path("reports")) -> Path:
     report_path = report_dir / f"consistency-{uuid4().hex}.json"
 
     with report_path.open("x", encoding="utf-8") as file:
-        json.dump(report, file, indent=2, ensure_ascii=False)
+        dump(report, file, indent=2, ensure_ascii=False)
         file.write("\n")
 
     print(f"Saved consistency report: {report_path}")

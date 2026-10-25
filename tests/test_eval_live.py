@@ -1,11 +1,13 @@
-import json
-import pytest
-import hashlib
-import platform
+from hashlib import sha256
+from json import dumps, load
+from pathlib import Path
+from platform import python_version
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
+
+from pytest import raises
+
 from eval_live import main
-from pathlib import Path
 
 
 def test_live_evaluation_all_pass(tmp_path, monkeypatch, capsys):
@@ -19,7 +21,7 @@ def test_live_evaluation_all_pass(tmp_path, monkeypatch, capsys):
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
-    dataset_file.write_text(json.dumps(data))
+    dataset_file.write_text(dumps(data))
 
     monkeypatch.chdir(tmp_path)
 
@@ -67,7 +69,7 @@ def test_live_evaluation_all_pass(tmp_path, monkeypatch, capsys):
     assert len(report_files) == 1
 
     with report_files[0].open("r", encoding="utf-8") as file:
-        saved_report = json.load(file)
+        saved_report = load(file)
 
     assert saved_report == report
 
@@ -83,7 +85,7 @@ def test_live_evaluation_mixed_results(tmp_path, monkeypatch, capsys):
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
-    dataset_file.write_text(json.dumps(data))
+    dataset_file.write_text(dumps(data))
 
     monkeypatch.chdir(tmp_path)
 
@@ -125,7 +127,7 @@ def test_live_evaluation_connection_error(tmp_path, monkeypatch, capsys):
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
-    dataset_file.write_text(json.dumps(data))
+    dataset_file.write_text(dumps(data))
 
     monkeypatch.chdir(tmp_path)
 
@@ -174,7 +176,7 @@ def test_live_evaluation_all_errors(tmp_path, monkeypatch, capsys):
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
-    dataset_file.write_text(json.dumps(data))
+    dataset_file.write_text(dumps(data))
 
     monkeypatch.chdir(tmp_path)
 
@@ -198,12 +200,12 @@ def test_live_evaluation_invalid_dataset(tmp_path, monkeypatch, capsys):
     data = [{"id": "test_001", "question": "What is the capital of France?"}]
 
     dataset_file = tmp_path / "eval-read-live.json"
-    dataset_file.write_text(json.dumps(data))
+    dataset_file.write_text(dumps(data))
 
     monkeypatch.chdir(tmp_path)
 
     with patch("eval_live.generate_response") as mock_generate:
-        with pytest.raises(SystemExit) as error:
+        with raises(SystemExit) as error:
             main()
 
     output = capsys.readouterr().out
@@ -224,7 +226,7 @@ def test_live_evaluation_http_error(tmp_path, monkeypatch, capsys):
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
-    dataset_file.write_text(json.dumps(data))
+    dataset_file.write_text(dumps(data))
 
     monkeypatch.chdir(tmp_path)
 
@@ -279,7 +281,7 @@ def test_live_evaluation_timeout(tmp_path, monkeypatch, capsys):
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
-    dataset_file.write_text(json.dumps(data))
+    dataset_file.write_text(dumps(data))
 
     monkeypatch.chdir(tmp_path)
 
@@ -319,7 +321,7 @@ def test_live_evaluation_missing_file(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
 
     with patch("eval_live.generate_response") as mock_generate:
-        with pytest.raises(SystemExit) as error:
+        with raises(SystemExit) as error:
             main()
 
     output = capsys.readouterr().out
@@ -337,7 +339,7 @@ def test_live_evaluation_malformed_json(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
 
     with patch("eval_live.generate_response") as mock_generate:
-        with pytest.raises(SystemExit) as error:
+        with raises(SystemExit) as error:
             main()
 
     output = capsys.readouterr().out
@@ -358,7 +360,7 @@ def test_live_evaluation_wrapped_timeout(tmp_path, monkeypatch, capsys):
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
-    dataset_file.write_text(json.dumps(data))
+    dataset_file.write_text(dumps(data))
 
     monkeypatch.chdir(tmp_path)
 
@@ -406,7 +408,7 @@ def test_multiple_reports_preserved(tmp_path, monkeypatch):
     ]
 
     dataset_file = tmp_path / "eval-read-live.json"
-    dataset_file.write_text(json.dumps(data))
+    dataset_file.write_text(dumps(data))
 
     monkeypatch.chdir(tmp_path)
 
@@ -421,7 +423,7 @@ def test_multiple_reports_preserved(tmp_path, monkeypatch):
     saved_reports = []
     for report_file in report_files:
         with report_file.open("r", encoding="utf-8") as file:
-            saved_reports.append(json.load(file))
+            saved_reports.append(load(file))
 
     assert first_report in saved_reports
     assert second_report in saved_reports
@@ -433,11 +435,11 @@ def test_request_durations_not_overwritten(tmp_path, monkeypatch):
         {"id": "test_002", "question": "Second?", "expected": "B"},
     ]
 
-    (tmp_path / "eval-read-live.json").write_text(json.dumps(data))
+    (tmp_path / "eval-read-live.json").write_text(dumps(data))
     monkeypatch.chdir(tmp_path)
 
     with patch("eval_live.generate_response", side_effect=["A", "B"]):
-        with patch("eval_live.time.perf_counter", side_effect=[10.0, 12.0, 20.0, 23.0]):
+        with patch("eval_live.perf_counter", side_effect=[10.0, 12.0, 20.0, 23.0]):
             report = main()
 
     assert report["results"][0]["duration_seconds"] == 2.0
@@ -453,13 +455,13 @@ def test_report_save_failure(tmp_path, monkeypatch, capsys):
         }
     ]
 
-    (tmp_path / "eval-read-live.json").write_text(json.dumps(data))
+    (tmp_path / "eval-read-live.json").write_text(dumps(data))
     monkeypatch.chdir(tmp_path)
 
     (tmp_path / "reports").write_text("Not a dictionary")
 
     with patch("eval_live.generate_response", return_value="Paris"):
-        with pytest.raises(SystemExit) as error:
+        with raises(SystemExit) as error:
             main()
     output = capsys.readouterr().out
 
@@ -478,7 +480,7 @@ def test_reference_metadata_preserved(tmp_path, monkeypatch):
     ]
 
     dataset_file = tmp_path / "eval-read-reference.json"
-    dataset_file.write_text(json.dumps(data))
+    dataset_file.write_text(dumps(data))
 
     monkeypatch.chdir(tmp_path)
 
@@ -500,7 +502,7 @@ def test_reference_metadata_preserved_on_error(tmp_path, monkeypatch):
     ]
 
     dataset_file = tmp_path / "eval-read-reference.json"
-    dataset_file.write_text(json.dumps(data))
+    dataset_file.write_text(dumps(data))
 
     monkeypatch.chdir(tmp_path)
 
@@ -528,7 +530,7 @@ def test_live_alternative_scoring(tmp_path, monkeypatch):
         }
     ]
 
-    (tmp_path / "eval-read-reference.json").write_text(json.dumps(data))
+    (tmp_path / "eval-read-reference.json").write_text(dumps(data))
     monkeypatch.chdir(tmp_path)
 
     with patch("eval_live.generate_response", return_value="NYC"):
@@ -553,7 +555,7 @@ def test_alternative_scoring_on_request_error(tmp_path, monkeypatch):
         }
     ]
 
-    (tmp_path / "eval-read-reference.json").write_text(json.dumps(data))
+    (tmp_path / "eval-read-reference.json").write_text(dumps(data))
     monkeypatch.chdir(tmp_path)
 
     with patch(
@@ -579,7 +581,7 @@ def test_custom_model_forwarded(tmp_path, monkeypatch):
     ]
 
     dataset = tmp_path / "eval-read-live.json"
-    dataset.write_text(json.dumps(data), encoding="utf-8")
+    dataset.write_text(dumps(data), encoding="utf-8")
 
     monkeypatch.chdir(tmp_path)
 
@@ -629,7 +631,7 @@ def test_live_report_contains_dataset_fingerprint(tmp_path, monkeypatch):
         report = main()
 
     assert report["metadata"]["provenance"]["dataset_sha256"] == (
-        hashlib.sha256(contents).hexdigest()
+        sha256(contents).hexdigest()
     )
     assert report["summary"]["passed"] == 1
 
@@ -638,10 +640,10 @@ def test_live_report_contains_dataset_fingerprint(tmp_path, monkeypatch):
     assert len(report_files) == 1
 
     with report_files[0].open("r", encoding="utf-8") as file:
-        saved_report = json.load(file)
+        saved_report = load(file)
 
     assert saved_report["metadata"]["provenance"]["dataset_sha256"] == (
-        hashlib.sha256(contents).hexdigest()
+        sha256(contents).hexdigest()
     )
     assert saved_report == report
 
@@ -666,7 +668,7 @@ def test_live_report_records_exact_scoring_identifier(tmp_path, monkeypatch):
 def test_reference_report_records_both_scoring_identifiers(tmp_path, monkeypatch):
     dataset = tmp_path / "eval-read-reference.json"
     dataset.write_text(
-        json.dumps(
+        dumps(
             [
                 {
                     "id": "fact_001",
@@ -696,7 +698,7 @@ def test_reference_report_records_both_scoring_identifiers(tmp_path, monkeypatch
 def test_live_report_does_not_invent_model_configuration(tmp_path, monkeypatch):
     dataset = tmp_path / "eval-read-live.json"
     dataset.write_text(
-        json.dumps(
+        dumps(
             [
                 {
                     "id": "test_001",
@@ -726,4 +728,4 @@ def test_live_report_does_not_invent_model_configuration(tmp_path, monkeypatch):
         "gemma3:1b",
     )
 
-    assert provenance["python_version"] == platform.python_version()
+    assert provenance["python_version"] == python_version()

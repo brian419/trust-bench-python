@@ -1,9 +1,9 @@
-import json
-import platform
-
+from json import load, loads
+from platform import python_version
 from unittest.mock import patch
-from run_consistency import main, MODEL, OPTIONS, PROMPTS, REPETITIONS
+
 from provenance import consistency_inputs_sha256
+from run_consistency import main, MODEL, OPTIONS, PROMPTS, REPETITIONS
 
 
 def test_consistency_report_saved(tmp_path):
@@ -36,7 +36,7 @@ def test_consistency_report_saved(tmp_path):
 
     assert report_path.exists()
 
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report = loads(report_path.read_text(encoding="utf-8"))
 
     assert report["metadata"]["model"] == MODEL
     assert report["metadata"]["repetitions"] == REPETITIONS
@@ -67,8 +67,6 @@ def test_consistency_reports_do_not_overwrite(tmp_path):
 
 
 def test_consistency_report_records_model_provenance(tmp_path, monkeypatch):
-    from run_consistency import main
-
     fake_results = []
 
     monkeypatch.setattr(
@@ -79,7 +77,7 @@ def test_consistency_report_records_model_provenance(tmp_path, monkeypatch):
     report_path = main(report_dir=tmp_path)
 
     with report_path.open("r", encoding="utf-8") as file:
-        report = json.load(file)
+        report = load(file)
 
     metadata = report["metadata"]
 
@@ -96,4 +94,4 @@ def test_consistency_report_records_model_provenance(tmp_path, monkeypatch):
     )
     assert metadata["provenance"]["scoring_method"] is None
     assert metadata["provenance"]["prompt_format"] == "plain-question-v1"
-    assert metadata["provenance"]["python_version"] == platform.python_version()
+    assert metadata["provenance"]["python_version"] == python_version()

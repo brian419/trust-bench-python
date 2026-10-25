@@ -1,4 +1,4 @@
-import pytest
+from pytest import raises
 
 from failure_classifier import classify_failures
 
@@ -56,7 +56,7 @@ def test_request_error():
 
 
 def test_unknown_human_label():
-    with pytest.raises(
+    with raises(
         ValueError,
         match="Unknown classification label",
     ):
@@ -67,7 +67,7 @@ def test_unknown_human_label():
 
 
 def test_unknown_scoring_status():
-    with pytest.raises(
+    with raises(
         ValueError,
         match="Unknown scoring status",
     ):
@@ -75,7 +75,7 @@ def test_unknown_scoring_status():
 
 
 def test_needs_review_cannot_be_human_label():
-    with pytest.raises(
+    with raises(
         ValueError,
         match="Unknown classification label",
     ):

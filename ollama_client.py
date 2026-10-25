@@ -1,4 +1,4 @@
-import json
+from json import dumps, load
 from urllib.request import Request, urlopen
 
 def generate_response(
@@ -18,7 +18,7 @@ def generate_response(
     if options is not None:
         data["options"] = options
 
-    json_data = json.dumps(data).encode("utf-8")
+    json_data = dumps(data).encode("utf-8")
 
     request = Request(
         url,
@@ -28,6 +28,6 @@ def generate_response(
     )
 
     with urlopen(request, timeout=120) as response:
-        result = json.load(response)
+        result = load(response)
 
     return result["response"]

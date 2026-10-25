@@ -1,17 +1,17 @@
-import hashlib
-import json
+from hashlib import sha256
+from json import dumps
 
-import pytest
+from pytest import raises
 
 from consistency_report_reader import load_verified_report
 
 
 def write_report(tmp_path, content):
     report_path = tmp_path / "consistency.json"
-    raw_data = json.dumps(content).encode("utf-8")
+    raw_data = dumps(content).encode("utf-8")
     report_path.write_bytes(raw_data)
 
-    expected_hash = hashlib.sha256(raw_data).hexdigest()
+    expected_hash = sha256(raw_data).hexdigest()
 
     return report_path, expected_hash
 
@@ -42,7 +42,7 @@ def test_modified_report_rejected(tmp_path):
         encoding="utf-8",
     )
 
-    with pytest.raises(ValueError, match="SHA-256 mismatch"):
+    with raises(ValueError, match="SHA-256 mismatch"):
         load_verified_report(report_path, expected_hash)
 
 
@@ -52,5 +52,5 @@ def test_invalid_report_structure(tmp_path):
         {"metadata": {}, "results": "not a list"},
     )
 
-    with pytest.raises(ValueError, match="results must be a list"):
+    with raises(ValueError, match="results must be a list"):
         load_verified_report(report_path, expected_hash)

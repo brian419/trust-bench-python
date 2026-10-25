@@ -1,4 +1,4 @@
-import json
+from json import load
 
 
 def compare_answers(expected: str, response: str) -> bool:
@@ -19,7 +19,7 @@ def calculate_accuracy(passed_count: int, failed_count: int):
 if __name__ == "__main__":
 
     with open("eval-read.json", "r") as file:
-        data = json.load(file)
+        data = load(file)
 
     passed_count = 0
     failed_count = 0

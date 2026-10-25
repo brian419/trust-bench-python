@@ -1,6 +1,6 @@
 """Compatibility checks for TrustBench reports."""
 
-import re
+from re import fullmatch
 
 
 def compare_input_fingerprints(first: dict, second: dict) -> dict:
@@ -43,8 +43,8 @@ def compare_input_fingerprints(first: dict, second: dict) -> dict:
     if not (
         isinstance(first_hash, str)
         and isinstance(second_hash, str)
-        and re.fullmatch(sha256_pattern, first_hash)
-        and re.fullmatch(sha256_pattern, second_hash)
+        and fullmatch(sha256_pattern, first_hash)
+        and fullmatch(sha256_pattern, second_hash)
     ):
         return {
             "status": "UNVERIFIED",

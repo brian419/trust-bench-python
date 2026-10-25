@@ -1,9 +1,6 @@
 """Compare individual TrustBench evaluation results."""
 
-from report_compatibility import (
-    compare_report_compatibility,
-    detect_report_type,
-)
+from report_compatibility import compare_report_compatibility, detect_report_type
 
 
 def classify_status_change(previous: str, current: str) -> str:

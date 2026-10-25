@@ -1,6 +1,7 @@
-import json
-import sys
-import pytest
+from json import dumps
+
+from pytest import raises
+
 from compare_reports import compare_report_files, main
 
 
@@ -39,11 +40,11 @@ def test_compare_report_files(tmp_path):
     )
 
     previous_path.write_text(
-        json.dumps(previous),
+        dumps(previous),
         encoding="utf-8",
     )
     current_path.write_text(
-        json.dumps(current),
+        dumps(current),
         encoding="utf-8",
     )
 
@@ -75,12 +76,11 @@ def test_cli_prints_comparison_summary(tmp_path, monkeypatch, capsys):
         ]
     )
 
-    previous_path.write_text(json.dumps(previous), encoding="utf-8")
-    current_path.write_text(json.dumps(current), encoding="utf-8")
+    previous_path.write_text(dumps(previous), encoding="utf-8")
+    current_path.write_text(dumps(current), encoding="utf-8")
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         ["compare_reports.py", str(previous_path), str(current_path)],
     )
 
@@ -100,12 +100,11 @@ def test_cli_prints_empty_comparison(tmp_path, monkeypatch, capsys):
 
     report = make_report([])
 
-    previous_path.write_text(json.dumps(report), encoding="utf-8")
-    current_path.write_text(json.dumps(report), encoding="utf-8")
+    previous_path.write_text(dumps(report), encoding="utf-8")
+    current_path.write_text(dumps(report), encoding="utf-8")
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         ["compare_reports.py", str(previous_path), str(current_path)],
     )
 
@@ -128,12 +127,11 @@ def test_cli_prints_compatibility_warnings(tmp_path, monkeypatch, capsys):
         ]
     )
 
-    previous_path.write_text(json.dumps(report), encoding="utf-8")
-    current_path.write_text(json.dumps(report), encoding="utf-8")
+    previous_path.write_text(dumps(report), encoding="utf-8")
+    current_path.write_text(dumps(report), encoding="utf-8")
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         ["compare_reports.py", str(previous_path), str(current_path)],
     )
 
@@ -167,12 +165,11 @@ def test_cli_prints_individual_case_changes(tmp_path, monkeypatch, capsys):
         ]
     )
 
-    previous_path.write_text(json.dumps(previous), encoding="utf-8")
-    current_path.write_text(json.dumps(current), encoding="utf-8")
+    previous_path.write_text(dumps(previous), encoding="utf-8")
+    current_path.write_text(dumps(current), encoding="utf-8")
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         ["compare_reports.py", str(previous_path), str(current_path)],
     )
 
@@ -191,17 +188,16 @@ def test_cli_rejects_missing_file(tmp_path, monkeypatch, capsys):
     current_path = tmp_path / "current.json"
 
     current_path.write_text(
-        json.dumps(make_report([])),
+        dumps(make_report([])),
         encoding="utf-8",
     )
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         ["compare_reports.py", str(missing_path), str(current_path)],
     )
 
-    with pytest.raises(SystemExit) as error:
+    with raises(SystemExit) as error:
         main()
 
     assert error.value.code == 2
@@ -217,17 +213,16 @@ def test_cli_rejects_invalid_json(tmp_path, monkeypatch, capsys):
 
     previous_path.write_text("{invalid-json", encoding="utf-8")
     current_path.write_text(
-        json.dumps(make_report([])),
+        dumps(make_report([])),
         encoding="utf-8",
     )
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         ["compare_reports.py", str(previous_path), str(current_path)],
     )
 
-    with pytest.raises(SystemExit) as error:
+    with raises(SystemExit) as error:
         main()
 
     assert error.value.code == 2
@@ -255,16 +250,15 @@ def test_cli_rejects_incompatible_reports(tmp_path, monkeypatch, capsys):
 
     current["metadata"]["provenance"]["dataset_sha256"] = "b" * 64
 
-    previous_path.write_text(json.dumps(previous), encoding="utf-8")
-    current_path.write_text(json.dumps(current), encoding="utf-8")
+    previous_path.write_text(dumps(previous), encoding="utf-8")
+    current_path.write_text(dumps(current), encoding="utf-8")
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         ["compare_reports.py", str(previous_path), str(current_path)],
     )
 
-    with pytest.raises(SystemExit) as error:
+    with raises(SystemExit) as error:
         main()
 
     assert error.value.code == 2
@@ -279,22 +273,21 @@ def test_cli_rejects_malformed_report(tmp_path, monkeypatch, capsys):
     current_path = tmp_path / "current.json"
 
     previous_path.write_text(
-        json.dumps({"metadata": {}, "results": "invalid"}),
+        dumps({"metadata": {}, "results": "invalid"}),
         encoding="utf-8",
     )
 
     current_path.write_text(
-        json.dumps(make_report([])),
+        dumps(make_report([])),
         encoding="utf-8",
     )
 
     monkeypatch.setattr(
-        sys,
-        "argv",
+        "sys.argv",
         ["compare_reports.py", str(previous_path), str(current_path)],
     )
 
-    with pytest.raises(SystemExit) as error:
+    with raises(SystemExit) as error:
         main()
 
     assert error.value.code == 2
