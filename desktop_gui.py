@@ -7,9 +7,10 @@ from subprocess import TimeoutExpired
 from threading import Lock, Thread
 from tkinter import END, Listbox, StringVar, Tk, WORD
 from tkinter.filedialog import askopenfilename
-from tkinter.messagebox import showerror, showwarning
+from tkinter.messagebox import showerror, showinfo, showwarning
 from tkinter.scrolledtext import ScrolledText
 from tkinter.ttk import Button, Combobox, Entry, Frame, Label, LabelFrame, Notebook
+from webbrowser import open as open_browser
 
 from comparison_formatter import generate_comparison_text
 from evaluation_launcher import (
@@ -18,6 +19,7 @@ from evaluation_launcher import (
     stop_evaluation_group,
 )
 from generate_report import generate_text_report
+from ollama_readiness import check_ollama_readiness, OllamaReadiness
 from report_browser import list_saved_reports
 from report_loader import load_report as load_saved_report
 from report_summary import summarize_live_report
@@ -51,6 +53,12 @@ class TrustBenchDesktop:
         self.shutdown_lock = Lock()
         self.shutdown_attempted = False
         self.shutdown_verified = False
+        self.readiness_pending = False
+        self.readiness_request_id = 0
+        self.pending_readiness_command = None
+        self.event_poll_scheduled = False
+        self.event_poll_id = None
+        self.window_closed = False
         self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
 
         self.build_interface()
@@ -239,26 +247,56 @@ class TrustBenchDesktop:
             textvariable=self.model_name,
         ).pack(fill="x", pady=(0, 10))
 
+        readiness_controls = Frame(evaluation_frame)
+        readiness_controls.pack(fill="x", pady=(0, 6))
+        self.check_ollama_button = Button(
+            readiness_controls,
+            text="Check Ollama",
+            command=self.check_ollama,
+        )
+        self.check_ollama_button.pack(side="left")
         Button(
+            readiness_controls,
+            text="Setup Help",
+            command=self.show_ollama_setup,
+        ).pack(side="left", padx=(8, 0))
+        Button(
+            readiness_controls,
+            text="Get Ollama",
+            command=self.open_ollama_download,
+        ).pack(side="left", padx=(8, 0))
+        self.ollama_status = StringVar(
+            value="Ollama not checked. Choose Check Ollama or Start Evaluation."
+        )
+        Label(
             evaluation_frame,
+            textvariable=self.ollama_status,
+            wraplength=680,
+            justify="left",
+        ).pack(fill="x", pady=(0, 8))
+
+        actions = Frame(evaluation_frame)
+        actions.pack(fill="x")
+        Button(
+            actions,
             text="Preview Command",
             command=self.preview_evaluation,
-        ).pack(anchor="w", pady=(0, 8))
+        ).pack(side="left")
 
         self.start_button = Button(
-            evaluation_frame,
+            actions,
             text="Start Evaluation",
-            command=self.start_evaluation,
+            command=self.check_and_start_evaluation,
         )
-        self.start_button.pack(anchor="w", pady=(0, 8))
+        self.start_button.pack(side="left", padx=(8, 0))
 
         self.stop_button = Button(
-            evaluation_frame,
+            actions,
             text="Stop Evaluation",
             command=self.stop_evaluation,
             state="disabled",
         )
-        self.stop_button.pack(anchor="w")
+        self.stop_button.pack(side="left", padx=(8, 0))
 
         Label(
             self.evaluate_tab,
@@ -316,6 +354,130 @@ class TrustBenchDesktop:
 
         return True
 
+    def open_ollama_download(self):
+        """Open the official download page only when the user requests it."""
+        return open_browser("https://ollama.com/download/mac")
+
+    def show_ollama_setup(self):
+        """Explain separate setup without installing software or models."""
+        showinfo(
+            "Ollama Setup",
+            "1. Use Get Ollama to download the macOS app, then install and open it.\n"
+            "2. Choose a local model in Ollama and download it if needed. "
+            "Use the same model name here (the default is gemma3:1b).\n"
+            "3. Choose Check Ollama, then Start Evaluation.\n\n"
+            "You can also download a model in Terminal: ollama pull gemma3:1b\n"
+            "Model downloads need internet and disk space. TrustBench does not "
+            "install Ollama or download models automatically.\n\n"
+            "Reports and Compare work without Ollama.\n\n"
+            + self.ollama_status.get(),
+        )
+
+    def check_ollama(self):
+        """Check readiness without starting an evaluation."""
+        return self._begin_ollama_check()
+
+    def check_and_start_evaluation(self):
+        """Validate settings and require a fresh readiness check for a UI start."""
+        if self._evaluation_controls_busy():
+            return False
+        try:
+            command = build_live_command(self.dataset_path.get(), self.model_name.get())
+        except ValueError as error:
+            showerror("Invalid Evaluation Settings", str(error))
+            return False
+        return self._begin_ollama_check(command)
+
+    def _evaluation_controls_busy(self):
+        return (
+            self.evaluation_running or self.shutdown_pending or self.shutdown_unverified
+            or self.close_requested or self.readiness_pending or self.window_closed
+        )
+
+    def _begin_ollama_check(self, command=None):
+        if self._evaluation_controls_busy():
+            return False
+        model = self.model_name.get().strip()
+        if not model:
+            showerror("Invalid Evaluation Settings", "Enter an Ollama model name.")
+            return False
+        self.readiness_request_id += 1
+        request_id = self.readiness_request_id
+        self.readiness_pending = True
+        self.pending_readiness_command = command
+        self.start_button.configure(state="disabled")
+        self.check_ollama_button.configure(state="disabled")
+        self.ollama_status.set("Checking Ollama and the selected model...")
+        worker = Thread(
+            target=self._check_ollama_worker, args=(request_id, model), daemon=True,
+        )
+        try:
+            worker.start()
+        except RuntimeError:
+            self.readiness_pending = False
+            self.pending_readiness_command = None
+            self.start_button.configure(state="normal")
+            self.check_ollama_button.configure(state="normal")
+            self.ollama_status.set(
+                "Could not start the Ollama check. Please try again."
+            )
+            return False
+        self._schedule_event_poll()
+        return True
+
+    def _check_ollama_worker(self, request_id, model):
+        """Only enqueue data here; every Tkinter operation stays on its thread."""
+        try:
+            result = check_ollama_readiness(model)
+        except Exception:
+            result = OllamaReadiness(
+                "CHECK_FAILED", model, "Could not verify Ollama. Please check again.",
+            )
+        self.evaluation_events.put(("readiness", (request_id, model, result)))
+
+    def _handle_ollama_result(self, request_id, model, result):
+        if (
+            request_id != self.readiness_request_id
+            or self.window_closed
+            or not self.readiness_pending
+        ):
+            return
+        command = self.pending_readiness_command
+        self.pending_readiness_command = None
+        self.readiness_pending = False
+        self.start_button.configure(state="normal")
+        self.check_ollama_button.configure(state="normal")
+        if self.close_requested:
+            return
+        if model != self.model_name.get().strip():
+            self.ollama_status.set("The model changed. Choose Check Ollama again.")
+            return
+        self.ollama_status.set(result.message)
+        if command is not None and result.status == "READY":
+            try:
+                current = build_live_command(
+                    self.dataset_path.get(), self.model_name.get()
+                )
+            except ValueError:
+                current = None
+            if current != command:
+                self.ollama_status.set(
+                    "Evaluation settings changed. Choose Start Evaluation again."
+                )
+                return
+            self.start_evaluation()
+
+    def _schedule_event_poll(self):
+        if not self.event_poll_scheduled and not self.window_closed:
+            self.event_poll_scheduled = True
+            self.event_poll_id = self.root.after(100, self._drain_evaluation_events)
+
+    def _cancel_event_poll(self):
+        if self.event_poll_scheduled and self.event_poll_id is not None:
+            self.root.after_cancel(self.event_poll_id)
+        self.event_poll_scheduled = False
+        self.event_poll_id = None
+
     def start_evaluation(self):
         """Start a live evaluation while keeping the GUI responsive."""
 
@@ -324,6 +486,8 @@ class TrustBenchDesktop:
             or self.shutdown_pending
             or self.shutdown_unverified
             or self.close_requested
+            or self.readiness_pending
+            or self.window_closed
         ):
             return False
 
@@ -348,6 +512,7 @@ class TrustBenchDesktop:
         self.shutdown_verified = False
 
         self.start_button.configure(state="disabled")
+        self.check_ollama_button.configure(state="disabled")
         self.stop_button.configure(state="normal")
 
         self.evaluation_display.configure(state="normal")
@@ -365,7 +530,7 @@ class TrustBenchDesktop:
         )
         worker.start()
 
-        self.root.after(100, self._drain_evaluation_events)
+        self._schedule_event_poll()
         return True
 
     def on_window_close(self):
@@ -387,6 +552,11 @@ class TrustBenchDesktop:
 
             return
 
+        self.readiness_request_id += 1
+        self.readiness_pending = False
+        self.pending_readiness_command = None
+        self.window_closed = True
+        self._cancel_event_poll()
         self.root.destroy()
 
     def _finish_window_close(self):
@@ -408,6 +578,8 @@ class TrustBenchDesktop:
             return
 
         self.close_requested = False
+        self.window_closed = True
+        self._cancel_event_poll()
         self.root.destroy()
 
     def stop_evaluation(self):
@@ -557,13 +729,21 @@ class TrustBenchDesktop:
     def _drain_evaluation_events(self):
         """Process queued events safely on Tkinter's main thread."""
 
+        self.event_poll_scheduled = False
+        self.event_poll_id = None
+        if self.window_closed:
+            return
+
         while True:
             try:
                 event_type, value = self.evaluation_events.get_nowait()
             except Empty:
                 break
 
-            if event_type == "process":
+            if event_type == "readiness":
+                self._handle_ollama_result(*value)
+
+            elif event_type == "process":
                 self.active_evaluation_process = value
 
                 if self.stop_requested and not self.evaluation_finished:
@@ -658,8 +838,12 @@ class TrustBenchDesktop:
 
         self._finish_window_close()
 
-        if self.evaluation_running or self.shutdown_pending:
-            self.root.after(100, self._drain_evaluation_events)
+        if not self.window_closed:
+            self.check_ollama_button.configure(
+                state=("disabled" if self._evaluation_controls_busy() else "normal")
+            )
+        if self.evaluation_running or self.shutdown_pending or self.readiness_pending:
+            self._schedule_event_poll()
 
     def refresh_reports(self):
         """Refresh the list of saved evaluation reports."""

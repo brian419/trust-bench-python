@@ -34,6 +34,14 @@ def make_test_app():
     app.shutdown_lock = Lock()
     app.shutdown_attempted = False
     app.shutdown_verified = False
+    app.readiness_pending = False
+    app.readiness_request_id = 0
+    app.pending_readiness_command = None
+    app.event_poll_scheduled = False
+    app.event_poll_id = None
+    app.window_closed = False
+    app.check_ollama_button = MagicMock()
+    app.ollama_status = MagicMock()
     return app
 
 
