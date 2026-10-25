@@ -21,10 +21,11 @@ from generate_report import generate_text_report
 from report_browser import list_saved_reports
 from report_loader import load_report as load_saved_report
 from report_summary import summarize_live_report
+from runtime_paths import reports_directory, resource_directory
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent
-REPORTS_DIRECTORY = PROJECT_ROOT / "reports"
+PROJECT_ROOT = resource_directory()
+REPORTS_DIRECTORY = reports_directory(source_root=PROJECT_ROOT)
 
 
 class TrustBenchDesktop:

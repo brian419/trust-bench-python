@@ -19,7 +19,11 @@ from provenance import (
 from reference_validator import validate_reference_dataset
 
 
-def main(filename="eval-read-live.json", model="gemma3:1b"):
+def main(
+    filename="eval-read-live.json",
+    model="gemma3:1b",
+    report_dir: str | Path | None = None,
+):
     is_reference_dataset = Path(filename).name == "eval-read-reference.json"
 
     try:
@@ -222,7 +226,7 @@ def main(filename="eval-read-live.json", model="gemma3:1b"):
 
     report = {"metadata": metadata, "summary": summary, "results": results}
 
-    reports_dir = Path("reports")
+    reports_dir = Path("reports") if report_dir is None else Path(report_dir)
     report_filename = f"evaluation-{uuid4().hex}.json"
     report_path = reports_dir / report_filename
 

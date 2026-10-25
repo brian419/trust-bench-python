@@ -7,8 +7,11 @@ from subprocess import PIPE, Popen, STDOUT
 from sys import executable
 from time import monotonic, sleep
 
+from app_entry import WORKER_FLAG
+from runtime_paths import is_packaged, reports_directory, resource_directory
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+
+PROJECT_ROOT = resource_directory()
 
 
 def build_live_command(dataset: str, model: str) -> list[str]:
@@ -30,6 +33,18 @@ def build_live_command(dataset: str, model: str) -> list[str]:
     if not dataset_path.is_file():
         raise ValueError(f"Dataset file does not exist: {dataset_path}")
 
+    if is_packaged():
+        return [
+            executable,
+            WORKER_FLAG,
+            "--dataset",
+            str(dataset_path),
+            "--model",
+            model.strip(),
+            "--reports-dir",
+            str(reports_directory()),
+        ]
+
     return [
         executable,
         str(PROJECT_ROOT / "trustbench.py"),
@@ -49,9 +64,15 @@ def run_live_command(command: list[str]) -> Popen:
     environment = environ.copy()
     environment["PYTHONUNBUFFERED"] = "1"
 
+    working_directory = PROJECT_ROOT
+
+    if is_packaged():
+        working_directory = reports_directory().parent
+        working_directory.mkdir(parents=True, exist_ok=True)
+
     return Popen(
         command,
-        cwd=PROJECT_ROOT,
+        cwd=working_directory,
         env=environment,
         stdout=PIPE,
         stderr=STDOUT,
