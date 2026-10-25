@@ -27,13 +27,27 @@ also passed. No third-party dependencies were added. Tests used temporary files,
 mocked HTTP responses and local subprocesses; they did not require paid services
 or model inference.
 
-**User validation pending:** Pull the fix and run the 450-test suite on macOS
-with Python 3.12.12. Recheck live GUI progress, stop/restart and normal closure,
-then open and compare completed saved reports. The earlier Mac evidence below
-applies to the pre-fix runtime, not this fix checkpoint.
+**User validation completed:** At `02aad17`, the user ran **450 tests in 5.42
+seconds** on macOS/Python 3.12.12 and reported a clean working tree. Real Ollama
+GUI runs saved `evaluation-2ad0fb67b50f4526acb1d8f42ec0bef8.json` and
+`evaluation-bc339d445631492f8f18a13ee683340c.json`, both with 2 PASS, 0 FAIL and
+0 request errors. An intervening run was stopped during the first question and
+exited with code -15; a subsequent evaluation completed successfully. Screenshots
+confirm report listing and a comparison with 2 unchanged cases, no new errors
+or regressions, and expected missing-metadata compatibility warnings. Normal
+window closure produced no traceback. The latest Reports screenshot shows a
+selected filename with an empty viewer; opening a formatted report is not
+separately demonstrated by that screenshot, although earlier viewing checks
+passed.
 
-5F packaging, accessibility, installation and sharing remain open. Fix
-implementation is complete; Mac revalidation is the next checkpoint.
+Progress is the per-case text in **Evaluation Output**. There is no separate
+progress bar. The two-question run completed in under a second of request time,
+so the user could not clearly assess incremental timing by eye. The bounded
+launcher/CLI/evaluator regression test verifies output delivery before exit.
+The latest manual run used `eval-read-live.json`, not the larger reference file.
+
+The prepackaging fix checkpoint is complete. 5F packaging, accessibility,
+installation and sharing remain open; no package or release is claimed.
 
 ## Original review outcome
 
@@ -174,6 +188,6 @@ Keep these release tasks distinct from the four fixes:
 - Do not claim signing, installer behavior, screen-reader accessibility,
   Windows support or release readiness without the corresponding validation.
 
-Current order: the four fixes and automated regression checks are complete;
-revalidate affected Mac workflows, then implement and validate 5F. Do not merge
+Current order: the four fixes, automated regression checks and affected Mac
+smoke checks are complete; implement and validate 5F. Do not merge
 Milestone 5 into `main` or publish a release as part of this review.
