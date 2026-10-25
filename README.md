@@ -8,7 +8,7 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–4: Complete on `main` (155 tests at merge). Milestone 5A: Unified CLI (`f4a8ccf`, 183 tests). Milestone 5B: Reproducibility metadata (`7f75d53`, 200 tests). Milestone 5C: Live-report comparisons (`0c742e8`, 289 tests). Milestone 5D: Human-readable live-report summaries and text export implemented and manually verified locally (315 tests, October 24, 2026); code commit/push pending. Milestones 5E–5F remain planned.**
+**Milestones 1–4 are complete on `main` (155 tests at merge). On `feature/milestone-5`, milestones 5A–5E provide the unified CLI, provenance metadata, live-report comparisons, readable reports, and a native Tkinter desktop GUI. The GUI implementation was committed and pushed as `8ebd025` on October 25, 2026. The feature branch passed 389 automated tests and the GUI was manually tested with local Ollama. Milestone 5F (packaging, accessibility, and release readiness) remains open.**
 
 Milestone 3 merged into `main` on October 21, 2026. Milestone 4 (stages 4A–4E) was fast-forward merged and pushed to `main` on October 23, 2026 at commit `72a4842`, after 155 tests passed locally. The historical `feature/milestone-4` branch remains available, but all Milestone 4 workflows are now on `main`. Milestone 5A provides the tested CLI foundation; the 5B provenance checkpoint adds report metadata on the same feature branch. Neither stage has been merged into `main`.
 
@@ -61,7 +61,7 @@ This reads existing reports **without running Ollama**. Use actual report filena
 
 ## Generating readable live-evaluation reports (Milestone 5D)
 
-**Status (October 24, 2026):** Locally implemented, tested (**315 automated tests passed**) and manually verified with a real historical report. The six new runtime/test files are staged for a local commit and may not yet be published on GitHub.
+**Status:** Implemented on `feature/milestone-5`; the original 5D checkpoint passed **315 automated tests** and was manually verified with a historical live report. The reporting functionality is present in the pushed feature branch.
 
 From the repository root, print a human-readable summary of an existing live evaluation:
 
@@ -83,10 +83,32 @@ Replace the example input path with a real report from your local `reports/` fol
 
 **Limits:** Accuracy is calculated only over scored PASS/FAIL responses; ERROR results are excluded. An exact-match failure does not necessarily imply factual error. These small evaluations do not establish general reliability, factuality, fairness or safety. The CLI summarizes one saved report; it is not yet a general report browser, a GUI, or a cross-run significance test.
 
+## Desktop GUI (Milestone 5E)
+
+**Status (October 25, 2026):** Implemented and pushed on `feature/milestone-5` in commit `8ebd025`. The feature branch passed **389 automated tests**; macOS smoke tests covered report browsing, comparisons, command preview, cancellation, restarting, completed Ollama inference, and normal window closure. This is a source-run desktop application, **not yet a packaged installer**.
+
+From the repository root, launch the native Tkinter interface:
+
+```bash
+python3 desktop_gui.py
+```
+
+For a Python installation managed with pyenv, use the interpreter with working Tkinter support, e.g. `~/.pyenv/versions/3.12.12/bin/python3 desktop_gui.py`. Tkinter must be available on your system. On a Mac, this opens a local desktop window without a browser; other platforms have not yet been manually validated.
+
+The application has three tabs:
+
+- **Reports:** Refresh and browse local `reports/evaluation-*.json` files, double-click or select **View Selected Report**, or use **Open Evaluation Report** to choose a JSON file. The display uses the existing text report formatter.
+- **Compare:** Pick a previous and current saved report and select **Compare Reports**. This uses the existing live-report compatibility and comparison logic; incompatible or unverifiable reports can be rejected. A `PARTIAL_MATCH` warning is not proof of reproducibility.
+- **Evaluate:** Choose a live JSON dataset and Ollama model (defaults: `eval-read-live.json` and `gemma3:1b`), select **Preview Command**, then **Start Evaluation**. Output appears in the window, and the completed live run writes its normal JSON report to the Git-ignored `reports/` folder. **Stop Evaluation** requests termination of the launched process group; the app avoids restarting or closing automatically when shutdown cannot be verified.
+
+**To run a live evaluation:** Start the local Ollama service and make sure the requested model is installed (for example `ollama pull gemma3:1b`). Reports and comparisons do **not** require Ollama. The GUI currently launches the existing unified CLI live mode rather than duplicating scoring logic. Offline, consistency, scorer, and injection workflows remain available through the CLI; the GUI Evaluate tab currently supports **live mode only**.
+
+**Validation and limitations:** A controlled macOS live test recorded 2 PASS, 0 FAIL, and 0 request errors (100% exact-match accuracy **on those two questions only**). Another test stopped a live run with process exit code `-15` (SIGTERM) and successfully started a fresh run. Automated tests cover GUI events, subprocess shutdown coordination, macOS process-group termination and parent/child group behavior. Cancellation can interrupt a run without saving a complete report. The live output pane still displays verbose evaluator output. No signed installer, accessibility audit, or cross-platform release testing has been completed.
+
 ## Requirements
 
-- Python 3 (developed with Python 3.12.3)
-- No third-party Python runtime dependencies. `pytest` is needed only to run tests.
+- Python 3.12 (developed/tested with Python 3.12; desktop GUI manually tested on macOS with Python 3.12.12).
+- Standard-library runtime components, including `tkinter` for the desktop GUI; your Python installation must include Tcl/Tk support. `pytest` is needed only to run tests.
 - For **live** evaluation only: [Ollama](https://ollama.com/) running locally with the `gemma3:1b` model available. This workflow does not require paid API access or an API key.
 
 ## Getting started
@@ -388,7 +410,7 @@ The final review covered the earlier evaluation workflows and bounded local expe
 - **Milestone 2: Testable architecture (complete).** Reusable functions, pytest tests, dataset validation, and controlled CLI errors.
 - **Milestone 3: Local model integration (complete).** Ollama HTTP inference, live scoring, request failure handling, elapsed-time tracking, and saved JSON run reports.
 - **Milestone 4: Responsible AI evaluation methods (complete and merged into `main`).** 4A reference-based evaluation, 4B alternative scoring, 4C response consistency/failure classification, 4D controlled prompt-injection experiments, and 4E synthesis/regression review have been locally validated (155 tests).
-- **Milestone 5: CLI + desktop GUI, reproducibility, and reporting (in progress).** The first unified CLI checkpoint is implemented on `feature/milestone-5` (`f4a8ccf`, 183 tests). Shared evaluation services, richer provenance, comparisons, summaries, the desktop GUI, and packaging remain planned.
+- **Milestone 5: CLI + desktop GUI, reproducibility, and reporting (in progress).** 5A–5E are implemented on `feature/milestone-5`, including a browser-free Tkinter GUI (`8ebd025`; 389 tests at the October 25 validation checkpoint). 5F packaging, accessibility and release validation remain open.
 
 See [`milestones.md`](milestones.md) for detailed status and acceptance evidence.
 
@@ -443,11 +465,11 @@ All three save the current **Python version** under `metadata.provenance.python_
 
 **Limitations:** The exact Ollama model digest/version is not queried, so `model_version` is `null`. Live generation relies on uncaptured Ollama defaults; `model_options: null` does *not* mean no defaults exist. Captured seeds/settings do not guarantee identical responses. These fingerprints verify input bytes or defined prompt/repetition inputs, not factual correctness or full environment equivalence; a byte-level dataset hash changes even for whitespace-only edits. Pre-5B reports lack these fields, and offline/scorer flows do not yet persist equivalent standardized provenance. Cross-run comparison and compatibility rules are planned for 5C.
 
-### Planned desktop interface and later Milestone 5 work
+### Desktop interface and remaining Milestone 5 work
 
-A local desktop GUI will offer dataset/model selection, evaluation runs, saved report inspection, and compatible comparisons without requiring a browser. The CLI will remain independently usable without installing GUI packages. Both interfaces are intended to call the same reusable Python evaluation services once that architecture is implemented.
+The source-run Tkinter desktop interface is implemented (see [Desktop GUI](#desktop-gui-milestone-5e)). The CLI remains independently usable without starting a graphical window. The GUI launches the established live CLI evaluation workflow and reuses saved-report, comparison and formatting functions; wider shared-service extraction and non-live GUI modes remain future possibilities.
 
-Milestone **5C** live-report comparison is locally implemented and validated; the staged code has not yet been committed or pushed. Upcoming stages: **5D** human-readable reporting; **5E** desktop GUI; **5F** packaging, accessibility, documentation, and release validation. See [`milestones.md`](milestones.md) for scope and acceptance criteria.
+**Next: 5F** — installation/packaging guidance, accessibility review, platform validation, documentation polish and release readiness. See [`milestones.md`](milestones.md) for status and acceptance criteria.
 
 ## Evaluation principles
 
