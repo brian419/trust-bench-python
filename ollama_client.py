@@ -1,5 +1,10 @@
-from json import dumps, load
+from json import dumps, JSONDecodeError, load
 from urllib.request import Request, urlopen
+
+
+class MalformedResponseError(ValueError):
+    """Ollama returned JSON that cannot be used as a model response."""
+
 
 def generate_response(
         prompt: str,
@@ -28,6 +33,21 @@ def generate_response(
     )
 
     with urlopen(request, timeout=120) as response:
-        result = load(response)
+        try:
+            result = load(response)
+        except (JSONDecodeError, UnicodeDecodeError) as error:
+            raise MalformedResponseError(
+                "Invalid Ollama response: expected valid JSON."
+            ) from error
+
+    if not isinstance(result, dict):
+        raise MalformedResponseError(
+            "Invalid Ollama response: expected a JSON object."
+        )
+
+    if not isinstance(result.get("response"), str):
+        raise MalformedResponseError(
+            "Invalid Ollama response: expected a string 'response' field."
+        )
 
     return result["response"]

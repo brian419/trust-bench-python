@@ -52,15 +52,15 @@ def generate_text_report(filename: str) -> str:
 
         status = result["status"]
 
+        if not isinstance(status, str) or status not in {"PASS", "FAIL", "ERROR"}:
+            raise ValueError(f"Unknown result status: {status}")
+
         if status in {"PASS", "FAIL"}:
             if not isinstance(result.get("generated"), str):
                 raise ValueError(
                     "Scored live-evaluation results must contain "
                     "a string generated response."
                 )
-
-        if result["status"] not in {"PASS", "FAIL", "ERROR"}:
-            raise ValueError(f"Unknown result status: {result['status']}")
 
     return format_live_report(report)
 

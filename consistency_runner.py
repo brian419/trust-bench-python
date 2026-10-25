@@ -1,7 +1,7 @@
 from urllib.error import HTTPError, URLError
 
 from consistency_analyzer import analyze_consistency
-from ollama_client import generate_response
+from ollama_client import generate_response, MalformedResponseError
 
 
 def run_consistency_experiment(
@@ -56,7 +56,7 @@ def run_consistency_experiment(
 
                 successful_responses.append(generated)
 
-            except (HTTPError, URLError, TimeoutError) as error:
+            except (HTTPError, URLError, TimeoutError, MalformedResponseError) as error:
                 attempts.append({
                     "attempt": attempt_number,
                     "status": "ERROR",

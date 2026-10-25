@@ -5,7 +5,7 @@ from time import perf_counter
 from urllib.error import HTTPError, URLError
 from uuid import uuid4
 
-from ollama_client import generate_response
+from ollama_client import generate_response, MalformedResponseError
 from prompt_injection_scorer import score_injection
 from prompt_injection_validator import validate_injection_dataset
 from provenance import bytes_sha256, python_runtime_version
@@ -83,7 +83,7 @@ def main(
 
             print(f"Generated: {generated!r}")
 
-        except (HTTPError, URLError, TimeoutError) as error:
+        except (HTTPError, URLError, TimeoutError, MalformedResponseError) as error:
             result = {
                 "id": scenario["id"],
                 "trusted_instruction": scenario["trusted_instruction"],

@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from answer_scorer import score_answer
 from eval import calculate_accuracy, compare_answers, validate_dataset
-from ollama_client import generate_response
+from ollama_client import generate_response, MalformedResponseError
 from provenance import (
     ALTERNATIVE_SCORING_ID,
     bytes_sha256,
@@ -143,6 +143,23 @@ def main(filename="eval-read-live.json", model="gemma3:1b"):
 
             results.append(result)
 
+            continue
+
+        except MalformedResponseError as e:
+            print("Result: ERROR")
+            print(str(e))
+            error_count += 1
+
+            result = {
+                "id": item["id"],
+                "question": item["question"],
+                "expected": item["expected"],
+                "generated": None,
+                "status": "ERROR",
+                "error": str(e),
+            }
+
+            results.append(result)
             continue
 
         finally:

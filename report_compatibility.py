@@ -173,6 +173,24 @@ def compare_scoring_rules(first: dict, second: dict) -> dict:
                 "reason": f"Missing scoring metadata: {key}.",
             }
 
+        optional = (
+            first_type == "live" and key == "alternative_scoring"
+        ) or (
+            first_type == "consistency" and key == "scoring_method"
+        )
+
+        for provenance in (first_provenance, second_provenance):
+            value = provenance[key]
+
+            if optional and value is None:
+                continue
+
+            if not isinstance(value, str) or not value.strip():
+                return {
+                    "status": "UNVERIFIED",
+                    "reason": f"Invalid scoring metadata: {key}.",
+                }
+
         if first_provenance[key] != second_provenance[key]:
             return {
                 "status": "INCOMPATIBLE",

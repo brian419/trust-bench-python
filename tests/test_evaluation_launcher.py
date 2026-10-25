@@ -66,8 +66,10 @@ def test_build_live_command_rejects_missing_file(tmp_path):
         build_live_command(str(missing), "gemma3:1b")
 
 
-def test_run_live_command_starts_subprocess():
+def test_run_live_command_starts_subprocess(monkeypatch):
     command = ["python3", "trustbench.py", "live"]
+    environment = {"EXISTING_SETTING": "preserved", "PYTHONUNBUFFERED": "0"}
+    monkeypatch.setattr("evaluation_launcher.environ", environment)
 
     with patch("evaluation_launcher.Popen") as popen:
         process = run_live_command(command)
@@ -77,6 +79,7 @@ def test_run_live_command_starts_subprocess():
     popen.assert_called_once_with(
         command,
         cwd=PROJECT_ROOT,
+        env={"EXISTING_SETTING": "preserved", "PYTHONUNBUFFERED": "1"},
         stdout=PIPE,
         stderr=STDOUT,
         text=True,
@@ -84,6 +87,7 @@ def test_run_live_command_starts_subprocess():
         bufsize=1,
         start_new_session=True,
     )
+    assert environment["PYTHONUNBUFFERED"] == "0"
 
 
 def test_run_live_command_propagates_startup_error():

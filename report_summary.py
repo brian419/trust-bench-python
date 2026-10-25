@@ -24,7 +24,7 @@ def summarize_live_report(report: dict) -> dict:
 
         status = result.get("status")
 
-        if status not in counts:
+        if not isinstance(status, str) or status not in counts:
             raise ValueError(f"Unknown result status: {status}")
 
         counts[status] += 1
@@ -63,7 +63,7 @@ def extract_failure_examples(report: dict) -> dict:
 
         status = result.get("status")
 
-        if status not in {"PASS", "FAIL", "ERROR"}:
+        if not isinstance(status, str) or status not in {"PASS", "FAIL", "ERROR"}:
             raise ValueError(f"Unknown result status: {status}")
 
         if status == "FAIL":

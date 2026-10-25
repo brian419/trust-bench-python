@@ -1,6 +1,6 @@
 """Build commands for TrustBench desktop evaluations."""
 
-from os import killpg
+from os import environ, killpg
 from pathlib import Path
 from signal import SIGKILL, SIGTERM
 from subprocess import PIPE, Popen, STDOUT
@@ -44,9 +44,15 @@ def build_live_command(dataset: str, model: str) -> list[str]:
 def run_live_command(command: list[str]) -> Popen:
     """Start a live evaluation without blocking the caller."""
 
+    # The CLI wrapper launches another interpreter. Inheriting this setting
+    # makes the evaluator flush too, without changing the caller's environment.
+    environment = environ.copy()
+    environment["PYTHONUNBUFFERED"] = "1"
+
     return Popen(
         command,
         cwd=PROJECT_ROOT,
+        env=environment,
         stdout=PIPE,
         stderr=STDOUT,
         text=True,
