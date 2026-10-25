@@ -196,6 +196,39 @@ python3 -m pytest -v
 
 The Milestone 3 baseline contained **47 tests**. The merged `main` branch passed **155 automated tests** after the 4E regression review on October 23, 2026 (148 at the 4D checkpoint; 111 at the completed 4C checkpoint). Tests include offline evaluation, reference validation, accepted-answer scoring, mocked Ollama requests, consistency inference, response scoring, human classification, SHA-256 verification, prompt-injection validation/scoring, and report generation. Automated tests mock model calls; an Ollama service is not necessary to run them.
 
+## Python import convention
+
+Application code, automated tests, and historical Python examples use explicit
+`from module import name` imports. Import only names used by the file; do not use
+wildcard imports. Separate standard-library, third-party, and local-project
+imports with blank lines, and alphabetize modules and imported names within each
+group. Use parenthesized multiline imports when needed. Keep aliases only where
+they clarify or prevent a name collision.
+
+```python
+from json import dumps, loads
+from pathlib import Path
+from subprocess import PIPE, Popen, STDOUT
+
+from pytest import raises
+
+from report_loader import load_report
+```
+
+When mocking a directly imported dependency, patch the name in the module that
+uses it, such as `evaluation_launcher.Popen` or `desktop_gui.Thread`. Direct
+imports still load the underlying module and do not provide a security boundary.
+
+**Refactor checkpoint (October 25, 2026):** Implemented on
+`refactor/standardize-imports` in commits `f179ae3` and `0faebdc`; 49 Python
+files changed and all 63 Python files audited. The user ran the full suite on
+macOS with Python 3.12.12: **389 passed in 5.63 seconds**. Manual checks confirmed
+offline evaluation, scorer comparison, local Ollama live/consistency/injection
+execution and report saving, readable report generation, and GUI report
+browsing, command preview, start/stop/restart, comparison and normal closure.
+The standalone report-comparison CLI smoke test remains pending. No merge into
+`feature/milestone-5` or `main` is recorded at this checkpoint; 5F remains open.
+
 ## Offline input format
 
 `eval.py` expects a JSON array of test-case objects containing the following required **string** fields:

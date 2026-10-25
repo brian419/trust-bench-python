@@ -460,6 +460,47 @@ No Ollama run is required. The `reports/` directory is ignored by Git and not in
 
 **Limits:** The two-question exact-match result is a smoke-test observation, not general accuracy or reliability evidence. The parent/child subprocess test confirms shared group membership and the helper's verified group disappearance in that test; it does not establish every possible descendant/process-tree behavior. The GUI currently displays verbose CLI output. Cross-platform manual validation, accessible keyboard/navigation review, packaging/signing and release processes remain for 5F.
 
+### Python import refactor validation (October 25, 2026)
+
+**Branch:** `refactor/standardize-imports`, based on `feature/milestone-5`
+at `3b1ef80`. Implementation commits: `f179ae3` (core code and tests) and
+`0faebdc` (desktop GUI, launcher and consumer mock targets).
+
+- Audited all 63 Python files and changed 49. Standard-library, pytest and
+  internal imports use explicit `from module import name` statements, grouped
+  and alphabetized. Unused imports were removed; no wildcard imports or
+  convention exceptions were needed. No runtime dependencies were added.
+- Updated mock targets to patch consumer bindings, including Tkinter widgets
+  and dialogs, threads, subprocess launch and timing functions. Existing
+  functions, classes, CLI options and evaluation algorithms were preserved.
+- Agent regression evidence: 389 tests passed on Linux with Python 3.12.14.
+  User regression evidence: **389 passed in 5.63 seconds** on macOS with
+  Python 3.12.12 at `0faebdc`; the user reported a clean working tree.
+- User terminal validation: offline evaluation returned 2 PASS / 1 FAIL;
+  scorer comparison processed 8 cases; local Ollama live evaluation returned
+  2 PASS / 0 FAIL / 0 ERROR and saved
+  `evaluation-8953779ed53d4516baf9d8dab99ab039.json`. Consistency and injection
+  commands completed and saved reports; their scoring summaries were not
+  supplied. Human-readable report generation completed successfully.
+- User GUI validation: refreshing, viewing and double-clicking saved reports;
+  dataset/model selection; command preview; completed evaluation; cancellation;
+  restart after cancellation; comparison with missing selections and with two
+  selected reports; and normal idle-window closure without a traceback.
+  The completed GUI report
+  `evaluation-64a75cbaf0874c259dd89d0685ef7926.json` recorded
+  2 PASS / 0 FAIL / 0 ERROR.
+- The screenshots show two unchanged cases when comparing the completed CLI
+  and GUI reports. The displayed `PARTIAL_MATCH` warning identifies missing
+  generation options and model-version metadata; it is not an import error.
+- Remaining validation: run the standalone `compare_reports.py` CLI on the
+  completed CLI and GUI reports. Merge into `feature/milestone-5` requires the
+  user's explicit approval. This refactor does not complete Milestone 5F.
+
+After integration, review Milestone 5A–5E for correctness, missing requirements,
+documentation consistency and release blockers before implementing 5F packaging,
+accessibility, installation/sharing guidance and release validation. Keep new
+feature ideas separate from fixes needed to satisfy the existing milestone.
+
 ### Architecture and scope rules
 
 - Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.
