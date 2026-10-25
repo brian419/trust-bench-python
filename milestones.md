@@ -2,7 +2,7 @@
 
 TrustBench is an independent Python learning and portfolio project exploring reproducible evaluation of AI-generated responses. Development is incremental: implement a small feature, understand its behavior, test it, and then extend it.
 
-**Current status:** Milestones 1–4 are complete and merged into `main` (155 tests passing after Milestone 4, October 23, 2026). Milestone 4A–4E work was fast-forward merged from `feature/milestone-4` and pushed to `main` at commit `72a4842`. Historical checkpoints include 47 tests at Milestone 3, 111 after 4C, and 148 after 4D. Milestone 5 is underway on `feature/milestone-5`: 5A and 5B have been pushed, while the 5C live-report comparison implementation was verified locally (289 tests) and is staged but not yet committed/pushed. 5D–5F are planned.
+**Current status:** Milestones 1–4 are merged into `main` (155 tests at the October 23, 2026 merge, commit `72a4842`). On `feature/milestone-5`, stages 5A–5E are implemented, including a local Tkinter desktop GUI committed and pushed as `8ebd025` on October 25, 2026. Full automated regression testing passed **389 tests**, and real macOS desktop and Ollama workflows were manually validated. Milestone 5F packaging, accessibility and release readiness remain open; Milestone 5 is not yet merged into `main`.
 
 ## Guiding principles
 
@@ -339,7 +339,7 @@ Original local source: `reports/prompt-injection-d2fe3abd6a1243cc89b073391c4dda9
 
 ## Milestone 5: Usable interfaces, reproducibility, and reporting
 
-**Status: In progress on `feature/milestone-5`. Initial 5A CLI foundation: `f4a8ccf` (183 tests). 5B provenance checkpoint: `7f75d53` (200 tests passing, October 24, 2026). 5C live-report comparison is committed at `0c742e8` (289 tests). 5D human-readable live-report summaries and text export are implemented and verified locally (315 tests), with the code commit/push pending. Stages 5E–5F remain planned.** The goal is a usable **CLI and desktop GUI**, with a choice of interface. Users who prefer the terminal should never need to open a browser; users who prefer a graphical application should be able to work without terminal commands after setup. Both interfaces will use the same evaluation engine, datasets, scoring definitions, and report formats.
+**Status: Stages 5A–5E implemented on `feature/milestone-5`; the 5E desktop code was pushed at `8ebd025` on October 25, 2026. The feature branch passed 389 automated tests and completed macOS GUI smoke tests, local Ollama execution, cancellation and restart. 5F packaging, accessibility and release readiness remain planned.** The CLI and native desktop GUI offer separate interfaces for shared live evaluation and report functionality. The GUI is source-run and currently exposes live mode only; broader GUI evaluation modes and a packaged installer are not claimed complete.
 
 ### Implementation plan
 
@@ -347,8 +347,8 @@ Original local source: `reports/prompt-injection-d2fe3abd6a1243cc89b073391c4dda9
 - **5B — Reproducibility metadata (implemented checkpoint):** Added available generation options, input/dataset fingerprints, scoring/prompt identifiers, Python runtime version and honest nulls for uncaptured model versions. Future work: exact model digests and more complete mode coverage.
 - **5C — Compatible run comparisons (local checkpoint complete):** Read existing saved live reports, check recorded experiment type/input fingerprints/scoring definitions and model-configuration warnings, match per-case statuses by ID and summarize changes. A general directory browser, detailed inspection UI, non-live comparison modes and raw-text diffing remain open.
 - **5D — Reports and summaries (local checkpoint complete):** Implemented human-readable live-evaluation summaries, PASS/FAIL/ERROR counts, scored-case denominators, failure/error examples, explicit limitations, CLI rendering and non-overwriting UTF-8 export. Supports historical live reports without 5B provenance. More report types and a browsing interface remain deferred.
-- **5E — Desktop GUI:** A local graphical interface for selecting datasets/models, starting evaluations, inspecting progress and prior reports, and viewing comparisons. **Do not require users to launch a web browser.** Favor a lightweight, free desktop approach suitable for local machines. The GUI must reuse the same core functions as the CLI, not duplicate evaluation/scoring logic. A browser-based dashboard can be considered later but is not required.
-- **5F — Packaging, accessibility, documentation, and release:** Easy installation and first-run guidance, platform considerations, meaningful validation errors, keyboard-accessible interface where practical, examples, tests, and a clear comparison of CLI versus GUI workflows.
+- **5E — Desktop GUI (implemented and manually verified):** Native Tkinter Reports, Compare and Evaluate tabs, live dataset/model selection, command preview, streamed output, cancellation, restart, saved-report inspection and compatible run comparison. Reuses CLI evaluation and existing report helpers without requiring a browser. Packaged distribution and non-live GUI modes are deferred.
+- **5F — Packaging, accessibility, documentation, and release (open):** Improve first-run/install guidance, keyboard/accessibility verification, platform testing, distribution/packaging, example workflows and release documentation.
 
 ### Milestone 5A: Unified CLI, initial checkpoint (implemented)
 
@@ -445,6 +445,21 @@ No Ollama run is required. The `reports/` directory is ignored by Git and not in
 
 **Scope/limits:** This command reports **one saved live-evaluation run** only; it does not provide a browser, aggregate multiple experiments, or summarize consistency/injection formats. Missing 5B provenance is acceptable for standalone descriptive summaries but may make cross-run comparison unverified. Exact-match accuracy excludes request errors and cannot establish semantic correctness, factuality, safety, fairness or general model reliability.
 
+### Milestone 5E: Native desktop GUI (implemented; manual validation complete)
+
+**Branch and evidence:** `feature/milestone-5`, code commit `8ebd025` (`feat: add TrustBench desktop GUI and evaluation controls`), pushed October 25, 2026. **389 automated tests passed** in the full feature-branch suite. The user manually validated a real macOS Tkinter window, report browsing, viewing reports, comparison, command preview, live Ollama cancellation and restart, a fully completed live evaluation, and normal idle-window closure. This is source-run validation, not a packaged product release.
+
+- [x] `desktop_gui.py`: three local Tkinter tabs — Reports, Compare, Evaluate — with dataset/model controls, command preview, output display, saved-report viewing and refresh.
+- [x] `report_browser.py` and `comparison_formatter.py`: list local reports and format 5C comparisons; reuse established report loader/compatibility/comparison behavior.
+- [x] `evaluation_launcher.py`: construct and launch the live CLI command in a separate subprocess session, request bounded process-group shutdown, check group disappearance, handle macOS permission uncertainty conservatively, and reap subprocess exit status while checking.
+- [x] GUI shutdown coordination: asynchronous Stop, process-group termination without blocking Tkinter, single shutdown attempt despite competing worker requests, and disabling restart/automatic close when shutdown is unverified.
+- [x] Automated unit/regression tests for GUI tabs/events and cancellation, report browser, comparison formatter, launcher; real macOS integration tests for a disposable subprocess and a parent-plus-child process group.
+- [x] Manual smoke test: Reports and Compare tabs display existing JSON reports; Evaluate previews correct `trustbench.py live` invocation. A live `gemma3:1b` cancellation exited with code `-15` (SIGTERM), subsequent evaluation restarted successfully, and a two-question live run produced **2 PASS / 0 FAIL / 0 ERROR** with a new saved report.
+
+**Run from repository root:** `python3 desktop_gui.py`. Requires Python with Tkinter support. For live mode, start Ollama and install the requested model (default `gemma3:1b`); report viewing and comparisons need no Ollama. GUI Evaluate currently supports **live mode**, while other existing experiment modes remain CLI-only. Saved reports live in Git-ignored `reports/` and are not bundled in the repo. Cancellation may interrupt report creation.
+
+**Limits:** The two-question exact-match result is a smoke-test observation, not general accuracy or reliability evidence. The parent/child subprocess test confirms shared group membership and the helper's verified group disappearance in that test; it does not establish every possible descendant/process-tree behavior. The GUI currently displays verbose CLI output. Cross-platform manual validation, accessible keyboard/navigation review, packaging/signing and release processes remain for 5F.
+
 ### Architecture and scope rules
 
 - Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.
@@ -484,4 +499,4 @@ A new user can choose either the terminal-based CLI or local desktop GUI to run 
 
 ### Near-term next step
 
-Milestones 1–4 remain merged into `main` (155 passing tests at the October 23, 2026 merge, commit `72a4842`). The initial Milestone 5A unified CLI was committed and pushed on `feature/milestone-5` at `f4a8ccf`; **183 automated tests passed** and the working tree was clean. Documentation was refreshed next. 5B provenance and local 5C live-report comparison have now been implemented; code for 5C is staged locally, pending commit/push. Next address remaining report-browser scope explicitly and continue to 5D human-readable reporting, 5E browser-free desktop GUI, and 5F packaging/release work. Maintain separate CLI and GUI workflows while building shared evaluation services.
+Milestone 5A–5E code is on `feature/milestone-5`; the desktop implementation is committed and pushed at `8ebd025`, with 389 automated tests passing at the October 25 checkpoint and successful macOS GUI/Ollama smoke tests. After pulling the documentation updates, run the full suite again, review the branch against `main`, and plan **5F packaging, accessibility, cross-platform validation and release documentation**. Do not describe the full Milestone 5 as merged or production-packaged yet.
