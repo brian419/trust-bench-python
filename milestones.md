@@ -558,6 +558,24 @@ The real subprocess regression test verifies delivery before evaluator exit.
 This fix checkpoint is complete. Proceed to 5F packaging, accessibility and
 sharing. See the [review and resolution record](docs/milestone-5-prepackaging-review.md).
 
+### Milestone 5F scope and branch (agreed October 25, 2026)
+
+Continue on `feature/milestone-5f-macos-packaging`, branched from
+`feature/milestone-5` at `c70826a`. The validated Milestone 5
+baseline remains available on the parent branch.
+
+The user selected a packaged macOS app for general users, with GitHub Releases
+as the intended single TrustBench download location. Python/GUI components will
+be bundled; Ollama and models remain separate initially. Linux follows later;
+Windows is deferred. The first build/manual target is Intel macOS.
+
+The [5F implementation plan](docs/milestone-5f-macos-packaging-plan.md) defines
+checkpoints for resources/report paths, packaged evaluator execution, Ollama
+readiness and recovery, app/DMG builds, accessibility and sharing validation.
+Reviewing the separate Ollama/model setup before release is an explicit
+requirement. Do not defer confusing first-run behavior beyond 5F without
+addressing it. Packaging implementation has not started at this checkpoint.
+
 ### Architecture and scope rules
 
 - Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.
