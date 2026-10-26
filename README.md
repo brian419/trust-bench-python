@@ -26,11 +26,11 @@ The **0.5.0 preview** provides a native Tkinter application with three workflows
 | **Compare** | Compare two compatible saved live-evaluation reports |
 | **Evaluate** | Select a dataset and local Ollama model, run an evaluation, and view progress and output |
 
-The Intel macOS preview was built and manually tested on **macOS 15.7.9** with Python **3.12.12**. Testing included installation, report viewing, comparisons, model discovery, and a successful two-case live evaluation. Apple Silicon and other operating systems have not been manually validated. **No public installer is currently published.**
+A locally buildable **Intel macOS preview** is available; no public installer has been published. The desktop interface can also run directly from Python source where Tkinter is available. The packaged app has been manually validated on Intel macOS; Apple Silicon and other platforms have not been manually validated.
 
 For requirements, installation, report locations, and accessibility controls, see the [macOS preview guide](docs/macos-preview-guide.md). Developers can follow the [macOS build instructions](docs/milestone-5f-3-macos-build.md).
 
-The preview is ad-hoc signed, not Apple Developer ID signed or notarized.
+The preview is ad-hoc signed, not Apple Developer ID signed or notarized; see the installation guide for details.
 
 ## Get started from source
 
@@ -55,12 +55,14 @@ python3 trustbench.py offline
 python3 trustbench.py scorers
 ```
 
-To evaluate a local model, start Ollama and download a model:
+To evaluate a local model, install and start Ollama, then download a compatible model of your choice using [Ollama's instructions](https://ollama.com/). List your installed models and supply one of their names:
 
 ```bash
-ollama pull gemma3:1b
-python3 trustbench.py live --model gemma3:1b --dataset eval-read-live.json
+ollama list
+python3 trustbench.py live --model YOUR_MODEL_NAME --dataset eval-read-live.json
 ```
+
+Replace `YOUR_MODEL_NAME` with a model you have installed. The desktop Evaluate tab can discover installed models. The bounded consistency and prompt-injection example workflows currently use a model configured in their respective scripts rather than a general `--model` option.
 
 Additional CLI experiments:
 
@@ -96,7 +98,7 @@ ruff check .
 ruff format --check .
 ```
 
-**Verified on October 26, 2026:** 724 automated tests passing, Ruff lint and formatting checks passing, and an Intel macOS app/DMG build with a successful local Ollama smoke test. The tested live evaluation completed 2/2 cases without request errors; that is a smoke test, not a model-performance benchmark.
+**Validation:** 724 automated tests passed, along with Ruff lint and formatting checks (October 2026). The Intel macOS preview was also built and manually smoke-tested. See the development milestones and macOS build guide for environment-specific results.
 
 ## Project documentation
 
