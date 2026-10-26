@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock, patch
 
 from pytest import mark, raises
-
 from test_desktop_gui import make_test_app
 
 
@@ -22,8 +21,9 @@ def navigation_app():
     return app
 
 
-@mark.parametrize("index, name", [(0, "report_list"), (1, "previous_report"),
-                                 (2, "dataset_entry")])
+@mark.parametrize(
+    "index, name", [(0, "report_list"), (1, "previous_report"), (2, "dataset_entry")]
+)
 def test_direct_tab_jump_focuses_entry_without_traversing_other_controls(index, name):
     app = navigation_app()
     app.notebook.index.return_value = index
@@ -102,7 +102,10 @@ def test_dismissed_compare_warning_allows_tabbing_from_trigger_button():
 
 def test_keyboard_help_explains_list_as_one_tab_stop_and_enter_return():
     app = navigation_app()
-    with patch("desktop_gui.showinfo") as help_dialog, patch("desktop_gui.platform", "darwin"):
+    with (
+        patch("desktop_gui.showinfo") as help_dialog,
+        patch("desktop_gui.platform", "darwin"),
+    ):
         app.show_keyboard_help()
     text = help_dialog.call_args.args[1]
     assert "one Tab stop" in text

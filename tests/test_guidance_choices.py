@@ -3,10 +3,10 @@
 from unittest.mock import MagicMock, patch
 
 from pytest import mark
+from test_navigation_guidance import navigation_app
 
 from ollama_readiness import OllamaReadiness
 from spoken_choices import SpokenChoices
-from test_navigation_guidance import navigation_app
 
 
 def app_with_speech():
@@ -29,9 +29,13 @@ def test_checkbox_focus_has_outline_and_explicit_focused_off_label():
     app = app_with_speech()
     app._speech_focus_in(MagicMock())
     app.speech_focus_frame.configure.assert_called_with(highlightbackground="#007aff")
-    app.speech_toggle.configure.assert_called_with(text="Spoken guidance: Off [focused]")
+    app.speech_toggle.configure.assert_called_with(
+        text="Spoken guidance: Off [focused]"
+    )
     app._speech_focus_out(MagicMock())
-    app.speech_focus_frame.configure.assert_called_with(highlightbackground="background")
+    app.speech_focus_frame.configure.assert_called_with(
+        highlightbackground="background"
+    )
     app.speech_toggle.configure.assert_called_with(text="Spoken guidance: Off")
 
 
@@ -55,7 +59,9 @@ def test_focus_speech_omits_prefix_and_instructions_but_visual_hint_keeps_them()
 def test_explicit_spoken_value_is_not_truncated_at_filename_dot():
     app = app_with_speech()
     app._announce = MagicMock()
-    app._set_keyboard_hint("Detailed help", spoken="Current report. evaluation-one.json")
+    app._set_keyboard_hint(
+        "Detailed help", spoken="Current report. evaluation-one.json"
+    )
     app._announce.assert_called_once_with("Current report. evaluation-one.json")
 
 
@@ -98,11 +104,20 @@ def test_model_result_marks_discovery_loaded_and_preserves_typed_name():
     app.readiness_pending = True
     app.readiness_request_id = 1
     app.pending_readiness_command = None
-    app._handle_ollama_result(1, "gemma3:1b", OllamaReadiness(
-        "READY", "gemma3:1b", "Ready", ("gemma3:1b", "other:latest"),
-    ))
+    app._handle_ollama_result(
+        1,
+        "gemma3:1b",
+        OllamaReadiness(
+            "READY",
+            "gemma3:1b",
+            "Ready",
+            ("gemma3:1b", "other:latest"),
+        ),
+    )
     assert app.models_loaded is True
-    app.model_selector.configure.assert_called_with(values=("gemma3:1b", "other:latest"))
+    app.model_selector.configure.assert_called_with(
+        values=("gemma3:1b", "other:latest")
+    )
     app.model_name.set.assert_not_called()
 
 
@@ -164,7 +179,9 @@ def test_confirmation_commits_and_restores_focus_once():
     picker.combo.current.assert_called_once_with(1)
     picker.window.grab_release.assert_called_once()
     picker.combo.focus_set.assert_called_once()
-    picker.combo.event_generate.assert_called_once_with("<<ComboboxSelected>>", when="tail")
+    picker.combo.event_generate.assert_called_once_with(
+        "<<ComboboxSelected>>", when="tail"
+    )
 
 
 def test_escape_cancels_without_changing_original_value_and_cleans_timer():
@@ -201,8 +218,10 @@ def test_popup_constructor_binds_arrows_selection_confirmation_and_cancel():
     root.winfo_screenwidth.return_value = 1280
     root.winfo_screenheight.return_value = 800
     with (
-        patch("spoken_choices.Toplevel"), patch("spoken_choices.Frame"),
-        patch("spoken_choices.Label"), patch("spoken_choices.Scrollbar"),
+        patch("spoken_choices.Toplevel"),
+        patch("spoken_choices.Frame"),
+        patch("spoken_choices.Label"),
+        patch("spoken_choices.Scrollbar"),
         patch("spoken_choices.Listbox") as listbox,
     ):
         listbox.return_value.curselection.return_value = (0,)

@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock
 
 from pytest import mark
-
 from test_guidance_choices import app_with_speech, choice_picker
 
 
@@ -18,7 +17,10 @@ def test_reports_entry_announces_first_or_existing_report_without_opening(index)
     app._reports_focus_in(MagicMock())
     expected = 0 if index is None else index
     app._spoken_report.assert_called_once_with(expected)
-    assert app._set_keyboard_hint.call_args.kwargs["spoken"] == "Report with readable metadata"
+    assert (
+        app._set_keyboard_hint.call_args.kwargs["spoken"]
+        == "Report with readable metadata"
+    )
     if index is None:
         app.report_list.selection_set.assert_called_once_with(0)
         app.report_list.see.assert_called_once_with(0)
@@ -41,7 +43,9 @@ def test_reports_entry_handles_empty_list_without_indexing():
 def test_mouse_open_waits_until_release_then_idle_for_every_selector(field):
     app = app_with_speech()
     combo = getattr(app, field)
-    combo.instate.side_effect = lambda states: states == ["readonly"] and field != "model_selector"
+    combo.instate.side_effect = lambda states: (
+        states == ["readonly"] and field != "model_selector"
+    )
     combo.identify.return_value = "downarrow"
     combo.cget.return_value = ("one", "two")
     app.root.focus_get.return_value = combo
@@ -109,7 +113,9 @@ def test_transient_focus_is_not_treated_as_outside_action(focus):
         value = picker.combo
     else:
         value = MagicMock()
-        value.winfo_toplevel.return_value = picker.window if focus == "inside" else MagicMock()
+        value.winfo_toplevel.return_value = (
+            picker.window if focus == "inside" else MagicMock()
+        )
     picker.window.focus_get.return_value = value
     picker._check_focus()
     assert picker.closed is (focus == "outside")
