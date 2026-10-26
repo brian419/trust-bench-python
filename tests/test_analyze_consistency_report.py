@@ -4,7 +4,7 @@ from json import dumps, loads
 
 from pytest import raises
 
-from analyze_consistency_report import main, REVIEW_SPEC
+from analyze_consistency_report import REVIEW_SPEC, main
 
 
 def make_source_report():

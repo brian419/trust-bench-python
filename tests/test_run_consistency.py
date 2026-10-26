@@ -3,7 +3,7 @@ from platform import python_version
 from unittest.mock import patch
 
 from provenance import consistency_inputs_sha256
-from run_consistency import main, MODEL, OPTIONS, PROMPTS, REPETITIONS
+from run_consistency import MODEL, OPTIONS, PROMPTS, REPETITIONS, main
 
 
 def test_consistency_report_saved(tmp_path):

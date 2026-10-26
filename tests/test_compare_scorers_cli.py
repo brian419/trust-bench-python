@@ -3,7 +3,6 @@ from pathlib import Path
 from subprocess import run
 from sys import executable
 
-
 SCRIPT = Path(__file__).resolve().parent.parent / "compare_scorers.py"
 
 
