@@ -3,14 +3,13 @@
 from os import environ, killpg
 from pathlib import Path
 from signal import SIGKILL, SIGTERM
-from subprocess import PIPE, Popen, STDOUT
+from subprocess import PIPE, STDOUT, Popen
 from sys import executable
 from time import monotonic, sleep
 
 from app_entry import WORKER_FLAG
 from evaluation_progress import PROGRESS_FILE_ENV
 from runtime_paths import is_packaged, reports_directory, resource_directory
-
 
 PROJECT_ROOT = resource_directory()
 

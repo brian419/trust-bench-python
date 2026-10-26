@@ -1,6 +1,7 @@
 from json import JSONDecodeError, load
 from sys import argv, exit
 
+
 def compare_answers(expected: str, response: str) -> bool:
     return expected.lower().strip() == response.lower().strip()
 
@@ -21,30 +22,48 @@ def validate_dataset(data: object, require_response: bool = True) -> list[str]:
 
     for case_number, item in enumerate(data, start=1):
         if not isinstance(item, dict):
-            validation_errors.append(f"Error: Test case #{case_number} must be a dictionary.")
+            validation_errors.append(
+                f"Error: Test case #{case_number} must be a dictionary."
+            )
             continue
 
         if "id" not in item:
-            validation_errors.append(f"Error: Test case #{case_number}: Missing required field 'id'.")
+            validation_errors.append(
+                f"Error: Test case #{case_number}: Missing required field 'id'."
+            )
         elif not isinstance(item["id"], str):
-            validation_errors.append(f"Error: Test case #{case_number}: Field 'id' must be a string.")
-    
-        if "question" not in item:
-            validation_errors.append(f"Error: Test case #{case_number}: Missing required field 'question'.")
-        elif not isinstance(item["question"], str):
-            validation_errors.append(f"Error: Test case #{case_number}: Field 'question' must be a string.")
-    
-        if "expected" not in item:
-            validation_errors.append(f"Error: Test case #{case_number}: Missing required field 'expected'.")
-        elif not isinstance(item["expected"], str):
-            validation_errors.append(f"Error: Test case #{case_number}: Field 'expected' must be a string.")
+            validation_errors.append(
+                f"Error: Test case #{case_number}: Field 'id' must be a string."
+            )
 
-        if require_response:    
+        if "question" not in item:
+            validation_errors.append(
+                f"Error: Test case #{case_number}: Missing required field 'question'."
+            )
+        elif not isinstance(item["question"], str):
+            validation_errors.append(
+                f"Error: Test case #{case_number}: Field 'question' must be a string."
+            )
+
+        if "expected" not in item:
+            validation_errors.append(
+                f"Error: Test case #{case_number}: Missing required field 'expected'."
+            )
+        elif not isinstance(item["expected"], str):
+            validation_errors.append(
+                f"Error: Test case #{case_number}: Field 'expected' must be a string."
+            )
+
+        if require_response:
             if "response" not in item:
-                validation_errors.append(f"Error: Test case #{case_number}: Missing required field 'response'.")
+                validation_errors.append(
+                    f"Error: Test case #{case_number}: Missing required field 'response'."
+                )
             elif not isinstance(item["response"], str):
-                validation_errors.append(f"Error: Test case #{case_number}: Field 'response' must be a string.")
-        
+                validation_errors.append(
+                    f"Error: Test case #{case_number}: Field 'response' must be a string."
+                )
+
     return validation_errors
 
 
@@ -78,27 +97,26 @@ if __name__ == "__main__":
 
     for item in data:
         answers_match = compare_answers(item["expected"], item["response"])
-        if answers_match == True:
+        if answers_match:
             print("Test ID:", item["id"], ";", "PASS: The answers match!")
             passed_count += 1
-        else: 
+        else:
             print("Test ID:", item["id"], ";", "FAIL: The answers don't match!")
             failed_count += 1
 
-
-    if (passed_count == 1):
+    if passed_count == 1:
         print("Passed", passed_count, "test")
     else:
         print("Passed", passed_count, "tests")
 
-    if (failed_count == 1):
+    if failed_count == 1:
         print("Failed", failed_count, "test")
     else:
         print("Failed", failed_count, "tests")
 
     accuracy = calculate_accuracy(passed_count, failed_count)
 
-    if (accuracy is None):
+    if accuracy is None:
         print("Accuracy: N/A")
     else:
         print("Accuracy:", round(accuracy, 2))

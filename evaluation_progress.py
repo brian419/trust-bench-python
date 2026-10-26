@@ -5,7 +5,6 @@ from json import dumps, loads
 from os import environ
 from pathlib import Path
 
-
 PROGRESS_FILE_ENV = "TRUSTBENCH_PROGRESS_FILE"
 
 
@@ -93,20 +92,30 @@ class EvaluationProgress:
             self.status = "Dataset validated; preparing requests"
         elif stage == "case_started" and self.total is not None:
             index = event.get("index")
-            if type(index) is not int or index != self.completed + 1 or index > self.total:
+            if (
+                type(index) is not int
+                or index != self.completed + 1
+                or index > self.total
+            ):
                 return
             self.current = index
-            self.status = f"Waiting for Ollama response for case {index} of {self.total}"
+            self.status = (
+                f"Waiting for Ollama response for case {index} of {self.total}"
+            )
         elif stage == "case_completed" and self.total is not None:
             count = event.get("completed")
             if (
-                type(count) is not int or count != self.completed + 1
-                or count != self.current or count > self.total
+                type(count) is not int
+                or count != self.completed + 1
+                or count != self.current
+                or count > self.total
                 or event.get("outcome") not in ("PASS", "FAIL", "ERROR")
             ):
                 return
             self.completed = count
-            self.status = f"Case {count} finished ({event['outcome']}); preparing next step"
+            self.status = (
+                f"Case {count} finished ({event['outcome']}); preparing next step"
+            )
         elif stage == "saving" and self.total == self.completed:
             self.status = "Cases finished; preparing and saving report"
         elif stage == "saved" and self.total == self.completed:

@@ -9,3 +9,4 @@ reports/
 /build/
 /dist/
 /.venv-macos-build/
+.ruff_cache/
