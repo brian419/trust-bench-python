@@ -4,7 +4,8 @@ Status: source runtime, Ollama guidance, progress, keyboard and optional spoken
 guidance checkpoints implemented. The user passed 681 tests in 9.50 seconds on
 macOS/Python 3.12.12 at `11384c3`, confirmed spoken guidance throughout the app
 including Start Evaluation, and explicitly approved the spoken-guidance work.
-Next is 5F-3: native macOS app/DMG build and validation. No app/DMG build,
+5F-3 build tooling is implemented and passes 702 agent tests. Native macOS
+app/DMG creation and installed-app validation are pending. No actual app/DMG build,
 signing/notarization, clean-install result or public release is claimed yet.
 Service-unavailable recovery remains a clean-install validation item.
 Branch: `feature/milestone-5f-macos-packaging`.
@@ -94,6 +95,11 @@ workflows depend on the model service. Preserve existing evaluation request
 errors and scoring semantics.
 
 ### 5F-3: macOS app and DMG build
+
+**Tooling implemented; native build pending.** See the
+[build guide](milestone-5f-3-macos-build.md) for the isolated build environment,
+commands, verification, signing status and installed-app checklist. The agent
+passed 702 tests on Linux; this does not establish Mac artifact validity.
 
 Prepare reproducible local build configuration and commands for the macOS app
 and DMG. Keep packaging tools as build-time dependencies where appropriate.

@@ -243,6 +243,20 @@ Start Evaluation, and explicitly approved this work. Next is the macOS app/DMG
 build. These are source-run results; installed-app testing remains required.
 See the [progress and accessibility checkpoint](docs/milestone-5f-progress-accessibility.md).
 
+### Local macOS app/DMG build (5F-3)
+
+Build tooling is available on the packaging branch for an internal Intel Mac
+candidate. PyInstaller 6.22.3 is a build-only dependency installed in a separate
+venv. `build_macos.py --plan` shows the plan; `--check` checks the Mac build
+interpreter and native tools; running it without flags builds/verifies a candidate.
+The output includes TrustBench.app, a DMG, checksum and environment/build records.
+It does not install, publish, bundle Ollama/models or include existing reports.
+
+**702 agent tests pass** on Linux/Python 3.12.14. Native Mac building and
+installed-app validation remain pending. Candidates are ad-hoc signed and not
+notarized; this checkpoint is not a public-release readiness claim. See the
+[Mac build commands and validation guide](docs/milestone-5f-3-macos-build.md).
+
 ## Requirements
 
 - Python 3.12 (developed/tested with Python 3.12; desktop GUI manually tested on macOS with Python 3.12.12).

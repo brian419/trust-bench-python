@@ -772,6 +772,26 @@ were made. Next is 5F-3: macOS app/DMG configuration and actual installed-app
 validation. Approval covers app-controlled spoken guidance; system VoiceOver
 compatibility and full accessibility certification are not claimed.
 
+### Milestone 5F-3 macOS app/DMG tooling (implemented; native build pending)
+
+`build_macos.py`, the checked-in Mac spec and build-only requirements prepare
+unique Intel candidate directories. The build verifies resources, Python/Tcl/Tk,
+architecture and ad-hoc signing, smoke-tests the real frozen worker without
+Ollama or user-data writes, stages via ditto, and creates/verifies a DMG with an
+Applications shortcut. It records source/environment/package evidence and DMG
+checksums. No CI charges, installation or release publishing are introduced.
+
+The spec uses a windowed onedir bundle and disables argv emulation. It includes
+only five explicit datasets, with no user reports, venv, Ollama or models. Output,
+work and build-venv directories are ignored by Git. The first target is the user's
+Intel Mac; minimum macOS metadata conservatively matches the build host.
+
+**702 tests passed** on Linux/Python 3.12.14, including 21 new build regressions.
+Plan/compilation/import checks and the pinned-packager download were executed.
+No native Mac artifact was built by the agent. The user must build on macOS and
+validate from Applications before moving to clean-install/sharing preparation.
+See the [5F-3 build guide](docs/milestone-5f-3-macos-build.md).
+
 ### Architecture and scope rules
 
 - Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.
