@@ -6,12 +6,9 @@ from pytest import raises
 
 from ollama_client import generate_response
 
+
 def test_generate_response():
-    fake_data = {
-        "model": "gemma3:1b",
-        "response": "Paris",
-        "done": True
-    }
+    fake_data = {"model": "gemma3:1b", "response": "Paris", "done": True}
 
     fake_json = dumps(fake_data).encode("utf-8")
 
@@ -22,7 +19,7 @@ def test_generate_response():
     with patch("ollama_client.urlopen", return_value=fake_response) as mock_urlopen:
         answer = generate_response(
             "What is the capital of France? Answer with only the English city name.",
-            "gemma3:1b"
+            "gemma3:1b",
         )
 
         called_request = mock_urlopen.call_args.args[0]
@@ -32,21 +29,21 @@ def test_generate_response():
     assert called_request.get_method() == "POST"
     assert answer == "Paris"
     assert sent_data["model"] == "gemma3:1b"
-    assert sent_data["prompt"] == "What is the capital of France? Answer with only the English city name."
+    assert (
+        sent_data["prompt"]
+        == "What is the capital of France? Answer with only the English city name."
+    )
     assert sent_data["stream"] is False
 
     assert "options" not in sent_data
 
 
 def test_generate_response_connection_error():
-    with patch(
-        "ollama_client.urlopen",
-        side_effect=URLError("Connection refused")
-    ):
+    with patch("ollama_client.urlopen", side_effect=URLError("Connection refused")):
         with raises(URLError):
             generate_response(
                 "What is the capital of France? Answer with only the English city name.",
-                "gemma3:1b"
+                "gemma3:1b",
             )
 
 
@@ -57,31 +54,25 @@ def test_generate_response_http_error():
         code=404,
         msg="Not Found",
         hdrs=None,
-        fp=None
+        fp=None,
     )
 
-    with patch(
-        "ollama_client.urlopen",
-        side_effect=fake_error
-    ):
+    with patch("ollama_client.urlopen", side_effect=fake_error):
         with raises(HTTPError) as error:
             generate_response(
                 "What is the capital of France? Answer with only the English city name.",
-                "missing-model"
+                "missing-model",
             )
 
     assert error.value.code == 404
 
 
 def test_generate_response_timeout():
-    with patch(
-        "ollama_client.urlopen",
-        side_effect=TimeoutError("timed out")
-    ):
+    with patch("ollama_client.urlopen", side_effect=TimeoutError("timed out")):
         with raises(TimeoutError):
             generate_response(
                 "What is the capital of France? Answer with only the English city name.",
-                "gemma3:1b"
+                "gemma3:1b",
             )
 
 

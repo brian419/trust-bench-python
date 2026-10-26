@@ -9,10 +9,10 @@ from urllib.error import HTTPError, URLError
 from pytest import mark
 
 from ollama_readiness import (
-    check_ollama_readiness,
     CHECK_TIMEOUT_SECONDS,
     MAX_RESPONSE_BYTES,
     MODELS_URL,
+    check_ollama_readiness,
 )
 
 
@@ -84,8 +84,15 @@ def test_http_failure_is_not_misreported_as_missing_model():
 @mark.parametrize(
     "payload",
     [
-        b"not json", b"\xff", b"null", b"[]", b"{}", b'{"models":null}',
-        b'{"models":[null]}', b'{"models":[{}]}', b'{"models":[{"name":7}]}',
+        b"not json",
+        b"\xff",
+        b"null",
+        b"[]",
+        b"{}",
+        b'{"models":null}',
+        b'{"models":[null]}',
+        b'{"models":[{}]}',
+        b'{"models":[{"name":7}]}',
     ],
 )
 def test_malformed_model_list_is_unverified(payload):
@@ -117,31 +124,43 @@ def test_download_hint_quotes_model_and_never_runs_commands():
 
 
 def test_retry_recovers_after_service_and_model_become_available():
-    with patch("ollama_readiness.urlopen", side_effect=[
-        URLError("refused"), BytesIO(b'{"models":[]}'),
-        BytesIO(b'{"models":[{"name":"gemma3:1b"}]}'),
-    ]):
+    with patch(
+        "ollama_readiness.urlopen",
+        side_effect=[
+            URLError("refused"),
+            BytesIO(b'{"models":[]}'),
+            BytesIO(b'{"models":[{"name":"gemma3:1b"}]}'),
+        ],
+    ):
         statuses = [check_ollama_readiness("gemma3:1b").status for _ in range(3)]
     assert statuses == ["UNAVAILABLE", "MODEL_MISSING", "READY"]
 
 
 def test_model_choices_preserve_names_remove_duplicates_and_sort():
-    payload = dumps({"models": [
-        {"name": "z-team/model:Q4_K_M"}, {"model": "Alpha:latest"},
-        {"name": "z-team/model:Q4_K_M"}, {"name": "gemma3:1b"},
-    ]}).encode()
+    payload = dumps(
+        {
+            "models": [
+                {"name": "z-team/model:Q4_K_M"},
+                {"model": "Alpha:latest"},
+                {"name": "z-team/model:Q4_K_M"},
+                {"name": "gemma3:1b"},
+            ]
+        }
+    ).encode()
     with patch("ollama_readiness.urlopen", return_value=BytesIO(payload)):
         result = check_ollama_readiness("missing:latest")
     assert result.status == "MODEL_MISSING"
     assert result.models == ("Alpha:latest", "gemma3:1b", "z-team/model:Q4_K_M")
 
 
-@mark.parametrize("models, status", [([], "NO_MODELS"),
-                                   ([{"name": "gemma3:1b"}], "MODELS_AVAILABLE")])
+@mark.parametrize(
+    "models, status", [([], "NO_MODELS"), ([{"name": "gemma3:1b"}], "MODELS_AVAILABLE")]
+)
 def test_discovery_does_not_require_a_known_model_name(models, status):
-    with patch("ollama_readiness.urlopen", return_value=BytesIO(
-        dumps({"models": models}).encode()
-    )):
+    with patch(
+        "ollama_readiness.urlopen",
+        return_value=BytesIO(dumps({"models": models}).encode()),
+    ):
         result = check_ollama_readiness(" ", allow_empty=True)
     assert result.status == status
     assert result.models == tuple(item["name"] for item in models)
