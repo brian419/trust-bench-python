@@ -45,6 +45,7 @@ from generate_report import generate_text_report
 from ollama_readiness import check_ollama_readiness, OllamaReadiness
 from report_browser import list_saved_reports
 from report_loader import load_report as load_saved_report
+from report_speech import report_speech_details, spoken_model_name
 from report_summary import summarize_live_report
 from runtime_paths import reports_directory, resource_directory
 from spoken_choices import SpokenChoices
@@ -477,11 +478,11 @@ class TrustBenchDesktop:
             widget.bind("<FocusIn>", lambda event, label=name: self._set_keyboard_hint(
                 f"Keyboard focus: {label}. Down Arrow or Enter/Return opens choices; "
                 "Up/Down Arrow moves through choices; Enter/Return confirms; Escape closes.",
-                spoken=f"{label}. {event.widget.get() or 'No selection'}",
+                spoken=self._spoken_field(event.widget, label),
             ))
             widget.bind("<FocusOut>", self._clear_keyboard_hint)
             widget.bind("<<ComboboxSelected>>", lambda event, label=name: self._announce(
-                f"{label}: {event.widget.get()}"
+                self._spoken_field(event.widget, label)
             ))
         for widget, name in (
             (self.dataset_entry, "Dataset path"),
@@ -622,6 +623,7 @@ class TrustBenchDesktop:
         )
         self.choice_picker = SpokenChoices(
             self.root, combo, label, self._announce, self._choices_closed,
+            describe=lambda index, value: self._spoken_choice(combo, index, value),
         )
         window = self.choice_picker.window
         window.bind("<F6>", lambda event: self._choice_action(self._focus_spoken_guidance))
@@ -852,7 +854,39 @@ class TrustBenchDesktop:
     def _announce_report_selection(self, event):
         selection = self.report_list.curselection()
         if selection:
-            self._announce("Selected report: " + Path(self.saved_reports[selection[0]]).name)
+            self._announce(self._spoken_report(selection[0]))
+
+    def _spoken_report(self, index):
+        reports = self.saved_reports
+        if not 0 <= index < len(reports):
+            return "Report details unavailable"
+        prefix = f"Report {index + 1} of {len(reports)}"
+        narrator = getattr(self, "narrator", None)
+        if narrator is None or not narrator.enabled:
+            return prefix
+        cache = getattr(self, "report_speech_cache", None)
+        if cache is None:
+            cache = self.report_speech_cache = {}
+        path = reports[index]
+        if path not in cache:
+            cache[path] = report_speech_details(path)
+        return prefix + ". " + cache[path]
+
+    def _spoken_choice(self, combo, index, value):
+        if combo is self.model_selector:
+            return f"Model {index + 1}. {spoken_model_name(value)}"
+        for position, path in enumerate(self.saved_reports):
+            if Path(path).name == value:
+                return self._spoken_report(position)
+        return f"Report choice {index + 1}. Details unavailable"
+
+    def _spoken_field(self, combo, label):
+        value = combo.get()
+        if not value:
+            return label + ". No selection"
+        if combo is self.model_selector:
+            return label + ". " + spoken_model_name(value)
+        return label + ". " + self._spoken_choice(combo, max(0, combo.current()), value)
 
     def read_current_view(self):
         index = self.notebook.index("current")
@@ -1491,6 +1525,7 @@ class TrustBenchDesktop:
             return False
 
         self.saved_reports = reports
+        self.report_speech_cache = {}
 
         self.report_list.delete(0, END)
 

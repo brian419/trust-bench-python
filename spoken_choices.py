@@ -7,10 +7,11 @@ from tkinter.ttk import Frame, Label, Scrollbar
 class SpokenChoices:
     """Browse without committing; announce highlights rather than guessing native menus."""
 
-    def __init__(self, root, combo, label, announce, on_close):
+    def __init__(self, root, combo, label, announce, on_close, *, describe=None):
         self.combo = combo
         self.announce = announce
         self.on_close = on_close
+        self.describe = describe
         self.values = tuple(combo.cget("values"))
         self.closed = False
         self.last_highlight = None
@@ -72,7 +73,11 @@ class SpokenChoices:
             return
         index = selection[0]
         self.last_highlight = index
-        self.announce(f"{index + 1} of {len(self.values)}. {self.values[index]}")
+        describe = getattr(self, "describe", None)
+        text = describe(index, self.values[index]) if describe is not None else (
+            f"{index + 1} of {len(self.values)}. {self.values[index]}"
+        )
+        self.announce(text)
 
     def pointer_highlight(self, event):
         if self.closed or not self.values:
