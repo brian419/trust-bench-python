@@ -246,6 +246,8 @@ def test_interface_wires_ui_start_to_preflight_without_startup_network(app):
     assert commands["Get Ollama (website)"] == app.open_ollama_download
     assert commands["Refresh Models"] == app.check_ollama
     assert commands["Stop Evaluation"] == app.stop_evaluation
+    app.model_selector.bind.assert_any_call("<Return>", app._open_dropdown)
+    app.report_list.bind.assert_any_call("<Return>", app.open_selected_report)
     thread.assert_not_called()
     check.assert_not_called()
 

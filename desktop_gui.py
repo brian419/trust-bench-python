@@ -41,6 +41,10 @@ from runtime_paths import reports_directory, resource_directory
 PROJECT_ROOT = resource_directory()
 REPORTS_DIRECTORY = reports_directory(source_root=PROJECT_ROOT)
 OLLAMA_DOWNLOAD_URL = "https://ollama.com/download/mac"
+KEYBOARD_HINT = (
+    "Keyboard: Tab/Shift-Tab moves focus; Down Arrow opens dropdowns; "
+    "Space/Return activates buttons."
+)
 
 
 class TrustBenchDesktop:
@@ -242,10 +246,11 @@ class TrustBenchDesktop:
 
         dataset_controls = Frame(evaluation_frame)
         dataset_controls.pack(fill="x", pady=(0, 10))
-        Entry(
+        self.dataset_entry = Entry(
             dataset_controls,
             textvariable=self.dataset_path,
-        ).pack(side="left", fill="x", expand=True)
+        )
+        self.dataset_entry.pack(side="left", fill="x", expand=True)
 
         Button(
             dataset_controls,
@@ -371,7 +376,93 @@ class TrustBenchDesktop:
             display.bind("<Control-Tab>", lambda event: self._switch_tab(1))
             display.bind("<Control-Shift-Tab>", lambda event: self._switch_tab(-1))
 
+        self.keyboard_hint = StringVar(value=KEYBOARD_HINT)
+        Label(
+            frame, textvariable=self.keyboard_hint, wraplength=680, justify="left",
+        ).pack(fill="x", pady=(6, 0))
+        self._configure_button_keys(frame)
+        for widget, name in (
+            (self.previous_report, "Previous report"),
+            (self.current_report, "Current report"),
+            (self.model_selector, "Ollama model"),
+        ):
+            widget.configure(takefocus=True)
+            widget.bind("<Return>", self._open_dropdown)
+            widget.bind("<space>", self._dropdown_space)
+            widget.bind("<FocusIn>", lambda event, label=name: self.keyboard_hint.set(
+                f"Keyboard focus: {label}. Down Arrow or Return opens choices; "
+                "arrow keys select, Return confirms, Escape closes."
+            ))
+            widget.bind("<FocusOut>", self._clear_keyboard_hint)
+        for widget, name in (
+            (self.dataset_entry, "Dataset path"), (self.report_list, "Saved reports"),
+            (self.report_display, "Report text"),
+            (self.comparison_display, "Comparison results"),
+            (self.evaluation_display, "Evaluation Output"),
+        ):
+            widget.configure(takefocus=True)
+            widget.bind("<FocusIn>", lambda event, label=name: self.keyboard_hint.set(
+                f"Keyboard focus: {label}. Tab/Shift-Tab moves to another control."
+            ))
+            widget.bind("<FocusOut>", self._clear_keyboard_hint)
+        self.report_list.bind("<Return>", self.open_selected_report)
+        self.progress_bar.configure(takefocus=False)
         self.refresh_reports()
+
+    def _configure_button_keys(self, parent):
+        """Use explicit traversal/activation instead of platform-dependent defaults."""
+        for widget in parent.winfo_children():
+            kind = widget.winfo_class()
+            if kind == "TButton":
+                widget.configure(takefocus=lambda widget_path=None, button=widget: (
+                    not button.instate(["disabled"]) and bool(button.winfo_viewable())
+                ))
+                widget.bind("<FocusIn>", self._button_focus_in)
+                widget.bind("<FocusOut>", self._button_focus_out)
+                # Consume both halves so the class binding cannot invoke twice.
+                for key in ("space", "Return"):
+                    widget.bind(f"<KeyPress-{key}>", self._press_button)
+                    widget.bind(f"<KeyRelease-{key}>", self._activate_button)
+            elif kind in ("Scrollbar", "TScrollbar"):
+                widget.configure(takefocus=False)
+            self._configure_button_keys(widget)
+
+    def _button_focus_in(self, event):
+        event.widget.configure(default="active")
+        self.keyboard_hint.set(
+            f"Keyboard focus: {event.widget.cget('text')}. "
+            "Press Space or Return to activate."
+        )
+
+    def _button_focus_out(self, event):
+        self._keyboard_pressed_button = None
+        event.widget.configure(default="normal")
+        self._clear_keyboard_hint(event)
+
+    def _clear_keyboard_hint(self, event):
+        self.keyboard_hint.set(KEYBOARD_HINT)
+
+    def _press_button(self, event):
+        self._keyboard_pressed_button = (event.widget, event.keysym)
+        return "break"
+
+    def _activate_button(self, event):
+        pressed = getattr(self, "_keyboard_pressed_button", None)
+        self._keyboard_pressed_button = None
+        if pressed == (event.widget, event.keysym) and not event.widget.instate(["disabled"]):
+            event.widget.invoke()
+        return "break"
+
+    def _open_dropdown(self, event):
+        if not event.widget.instate(["disabled"]):
+            # Forward to Tk's public Down-key binding, including Aqua popdowns.
+            event.widget.event_generate("<Down>")
+        return "break"
+
+    def _dropdown_space(self, event):
+        if event.widget.instate(["readonly"]):
+            return self._open_dropdown(event)
+        return None  # Keep ordinary editing in the model-name entry.
 
     def _focus_next(self, event):
         event.widget.tk_focusNext().focus_set()
