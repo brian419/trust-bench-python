@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, patch
 
 from pytest import fixture, mark, raises
 
+from app_identity import BUILD_NUMBER
 from build_macos import (
     _verify_bundle,
     _worker_smoke_test,
@@ -36,6 +37,7 @@ def build_root(tmp_path, monkeypatch):
         (root / name).write_bytes((SOURCE / name).read_bytes())
     (root / "macos").mkdir()
     (root / "macos" / "INSTALL.txt").write_text("Development candidate")
+    (root / "macos" / "TrustBench.icns").write_bytes((SOURCE / "macos" / "TrustBench.icns").read_bytes())
     monkeypatch.setattr("build_macos.ROOT", root)
     return root
 
@@ -142,7 +144,9 @@ def make_bundle(root):
     binary.parent.mkdir()
     binary.write_bytes(b"fake executable")
     with (app / "Contents" / "Info.plist").open("wb") as output:
-        dump_plist({"CFBundleIdentifier": BUNDLE_ID}, output)
+        dump_plist({"CFBundleIdentifier": BUNDLE_ID, "CFBundleShortVersionString": APP_VERSION,
+                    "CFBundleVersion": BUILD_NUMBER, "CFBundleIconFile": "TrustBench.icns"}, output)
+    (resources / "TrustBench.icns").write_bytes((root / "macos" / "TrustBench.icns").read_bytes())
     for name in DATA_FILES:
         (resources / name).write_bytes((root / name).read_bytes())
     for name in ("_tkinter.so", "init.tcl", "tk.tcl", "libpython3.12.dylib"):
@@ -165,7 +169,7 @@ def test_bundle_verification_checks_resources_runtime_architecture_and_signature
 
 
 @mark.parametrize("missing", ["_tkinter.so", "init.tcl", "tk.tcl", "libpython3.12.dylib",
-                             "eval-read-live.json"])
+                             "eval-read-live.json", "TrustBench.icns"])
 def test_missing_bundle_component_blocks_candidate(build_root, missing):
     app = make_bundle(build_root)
     (app / "Contents" / "Resources" / missing).unlink()
@@ -227,6 +231,23 @@ def test_smoke_failure_stops_dmg_stage(build_root):
     command.assert_not_called()
 
 
+def test_failed_package_audit_stops_worker_and_dmg_creation(build_root):
+    fake_api = ModuleType("PyInstaller.__main__")
+    fake_api.run = MagicMock()
+    with (
+        patch.dict("sys.modules", {"PyInstaller": ModuleType("PyInstaller"), "PyInstaller.__main__": fake_api}),
+        patch("build_macos.check_build_environment", return_value={}),
+        patch("build_macos._verify_bundle", return_value={}),
+        patch("build_macos._audit_bundle", side_effect=RuntimeError("external dependency")),
+        patch("build_macos._worker_smoke_test") as smoke,
+        patch("build_macos.run") as command,
+    ):
+        with raises(RuntimeError, match="external dependency"):
+            build_candidate()
+    smoke.assert_not_called()
+    command.assert_not_called()
+
+
 def test_candidate_staging_checksum_and_record_never_publish_or_overwrite(build_root):
     fake_api = ModuleType("PyInstaller.__main__")
 
@@ -263,6 +284,9 @@ def test_candidate_staging_checksum_and_record_never_publish_or_overwrite(build_
     record = loads((first / "build-record.json").read_text())
     assert record["published"] is record["installed_app_validated"] is False
     assert record["app_version"] == APP_VERSION
+    audit = loads((first / "bundle-audit.json").read_text())
+    assert audit["files"][0]["path"] == "resource"
+    assert record["bundle_audit"]["files"] == 1
     assert record["dmg"]["sha256"] in (first / "SHA256SUMS.txt").read_text()
     create = next(args for args in commands if "create" in args)
     stage = Path(create[create.index("-srcfolder") + 1])

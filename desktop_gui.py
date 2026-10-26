@@ -34,6 +34,7 @@ from tkinter.ttk import (
 )
 from webbrowser import open as open_browser
 
+from app_identity import PREVIEW_LABEL
 from comparison_formatter import generate_comparison_text
 from evaluation_launcher import (
     build_live_command,
@@ -117,7 +118,7 @@ class TrustBenchDesktop:
 
         subtitle = Label(
             frame,
-            text="AI Evaluation and Reliability Testing",
+            text=f"AI Evaluation and Reliability Testing | {PREVIEW_LABEL}",
         )
         subtitle.pack(anchor="w", pady=(0, 12))
 
@@ -797,6 +798,7 @@ class TrustBenchDesktop:
         modifier = "Command" if platform == "darwin" else "Control"
         self._dialog(
             showinfo, "Keyboard Help",
+            f"TrustBench {PREVIEW_LABEL}\n\n"
             f"Jump directly to tabs: {modifier}+1 Reports, {modifier}+2 Compare, "
             f"{modifier}+3 Evaluate. Control+Tab goes forward; Control+Shift+Tab goes back.\n\n"
             f"F6 focuses Spoken guidance from any workflow. {modifier}+Shift+S toggles "

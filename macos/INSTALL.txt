@@ -1,4 +1,8 @@
-TrustBench local macOS build candidate
+TrustBench 0.5.0 preview
+
+Preview target: Intel (x86_64) Mac, macOS 15.7.9.
+The previous candidate was tested on this configuration. Other Mac models,
+Apple Silicon and other macOS versions have not been verified.
 
 Drag TrustBench.app to Applications, eject the disk image, then launch the app
 from Applications. End users do not need Python, Git or the source checkout.
@@ -20,3 +24,17 @@ No reports are bundled, moved, overwritten or deleted automatically.
 
 Spoken guidance is optional and off at launch. Keyboard Help lists shortcuts.
 The app-controlled speech feature is separate from Apple's VoiceOver.
+
+Your reports can include questions, expected answers, generated answers, model
+names, dataset paths and timestamps. Review their contents before sharing them.
+Live prompts go to your local Ollama service at localhost:11434. Opening Get
+Ollama launches an external website only after confirmation.
+
+Updating: quit TrustBench before replacing its app in Applications. Replacing
+the app does not intentionally remove reports in Application Support. Back up
+important reports first. To uninstall, move only TrustBench.app to Trash; saved
+reports remain until you explicitly remove their separate data folder.
+
+If something fails, record the app version/build from Finder Get Info, macOS
+version, action attempted and exact error. Avoid including private report data.
+Source and issue tracker: https://github.com/brian419/trust-bench-python

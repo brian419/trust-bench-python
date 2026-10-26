@@ -22,6 +22,7 @@ collection = COLLECT(
 )
 application = BUNDLE(
     collection, name="TrustBench.app", bundle_identifier=BUNDLE_ID, version=APP_VERSION,
+    icon=str(ROOT / "macos" / "TrustBench.icns"),
     info_plist={
         "CFBundleDisplayName": "TrustBench",
         "CFBundleShortVersionString": APP_VERSION,

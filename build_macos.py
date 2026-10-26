@@ -13,11 +13,10 @@ from sys import exit, platform, stderr
 from tempfile import TemporaryDirectory
 from uuid import uuid4
 
+from app_identity import APP_VERSION, BUILD_NUMBER, BUNDLE_ID, PREVIEW_LABEL
+
 
 ROOT = Path(__file__).resolve().parent
-APP_VERSION = "0.5.0"
-BUNDLE_ID = "io.github.brian419.trustbench"
-BUILD_NUMBER = "5001"
 PYINSTALLER_VERSION = "6.22.3"
 TARGET_PYTHON = "3.12.12"
 TARGET_ARCH = "x86_64"
@@ -25,12 +24,15 @@ DATA_FILES = (
     "eval-read-live.json", "eval-read-reference.json", "eval-read-valid.json",
     "prompt-injection-cases.json", "scoring-examples.json",
 )
-MAC_TOOLS = ("/usr/bin/codesign", "/usr/bin/ditto", "/usr/bin/file", "/usr/bin/hdiutil")
+MAC_TOOLS = (
+    "/usr/bin/codesign", "/usr/bin/ditto", "/usr/bin/file", "/usr/bin/hdiutil", "/usr/bin/otool",
+)
 
 
 def build_plan() -> dict:
     return {
-        "version": APP_VERSION, "architecture": TARGET_ARCH,
+        "version": APP_VERSION, "build_number": BUILD_NUMBER, "label": PREVIEW_LABEL,
+        "architecture": TARGET_ARCH,
         "python": TARGET_PYTHON, "pyinstaller": PYINSTALLER_VERSION,
         "spec": str(ROOT / "macos" / "TrustBench.spec"),
         "bundled_datasets": list(DATA_FILES),
@@ -57,6 +59,8 @@ def check_build_environment() -> dict:
     for name in DATA_FILES:
         if not (ROOT / name).is_file():
             raise RuntimeError(f"Missing bundled dataset: {name}")
+    if not (ROOT / "macos" / "TrustBench.icns").is_file():
+        raise RuntimeError("Missing TrustBench application icon.")
     for tool in MAC_TOOLS:
         if not Path(tool).is_file():
             raise RuntimeError(f"Required macOS build tool is unavailable: {tool}")
@@ -91,6 +95,43 @@ def _checksum(path: Path) -> str:
         return file_digest(source, "sha256").hexdigest()
 
 
+def _audit_bundle(app: Path) -> dict:
+    """Check package contents and native dependency paths without modifying the app."""
+    base = app.resolve()
+    files = []
+    links = []
+    native = {}
+    forbidden = {".git", ".venv", ".venv-macos-build", "__pycache__", "reports", "tests"}
+    magic = {b"\xfe\xed\xfa\xce", b"\xce\xfa\xed\xfe", b"\xfe\xed\xfa\xcf",
+             b"\xcf\xfa\xed\xfe", b"\xca\xfe\xba\xbe", b"\xbe\xba\xfe\xca",
+             b"\xca\xfe\xba\xbf", b"\xbf\xba\xfe\xca"}
+    for path in sorted(app.rglob("*")):
+        relative = path.relative_to(app).as_posix()
+        if forbidden.intersection(path.relative_to(app).parts) or path.name == ".env" or path.name.startswith(".env."):
+            raise RuntimeError(f"Unexpected development/user file in application: {relative}")
+        if path.is_symlink():
+            if path.readlink().is_absolute() or not path.exists() or not path.resolve().is_relative_to(base):
+                raise RuntimeError(f"Broken or external application symlink: {relative}")
+            links.append({"path": relative, "target": str(path.readlink())})
+        elif path.is_file():
+            files.append({"path": relative, "bytes": path.stat().st_size, "sha256": _checksum(path)})
+            with path.open("rb") as source:
+                header = source.read(4)
+            if header in magic:
+                output = run(["/usr/bin/otool", "-L", str(path)], check=True,
+                             capture_output=True, text=True).stdout
+                dependencies = []
+                for line in output.splitlines():
+                    dependency = line.strip().split(" (", 1)[0]
+                    if not line[:1].isspace() or not dependency or dependency.endswith(":"):
+                        continue
+                    if dependency.startswith("/") and not dependency.startswith(("/usr/lib/", "/System/Library/")):
+                        raise RuntimeError(f"External native dependency in {relative}: {dependency}")
+                    dependencies.append(dependency)
+                native[relative] = dependencies
+    return {"files": files, "symlinks": links, "native_dependencies": native}
+
+
 def _verify_bundle(app: Path) -> dict:
     binary = app / "Contents" / "MacOS" / "TrustBench"
     if not binary.is_file():
@@ -99,7 +140,14 @@ def _verify_bundle(app: Path) -> dict:
         info = load_plist(source)
     if info.get("CFBundleIdentifier") != BUNDLE_ID:
         raise RuntimeError("Unexpected application bundle identifier.")
+    if info.get("CFBundleShortVersionString") != APP_VERSION or info.get("CFBundleVersion") != BUILD_NUMBER:
+        raise RuntimeError("Unexpected application version/build metadata.")
     resources = app / "Contents" / "Resources"
+    if info.get("CFBundleIconFile") != "TrustBench.icns":
+        raise RuntimeError("Unexpected application icon metadata.")
+    icon = resources / "TrustBench.icns"
+    if not icon.is_file() or _checksum(icon) != _checksum(ROOT / "macos" / "TrustBench.icns"):
+        raise RuntimeError("Bundled TrustBench icon is missing or changed.")
     for name in DATA_FILES:
         bundled = resources / name
         if not bundled.is_file() or _checksum(bundled) != _checksum(ROOT / name):
@@ -177,6 +225,7 @@ def build_candidate() -> Path:
     ])
     app = output / "TrustBench.app"
     verification = _verify_bundle(app)
+    audit = _audit_bundle(app)
     smoke = _worker_smoke_test(app)
     stage = work / "dmg-content"
     stage.mkdir()
@@ -186,6 +235,7 @@ def build_candidate() -> Path:
         (ROOT / "macos" / "INSTALL.txt").read_text(encoding="utf-8"), encoding="utf-8",
     )
     _verify_bundle(stage / "TrustBench.app")
+    _audit_bundle(stage / "TrustBench.app")
     dmg = output / f"TrustBench-{APP_VERSION}-macos-{TARGET_ARCH}.dmg"
     run([
         "/usr/bin/hdiutil", "create", "-volname", "TrustBench", "-srcfolder", str(stage),
@@ -195,12 +245,17 @@ def build_candidate() -> Path:
     checksum = _checksum(dmg)
     (output / "SHA256SUMS.txt").write_text(f"{checksum}  {dmg.name}\n", encoding="utf-8")
     record = {
-        "app_version": APP_VERSION, "build_number": BUILD_NUMBER, "source": _source_evidence(),
+        "app_version": APP_VERSION, "build_number": BUILD_NUMBER, "label": PREVIEW_LABEL,
+        "source": _source_evidence(),
         "environment": environment, "verification": verification, "smoke_test": smoke,
         "dmg": {"filename": dmg.name, "sha256": checksum},
         "datasets": {name: _checksum(ROOT / name) for name in DATA_FILES},
         "build_packages": {d.metadata["Name"]: d.version for d in distributions() if d.metadata["Name"]},
         "native_gui_validated": False, "installed_app_validated": False, "published": False,
+        "support_scope": {"preview_architecture": "x86_64", "preview_macos": "15.7.9",
+                          "broader_compatibility_verified": False},
+        "bundle_audit": {"files": len(audit["files"]), "symlinks": len(audit["symlinks"]),
+                         "native_binaries": len(audit["native_dependencies"])},
     }
     packages = record["build_packages"]
     (output / "build-requirements.lock.txt").write_text(
@@ -208,6 +263,7 @@ def build_candidate() -> Path:
         encoding="utf-8",
     )
     (output / "build-record.json").write_text(dumps(record, indent=2) + "\n", encoding="utf-8")
+    (output / "bundle-audit.json").write_text(dumps(audit, indent=2) + "\n", encoding="utf-8")
     return output
 
 
