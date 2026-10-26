@@ -660,8 +660,17 @@ keyboard improvements, not a completed accessibility audit.
 The full suite passed **566 tests in 2.06 seconds** on Linux/Python 3.12.14,
 including 34 new regression cases. Source/private-worker subprocess telemetry,
 request-error outcomes, quiet waits, report-save failures, cleanup, elapsed-time
-freezing and restart resets are covered. Mac GUI, keyboard and VoiceOver checks
-remain pending before the app/DMG build. See the
+freezing and restart resets are covered. The user manually verified progress/counts, quiet-wait timing, stop/restart
+resets, resizing and normal closure on macOS. Their keyboard test found unclear
+button focus and inaccessible-to-them dropdown activation.
+
+The keyboard follow-up adds explicit enabled-button traversal and Space/Return
+activation, native focus emphasis, a persistent text hint naming the focused
+control, Return-to-open dropdowns, readonly Space-to-open, and Return to view a
+selected report. Editable model text still accepts spaces; disabled buttons are
+skipped and cannot activate. The full suite passes **577 tests** on Linux/Python
+3.12.14, including 11 new keyboard regression cases. Keyboard native rendering,
+Mac retesting and VoiceOver remain pending before the app/DMG build. See the
 [checkpoint and validation guide](docs/milestone-5f-progress-accessibility.md).
 
 ### Architecture and scope rules

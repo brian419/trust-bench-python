@@ -1,7 +1,8 @@
 # Pre-build evaluation progress and accessibility checkpoint
 
 Branch: `feature/milestone-5f-macos-packaging`.
-Status: implemented and agent-tested; Mac progress and accessibility validation pending.
+Status: progress manually validated on macOS; keyboard follow-up implemented
+and agent-tested, Mac keyboard/VoiceOver validation pending.
 No app/DMG build or release is claimed.
 
 ## User evidence and motivation
@@ -81,9 +82,39 @@ Tk widgets were mocked in GUI tests. Native layout, keyboard behavior and
 VoiceOver require actual macOS validation. No real Ollama inference was run by
 the agent for this checkpoint.
 
+## Mac progress evidence and keyboard follow-up
+
+The user manually verified case-count/bar updates, pending-case identification,
+elapsed time during quiet waits, completion/report saving, resets after
+stop/restart, resizing and normal closure. Report
+`evaluation-2524f1547c1d4e019f3b5de5c55fb370.json` recorded 2 PASS, 0 FAIL and
+0 request errors with Python 3.12.12. Screenshots also show a quiet wait at
+0 of 2 cases and a completed 2 of 2 run. This message did not provide a new
+pytest result, so the 566-test run above remains agent evidence.
+
+Their keyboard test found indistinct focus on buttons and uncertainty about
+opening dropdowns. A selected dropdown value is not itself proof of keyboard
+focus. The follow-up uses explicit focus callbacks and displays a hint naming
+the actual focused control. Buttons request the native active-default appearance
+while focused, restore normal appearance on focus out, and activate on a matched
+Space/Return press/release. Class bindings cannot cause duplicate activation.
+Disabled/hidden buttons are excluded from traversal. Focus loss cancels a pending
+key activation. Scrollbars and the progress bar are skipped in ordinary traversal;
+read-only output remains focusable and scrollable with its standard keys.
+
+Down Arrow uses Tk's native dropdown behavior; Return forwards to that binding.
+Space also opens readonly report dropdowns but remains editable text in the model
+field. Native arrow/Return/Escape popup behavior remains in Tk. Return in the
+saved-report list opens the selected report. No global Enter-to-start shortcut
+or automatic evaluation is added.
+
+The follow-up passed **577 tests** on Linux/Python 3.12.14, including 11 new
+keyboard cases. GUI widgets were mocked; the native Aqua highlight, popup behavior
+and screen-reader exposure still require Mac testing. No dependencies were added.
+
 ## Mac validation
 
-1. Pull the branch and run the full suite with Python 3.12.12; expect 566 tests.
+1. Pull the branch and run the full suite with Python 3.12.12; expect 577 tests.
 2. Launch `python3 app_entry.py`. Confirm status, bar, counts, timer, controls
    and output remain usable in the initial window and after resizing.
 3. Run `eval-read-live.json` with `gemma3:1b` selected from the dropdown. Confirm
@@ -123,3 +154,31 @@ Sources:
 - [Apple accessibility testing](https://developer.apple.com/documentation/accessibility/performing-accessibility-testing-for-your-app).
 - [Apple VoiceOver evaluation criteria](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/voiceover-evaluation-criteria).
 - [Python 3.12 ttk Progressbar and keyboard traversal](https://docs.python.org/3.12/library/tkinter.ttk.html).
+
+## Keyboard and VoiceOver quick start on macOS
+
+First test ordinary keyboard behavior with VoiceOver off. In System Settings >
+Keyboard, turn on Keyboard navigation. This is separate from the more extensive
+Accessibility > Keyboard > Full Keyboard Access feature. Test Tab/Shift-Tab,
+focused-button Space/Return, dropdown Down Arrow or Return, arrow-key choice,
+Return to confirm and Escape to dismiss. Observe both the native focus emphasis
+and the persistent Keyboard focus hint. No model should run just from moving focus.
+
+To test VoiceOver, use System Settings > Accessibility > VoiceOver, or press
+Command-F5 to toggle it on/off. If the function key shortcut is intercepted by
+hardware settings, try Fn-Command-F5 or use System Settings. In the first-run
+welcome dialog, Return enables VoiceOver and Space starts its tutorial.
+With default modifiers, Control-Option-Right/Left Arrow navigates items;
+Control-Option-Space performs the focused item's action. Keep the test short:
+check whether model/report fields and buttons are named, usable and reachable,
+and whether report/status text can be read. Record actual spoken output or
+missing elements. A visual keyboard hint is not a programmatic accessibility
+label and does not establish VoiceOver support.
+
+Official references for this follow-up:
+
+- [Apple Keyboard navigation](https://support.apple.com/guide/mac-help/use-full-keyboard-access-mchlc06d1059/mac).
+- [Apple VoiceOver on/off](https://support.apple.com/guide/voiceover/turn-voiceover-on-or-off-vo2682/mac).
+- [Apple VoiceOver commands](https://support.apple.com/guide/voiceover/control-your-mac-with-keyboard-commands-vo2681/mac).
+- [Tk button default appearance](https://www.tcl-lang.org/man/tcl8.6/TkCmd/ttk_button.htm).
+- [Tk combobox bindings](https://github.com/tcltk/tk/blob/core-8-6-branch/library/ttk/combobox.tcl).

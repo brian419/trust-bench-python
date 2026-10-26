@@ -167,8 +167,18 @@ No continuous activity animation is required. Existing detailed output remains
 available. Tab/Shift-Tab can leave read-only text areas; Control-Tab and
 Control-Shift-Tab switch workflow tabs, including from those text areas.
 
-This checkpoint passes **566 agent tests** on Linux/Python 3.12.14. Mac progress,
-keyboard and VoiceOver checks are pending; screen-reader support is not certified.
+The user manually verified progress, elapsed time, reset after stop/restart,
+resizing and normal closure on macOS. Keyboard testing exposed unclear button
+focus and dropdown activation. The follow-up adds a persistent keyboard hint,
+explicit enabled-button traversal, native focused-button emphasis, and
+Space/Return activation. Down Arrow opens dropdowns; Return also opens them.
+Space opens readonly report choices but remains text input in the model field.
+
+The updated suite passes **577 agent tests** on Linux/Python 3.12.14. Mac keyboard
+retesting and VoiceOver checks are pending; screen-reader support is not certified.
+For ordinary Mac keyboard testing, enable System Settings > Keyboard > Keyboard
+navigation. VoiceOver can be enabled separately in System Settings > Accessibility
+> VoiceOver; Command-F5 toggles it on/off (Fn may also be needed).
 See the [progress and accessibility checkpoint](docs/milestone-5f-progress-accessibility.md).
 
 ## Requirements
