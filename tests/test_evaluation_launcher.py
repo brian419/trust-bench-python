@@ -8,9 +8,9 @@ from unittest.mock import MagicMock, patch
 from pytest import raises
 
 from evaluation_launcher import (
+    PROJECT_ROOT,
     build_live_command,
     evaluation_group_exists,
-    PROJECT_ROOT,
     request_evaluation_stop,
     run_live_command,
     stop_evaluation_group,

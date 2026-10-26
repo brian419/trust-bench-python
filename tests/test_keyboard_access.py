@@ -3,9 +3,9 @@
 from unittest.mock import MagicMock
 
 from pytest import mark
+from test_desktop_gui import make_test_app
 
 from desktop_gui import KEYBOARD_HINT
-from test_desktop_gui import make_test_app
 
 
 def key_event(key="Return"):

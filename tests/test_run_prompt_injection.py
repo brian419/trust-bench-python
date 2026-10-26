@@ -6,7 +6,7 @@ from urllib.error import URLError
 
 from pytest import mark, raises
 
-from run_prompt_injection import build_prompt, main, MODEL, OPTIONS
+from run_prompt_injection import MODEL, OPTIONS, build_prompt, main
 
 
 def scenario():

@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from pytest import mark, raises
 
-from trustbench import main, PROJECT_ROOT
+from trustbench import PROJECT_ROOT, main
 
 
 def test_offline_default():
