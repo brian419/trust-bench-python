@@ -747,7 +747,7 @@ entry points. No dependencies were added. Existing reports, scoring, visual
 filenames and model values are unchanged. Native audible pronunciation remains
 for the user's Mac check.
 
-### First report announcement and spoken mouse chooser fix (Mac retest pending)
+### First report announcement and spoken mouse chooser fix (Mac validated)
 
 The user passed **663 tests in 8.52 seconds** on macOS/Python 3.12.12. Compare
 speech worked, but entering Saved reports only announced the section name and
@@ -764,8 +764,13 @@ speech-off dropdown behavior is retained.
 
 **681 tests passed** on Linux/Python 3.12.14, including 18 new cases. Reports entry
 selection, all-selector mouse sequencing, changed-context cancellation, focus
-transitions, unmatched release and speech-off behavior are covered. Native Mac
-validation is pending; no inference/scoring or report-schema changes were made.
+transitions, unmatched release and speech-off behavior are covered. The user
+subsequently passed **681 tests in 9.50 seconds** on macOS/Python 3.12.12 at
+`11384c3`, confirmed spoken guidance throughout the app including Start Evaluation,
+and explicitly approved the work. No inference/scoring or report-schema changes
+were made. Next is 5F-3: macOS app/DMG configuration and actual installed-app
+validation. Approval covers app-controlled spoken guidance; system VoiceOver
+compatibility and full accessibility certification are not claimed.
 
 ### Architecture and scope rules
 

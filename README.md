@@ -237,7 +237,10 @@ the originating click finishes, ignore unmatched opening-release events, and
 do not treat transient native focus changes as outside clicks. This is shared
 by both report selectors and the model selector; speech-off native menus remain
 unchanged. The follow-up passes **681 agent tests** on Linux/Python 3.12.14,
-including 18 new regression cases. Native Mac mouse/focus retesting is pending.
+including 18 new regression cases. The user then passed **681 tests in 9.50 seconds**
+on macOS/Python 3.12.12, verified spoken guidance throughout the app including
+Start Evaluation, and explicitly approved this work. Next is the macOS app/DMG
+build. These are source-run results; installed-app testing remains required.
 See the [progress and accessibility checkpoint](docs/milestone-5f-progress-accessibility.md).
 
 ## Requirements

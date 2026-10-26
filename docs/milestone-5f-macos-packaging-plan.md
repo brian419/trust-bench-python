@@ -1,11 +1,12 @@
 # Milestone 5F: macOS packaging, accessibility and sharing
 
-Status: 5F-1 is source-validated on macOS (468 tests). The original 5F-2 readiness/setup
-checkpoint passed 520 tests on macOS. The model-dropdown and website-transparency
-follow-up passed 532 tests on macOS and its main workflows were manually verified.
-The pre-build progress/keyboard checkpoint passes 566 agent tests; Mac validation
-of that checkpoint is pending. Service-unavailable recovery remains a manual check.
-No app/DMG build is claimed. 5F-3 through 5F-5 remain open.
+Status: source runtime, Ollama guidance, progress, keyboard and optional spoken
+guidance checkpoints implemented. The user passed 681 tests in 9.50 seconds on
+macOS/Python 3.12.12 at `11384c3`, confirmed spoken guidance throughout the app
+including Start Evaluation, and explicitly approved the spoken-guidance work.
+Next is 5F-3: native macOS app/DMG build and validation. No app/DMG build,
+signing/notarization, clean-install result or public release is claimed yet.
+Service-unavailable recovery remains a clean-install validation item.
 Branch: `feature/milestone-5f-macos-packaging`.
 Base: `feature/milestone-5` at `c70826ab340288d1cd393e802acb787bd82ed6c4`.
 Baseline: 450 tests passed on the user's Mac with Python 3.12.12, with
@@ -83,7 +84,8 @@ report paths, retained source behavior and process dispatch.
 
 **Implemented in `57b466e`; 520 tests passed on Linux/Python 3.12.14.**
 See the [5F-2 checkpoint](milestone-5f-2-ollama-readiness.md) for behavior,
-thread/lifecycle tests and the pending Mac validation. Opening TrustBench and
+thread/lifecycle tests and historical validation. The later source checks and
+user approval are recorded above. Opening TrustBench and
 using Reports/Compare do not require an Ollama check.
 
 Implement the readiness and recovery requirements above using bounded local
@@ -110,9 +112,13 @@ Check keyboard navigation, focus visibility, control activation, report
 selection/viewing and comparison, text readability and error recovery.
 Include real macOS accessibility checks before claiming accessibility support.
 
-Clarify running/completed/stopped states. Current progress is per-case text in
-Evaluation Output; there is no separate progress bar. Decide whether clearer
-status/count text is needed during this review without changing scoring.
+Source-run progress/status, keyboard navigation, focus recovery and optional
+app-controlled spoken guidance have been implemented and manually checked. The
+Evaluate tab has a persistent case bar/count, waiting status and elapsed time;
+scoring remains unchanged. The user approved spoken guidance after the 681-test
+Mac run. Repeat these checks with the bundled GUI runtime. Text scaling,
+contrast/system settings and actual VoiceOver exposure remain review targets;
+app speech is not a substitute for screen-reader accessibility.
 
 ### 5F-5: Clean-install and sharing validation
 
@@ -138,5 +144,5 @@ download does not mean Ollama or models are included in that download.
 - Mac build, accessibility and clean-install evidence is recorded honestly.
 - A concrete release candidate is reviewable before any release publication.
 
-No packaged app, DMG, release, signing or accessibility result is claimed by
-this planning checkpoint.
+Source-run evidence and user approval are recorded above. Native app/DMG,
+signing/notarization, clean-install and release evidence remain pending.
