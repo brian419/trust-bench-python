@@ -191,9 +191,16 @@ microphone permission or new runtime dependency. It complements screen-reader
 accessibility and does not establish VoiceOver support. Other platforms retain
 visual and keyboard operation; this speech backend targets macOS only.
 
-The current follow-up passes **606 agent tests** on Linux/Python 3.12.14,
-including 29 new regression cases. Mac navigation, dialog recovery and audible
-speech validation remain pending.
+The navigation/speech checkpoint passed **606 agent tests**. A follow-up fixes
+Tab access to the global speech controls: Tab from workflow output reaches Spoken
+guidance; Shift-Tab from the first workflow control reaches Keyboard Help, then
+the speech controls. Disabled Read current view is skipped. F6 focuses the speech
+checkbox without changing it; Command+Shift+S toggles speech on macOS
+(Control+Shift+S elsewhere). These shortcuts are displayed in the app and help.
+
+The updated suite passes **620 agent tests** on Linux/Python 3.12.14, including
+14 additional focus-navigation cases. The user reported the previous workflows
+working except Tab access to speech; the latest native focus fix needs Mac testing.
 See the [progress and accessibility checkpoint](docs/milestone-5f-progress-accessibility.md).
 
 ## Requirements

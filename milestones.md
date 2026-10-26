@@ -695,6 +695,19 @@ and timer cleanup are covered by regression tests. The full suite passes
 focus and popup behavior require user validation before packaging proceeds.
 See the [navigation and speech checkpoint](docs/milestone-5f-navigation-speech.md).
 
+### Spoken-guidance Tab access fix (implemented; Mac retest pending)
+
+The user reported the preceding workflows working except that Tab never reached
+the speech toggle. This fix explicitly connects each workflow's output/first
+control with the global accessibility controls in both directions, skips disabled
+Read current view, and keeps ordinary native traversal within workflows. The
+checkbox has an explicit focus callback. F6 focuses it without toggling speech;
+Command+Shift+S toggles on macOS (Control+Shift+S elsewhere), with visible help.
+
+**620 tests passed** on Linux/Python 3.12.14, including 14 new cases covering all
+three workflows and both directions. Speech remains off by default. Native Mac
+Tab/Shift-Tab and shortcut validation is pending.
+
 ### Architecture and scope rules
 
 - Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.
