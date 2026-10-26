@@ -2,7 +2,8 @@
 
 Branch: `feature/milestone-5f-macos-packaging`.
 Status: progress manually validated on macOS; keyboard follow-up implemented
-and agent-tested, Mac keyboard/VoiceOver validation pending.
+and agent-tested, initial Mac keyboard validation exposed further navigation/dialog issues.
+See the [navigation and speech follow-up](milestone-5f-navigation-speech.md).
 No app/DMG build or release is claimed.
 
 ## User evidence and motivation
@@ -182,3 +183,13 @@ Official references for this follow-up:
 - [Apple VoiceOver commands](https://support.apple.com/guide/voiceover/control-your-mac-with-keyboard-commands-vo2681/mac).
 - [Tk button default appearance](https://www.tcl-lang.org/man/tcl8.6/TkCmd/ttk_button.htm).
 - [Tk combobox bindings](https://github.com/tcltk/tk/blob/core-8-6-branch/library/ttk/combobox.tcl).
+
+## Subsequent user evidence
+
+At `7e1efb5`, the user passed **577 tests in 8.52 and 7.79 seconds** on
+macOS/Python 3.12.12. They confirmed arrow keys select reports, then identified
+missing list instructions, undiscoverable workflow shortcuts, Enter/Return
+terminology and focus loss after dialogs. These findings are addressed in the
+[navigation and speech checkpoint](milestone-5f-navigation-speech.md), whose native
+Mac validation remains pending. Optional app speech is not a claim of VoiceOver
+or general screen-reader support.

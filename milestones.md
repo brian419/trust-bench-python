@@ -673,6 +673,28 @@ skipped and cannot activate. The full suite passes **577 tests** on Linux/Python
 Mac retesting and VoiceOver remain pending before the app/DMG build. See the
 [checkpoint and validation guide](docs/milestone-5f-progress-accessibility.md).
 
+### Navigation and opt-in spoken guidance follow-up (Mac validation pending)
+
+The user passed **577 tests in 8.52 and 7.79 seconds** on macOS/Python 3.12.12.
+Further testing found confusing list versus control navigation, insufficiently
+discoverable tab shortcuts, Enter/Return terminology and focus loss after dialogs.
+The list itself already supports arrow-key selection; it remains one Tab stop.
+
+This follow-up adds persistent list/dropdown tips, F1 Keyboard Help, direct
+Command+1/2/3 tab shortcuts on macOS (Control+1/2/3 elsewhere), focus on entry to
+a selected workflow, keypad Enter, and one dialog helper for parent/focus recovery
+across Reports, Compare, Evaluate and file/help/confirmation dialogs.
+
+Optional Spoken guidance is off at every launch. Local macOS speech reads focus
+hints, selections, dialogs and changed evaluation status. Read current view is
+explicit, bounded and interruptible. It does not change system VoiceOver settings
+or replace a screen reader. Speech runs in its own worker with no Tk calls, no
+shell execution and no added dependency; old hints, disable/close, backend failures
+and timer cleanup are covered by regression tests. The full suite passes
+**606 tests** on Linux/Python 3.12.14, including 29 additional cases. Native Mac speech, keyboard
+focus and popup behavior require user validation before packaging proceeds.
+See the [navigation and speech checkpoint](docs/milestone-5f-navigation-speech.md).
+
 ### Architecture and scope rules
 
 - Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.

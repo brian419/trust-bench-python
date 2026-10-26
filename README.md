@@ -174,11 +174,26 @@ explicit enabled-button traversal, native focused-button emphasis, and
 Space/Return activation. Down Arrow opens dropdowns; Return also opens them.
 Space opens readonly report choices but remains text input in the model field.
 
-The updated suite passes **577 agent tests** on Linux/Python 3.12.14. Mac keyboard
-retesting and VoiceOver checks are pending; screen-reader support is not certified.
-For ordinary Mac keyboard testing, enable System Settings > Keyboard > Keyboard
-navigation. VoiceOver can be enabled separately in System Settings > Accessibility
-> VoiceOver; Command-F5 toggles it on/off (Fn may also be needed).
+The preceding keyboard checkpoint passed **577 tests on the user's Mac**.
+Further user testing prompted direct workflow shortcuts, clearer list/dropdown
+instructions and focus recovery after native dialogs. On macOS, **Command+1/2/3**
+jumps to Reports/Compare/Evaluate. Control+Tab cycles tabs. **Keyboard Help** (F1)
+explains how arrow keys choose within lists while Tab moves between controls.
+Enter and Return refer to the same confirmation action; keypad Enter is supported.
+
+**Spoken guidance** is optional and off at every launch. Its checkbox enables
+local macOS speech for focused-control hints, selected report/model names,
+dialog messages and evaluation status changes. **Read current view** explicitly
+reads an excerpt of the displayed text. Toggling off or closing stops speech;
+rapid navigation replaces old hints rather than building a backlog. This uses
+macOS `/usr/bin/say`, with no system VoiceOver setting change, paid service,
+microphone permission or new runtime dependency. It complements screen-reader
+accessibility and does not establish VoiceOver support. Other platforms retain
+visual and keyboard operation; this speech backend targets macOS only.
+
+The current follow-up passes **606 agent tests** on Linux/Python 3.12.14,
+including 29 new regression cases. Mac navigation, dialog recovery and audible
+speech validation remain pending.
 See the [progress and accessibility checkpoint](docs/milestone-5f-progress-accessibility.md).
 
 ## Requirements
