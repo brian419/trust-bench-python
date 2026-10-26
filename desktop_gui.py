@@ -9,14 +9,16 @@ from tempfile import TemporaryDirectory
 from threading import Lock, Thread
 from time import monotonic
 from tkinter import (
-    BooleanVar,
     END,
-    Frame as FocusFrame,
+    WORD,
+    BooleanVar,
     Listbox,
     StringVar,
     TclError,
     Tk,
-    WORD,
+)
+from tkinter import (
+    Frame as FocusFrame,
 )
 from tkinter.filedialog import askopenfilename
 from tkinter.messagebox import askyesno, showerror, showinfo, showwarning
@@ -43,7 +45,7 @@ from evaluation_launcher import (
 )
 from evaluation_progress import EvaluationProgress, ProgressReader
 from generate_report import generate_text_report
-from ollama_readiness import check_ollama_readiness, OllamaReadiness
+from ollama_readiness import OllamaReadiness, check_ollama_readiness
 from report_browser import list_saved_reports
 from report_loader import load_report as load_saved_report
 from report_speech import report_speech_details, spoken_model_name
@@ -51,7 +53,6 @@ from report_summary import summarize_live_report
 from runtime_paths import reports_directory, resource_directory
 from spoken_choices import SpokenChoices
 from spoken_guidance import SpokenGuidance
-
 
 PROJECT_ROOT = resource_directory()
 REPORTS_DIRECTORY = reports_directory(source_root=PROJECT_ROOT)
@@ -126,25 +127,35 @@ class TrustBenchDesktop:
         accessibility_controls.pack(fill="x", pady=(0, 6))
         self.speech_enabled = BooleanVar(value=False)
         self.speech_has_focus = False
-        self.speech_focus_frame = FocusFrame(accessibility_controls, highlightthickness=3, borderwidth=0)
+        self.speech_focus_frame = FocusFrame(
+            accessibility_controls, highlightthickness=3, borderwidth=0
+        )
         self.speech_focus_frame.pack(side="left")
         self.speech_focus_background = self.speech_focus_frame.cget("background")
-        self.speech_focus_frame.configure(highlightbackground=self.speech_focus_background)
+        self.speech_focus_frame.configure(
+            highlightbackground=self.speech_focus_background
+        )
         self.speech_toggle = Checkbutton(
-            self.speech_focus_frame, text="Spoken guidance: Off",
-            variable=self.speech_enabled, command=self.toggle_spoken_guidance,
+            self.speech_focus_frame,
+            text="Spoken guidance: Off",
+            variable=self.speech_enabled,
+            command=self.toggle_spoken_guidance,
             takefocus=True,
         )
         self.speech_toggle.pack(side="left")
         self.speech_enabled.trace_add("write", self._update_speech_label)
         self.speech_toggle.bind("<Return>", lambda event: self._toggle_speech_key())
         self.read_view_button = Button(
-            accessibility_controls, text="Read current view",
-            command=self.read_current_view, state="disabled",
+            accessibility_controls,
+            text="Read current view",
+            command=self.read_current_view,
+            state="disabled",
         )
         self.read_view_button.pack(side="left", padx=(8, 0))
         self.keyboard_help_button = Button(
-            accessibility_controls, text="Keyboard Help", command=self.show_keyboard_help,
+            accessibility_controls,
+            text="Keyboard Help",
+            command=self.show_keyboard_help,
         )
         self.keyboard_help_button.pack(side="right")
 
@@ -161,16 +172,20 @@ class TrustBenchDesktop:
         self.notebook.add(self.evaluate_tab, text="Evaluate")
         self.notebook.enable_traversal()
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
-        self.notebook.bind("<FocusIn>", lambda event: self._set_keyboard_hint(
-            "Keyboard focus: workflow tabs. Use the tab shortcuts below or Control+Tab."
-        ))
+        self.notebook.bind(
+            "<FocusIn>",
+            lambda event: self._set_keyboard_hint(
+                "Keyboard focus: workflow tabs. Use the tab shortcuts below or Control+Tab."
+            ),
+        )
         modifier = "Command" if platform == "darwin" else "Control"
         Label(
             frame,
             text=f"Tabs: {modifier}+1 Reports; {modifier}+2 Compare; "
             f"{modifier}+3 Evaluate. Control+Tab moves to the next tab. "
             f"F6 focuses Spoken guidance; {modifier}+Shift+S toggles it.",
-            wraplength=680, justify="left",
+            wraplength=680,
+            justify="left",
         ).pack(fill="x", pady=(4, 0))
         for index in range(3):
             self.root.bind(
@@ -181,7 +196,9 @@ class TrustBenchDesktop:
         self.root.bind("<Control-Shift-Tab>", lambda event: self._switch_tab(-1))
         self.root.bind("<F1>", lambda event: self.show_keyboard_help())
         self.root.bind("<F6>", lambda event: self._focus_spoken_guidance())
-        self.root.bind(f"<{modifier}-Shift-Key-S>", lambda event: self._toggle_speech_key())
+        self.root.bind(
+            f"<{modifier}-Shift-Key-S>", lambda event: self._toggle_speech_key()
+        )
         self.root.bind("<Tab>", self._focus_next)
         self.root.bind("<Shift-Tab>", self._focus_previous)
 
@@ -213,7 +230,8 @@ class TrustBenchDesktop:
             browser_frame,
             text="Up/Down Arrow chooses and scrolls reports; Enter/Return opens one. "
             "Tab leaves the list, regardless of how many reports it contains.",
-            wraplength=680, justify="left",
+            wraplength=680,
+            justify="left",
         ).pack(fill="x", pady=(4, 0))
 
         self.report_list.bind(
@@ -284,7 +302,8 @@ class TrustBenchDesktop:
             comparison_frame,
             text="Dropdowns: Down Arrow opens; arrow keys move; Enter/Return selects; "
             "Escape cancels. Space is for activating buttons.",
-            wraplength=680, justify="left",
+            wraplength=680,
+            justify="left",
         ).pack(fill="x", pady=(0, 6))
 
         Button(
@@ -324,9 +343,7 @@ class TrustBenchDesktop:
             text="Dataset:",
         ).pack(anchor="w")
 
-        self.dataset_path = StringVar(
-            value=str(PROJECT_ROOT / "eval-read-live.json")
-        )
+        self.dataset_path = StringVar(value=str(PROJECT_ROOT / "eval-read-live.json"))
 
         dataset_controls = Frame(evaluation_frame)
         dataset_controls.pack(fill="x", pady=(0, 10))
@@ -403,7 +420,9 @@ class TrustBenchDesktop:
         self.evaluation_actions = actions = Frame(self.evaluate_tab)
         actions.pack(fill="x", pady=(0, 6))
         self.expand_output_button = Button(
-            actions, text="Expand Output", command=self.toggle_evaluation_settings,
+            actions,
+            text="Expand Output",
+            command=self.toggle_evaluation_settings,
         )
         self.expand_output_button.pack(side="right")
         Button(
@@ -433,8 +452,10 @@ class TrustBenchDesktop:
         progress_frame = Frame(self.evaluate_tab)
         progress_frame.pack(fill="x", pady=(0, 8))
         Label(
-            progress_frame, textvariable=self.progress_status,
-            wraplength=680, justify="left",
+            progress_frame,
+            textvariable=self.progress_status,
+            wraplength=680,
+            justify="left",
         ).pack(anchor="w")
         self.progress_bar = Progressbar(progress_frame, mode="determinate", maximum=1)
         self.progress_bar.pack(fill="x", pady=(4, 4))
@@ -457,7 +478,9 @@ class TrustBenchDesktop:
         )
         self.evaluation_display.pack(fill="both", expand=True)
         for display in (
-            self.report_display, self.comparison_display, self.evaluation_display,
+            self.report_display,
+            self.comparison_display,
+            self.evaluation_display,
         ):
             display.bind("<Tab>", self._focus_next)
             display.bind("<Shift-Tab>", self._focus_previous)
@@ -466,7 +489,10 @@ class TrustBenchDesktop:
 
         self.keyboard_hint = StringVar(value=KEYBOARD_HINT)
         Label(
-            frame, textvariable=self.keyboard_hint, wraplength=680, justify="left",
+            frame,
+            textvariable=self.keyboard_hint,
+            wraplength=680,
+            justify="left",
         ).pack(fill="x", pady=(6, 0))
         self._configure_button_keys(frame)
         for widget, name in (
@@ -481,15 +507,21 @@ class TrustBenchDesktop:
             widget.bind("<Down>", self._dropdown_down)
             widget.bind("<Button-1>", self._dropdown_click)
             widget.bind("<ButtonRelease-1>", self._dropdown_release)
-            widget.bind("<FocusIn>", lambda event, label=name: self._set_keyboard_hint(
-                f"Keyboard focus: {label}. Down Arrow or Enter/Return opens choices; "
-                "Up/Down Arrow moves through choices; Enter/Return confirms; Escape closes.",
-                spoken=self._spoken_field(event.widget, label),
-            ))
+            widget.bind(
+                "<FocusIn>",
+                lambda event, label=name: self._set_keyboard_hint(
+                    f"Keyboard focus: {label}. Down Arrow or Enter/Return opens choices; "
+                    "Up/Down Arrow moves through choices; Enter/Return confirms; Escape closes.",
+                    spoken=self._spoken_field(event.widget, label),
+                ),
+            )
             widget.bind("<FocusOut>", self._clear_keyboard_hint)
-            widget.bind("<<ComboboxSelected>>", lambda event, label=name: self._announce(
-                self._spoken_field(event.widget, label)
-            ))
+            widget.bind(
+                "<<ComboboxSelected>>",
+                lambda event, label=name: self._announce(
+                    self._spoken_field(event.widget, label)
+                ),
+            )
         for widget, name in (
             (self.dataset_entry, "Dataset path"),
             (self.report_display, "Report text"),
@@ -497,9 +529,12 @@ class TrustBenchDesktop:
             (self.evaluation_display, "Evaluation Output"),
         ):
             widget.configure(takefocus=True)
-            widget.bind("<FocusIn>", lambda event, label=name: self._set_keyboard_hint(
-                f"Keyboard focus: {label}. Tab/Shift-Tab moves to another control."
-            ))
+            widget.bind(
+                "<FocusIn>",
+                lambda event, label=name: self._set_keyboard_hint(
+                    f"Keyboard focus: {label}. Tab/Shift-Tab moves to another control."
+                ),
+            )
             widget.bind("<FocusOut>", self._clear_keyboard_hint)
         self.report_list.bind("<Return>", self.open_selected_report)
         self.report_list.bind("<KP_Enter>", self.open_selected_report)
@@ -510,10 +545,12 @@ class TrustBenchDesktop:
         self.speech_toggle.bind("<FocusIn>", self._speech_focus_in)
         self.speech_toggle.bind("<KP_Enter>", lambda event: self._toggle_speech_key())
         self.speech_toggle.bind("<FocusOut>", self._speech_focus_out)
-        self.speech_toggle.configure(takefocus=lambda widget_path=None: (
-            not self.speech_toggle.instate(["disabled"])
-            and bool(self.speech_toggle.winfo_viewable())
-        ))
+        self.speech_toggle.configure(
+            takefocus=lambda widget_path=None: (
+                not self.speech_toggle.instate(["disabled"])
+                and bool(self.speech_toggle.winfo_viewable())
+            )
+        )
         self.progress_bar.configure(takefocus=False)
         self.refresh_reports()
 
@@ -525,7 +562,9 @@ class TrustBenchDesktop:
             self._announce("Evaluation output expanded. Setup controls hidden.")
         else:
             self.evaluation_settings.pack(
-                fill="x", pady=(0, 10), before=self.evaluation_actions,
+                fill="x",
+                pady=(0, 10),
+                before=self.evaluation_actions,
             )
             self.expand_output_button.configure(text="Expand Output")
             self._announce("Evaluation settings shown.")
@@ -536,9 +575,12 @@ class TrustBenchDesktop:
         for widget in parent.winfo_children():
             kind = widget.winfo_class()
             if kind == "TButton":
-                widget.configure(takefocus=lambda widget_path=None, button=widget: (
-                    not button.instate(["disabled"]) and bool(button.winfo_viewable())
-                ))
+                widget.configure(
+                    takefocus=lambda widget_path=None, button=widget: (
+                        not button.instate(["disabled"])
+                        and bool(button.winfo_viewable())
+                    )
+                )
                 widget.bind("<FocusIn>", self._button_focus_in)
                 widget.bind("<FocusOut>", self._button_focus_out)
                 # Consume both halves so the class binding cannot invoke twice.
@@ -586,7 +628,9 @@ class TrustBenchDesktop:
 
     def _speech_focus_out(self, event):
         self.speech_has_focus = False
-        self.speech_focus_frame.configure(highlightbackground=self.speech_focus_background)
+        self.speech_focus_frame.configure(
+            highlightbackground=self.speech_focus_background
+        )
         self._update_speech_label()
         self._clear_keyboard_hint(event)
 
@@ -597,7 +641,9 @@ class TrustBenchDesktop:
     def _activate_button(self, event):
         pressed = getattr(self, "_keyboard_pressed_button", None)
         self._keyboard_pressed_button = None
-        if pressed == (event.widget, event.keysym) and not event.widget.instate(["disabled"]):
+        if pressed == (event.widget, event.keysym) and not event.widget.instate(
+            ["disabled"]
+        ):
             event.widget.invoke()
         return "break"
 
@@ -616,9 +662,9 @@ class TrustBenchDesktop:
 
     def _dropdown_down(self, event):
         narrator = getattr(self, "narrator", None)
-        if (event.widget is self.model_selector and not event.widget.cget("values")) or (
-            narrator is not None and narrator.enabled
-        ):
+        if (
+            event.widget is self.model_selector and not event.widget.cget("values")
+        ) or (narrator is not None and narrator.enabled):
             return self._open_dropdown(event)
         return None
 
@@ -645,12 +691,18 @@ class TrustBenchDesktop:
         timer = getattr(self, "choice_open_timer", None)
         if timer is not None:
             self.root.after_cancel(timer)
-        self.choice_open_timer = self.root.after_idle(lambda: self._finish_mouse_choice(widget))
+        self.choice_open_timer = self.root.after_idle(
+            lambda: self._finish_mouse_choice(widget)
+        )
         return "break"
 
     def _finish_mouse_choice(self, widget):
         self.choice_open_timer = None
-        if self.window_closed or not widget.winfo_exists() or not widget.winfo_viewable():
+        if (
+            self.window_closed
+            or not widget.winfo_exists()
+            or not widget.winfo_viewable()
+        ):
             return
         try:
             focused = self.root.focus_get()
@@ -659,7 +711,11 @@ class TrustBenchDesktop:
         if focused is widget:
             # Recheck speech/state: a toggle or workflow change may have happened.
             narrator = getattr(self, "narrator", None)
-            if narrator is not None and narrator.enabled and not widget.instate(["disabled"]):
+            if (
+                narrator is not None
+                and narrator.enabled
+                and not widget.instate(["disabled"])
+            ):
                 if widget is self.model_selector and not widget.cget("values"):
                     self._ensure_models_loaded(force=True)
                 else:
@@ -672,22 +728,41 @@ class TrustBenchDesktop:
         picker = getattr(self, "choice_picker", None)
         if picker is not None:
             picker.cancel(restore_focus=False)
-        label = "Previous report" if combo is self.previous_report else (
-            "Current report" if combo is self.current_report else "Ollama model"
+        label = (
+            "Previous report"
+            if combo is self.previous_report
+            else ("Current report" if combo is self.current_report else "Ollama model")
         )
         self.choice_picker = SpokenChoices(
-            self.root, combo, label, self._announce, self._choices_closed,
+            self.root,
+            combo,
+            label,
+            self._announce,
+            self._choices_closed,
             describe=lambda index, value: self._spoken_choice(combo, index, value),
         )
         window = self.choice_picker.window
-        window.bind("<F6>", lambda event: self._choice_action(self._focus_spoken_guidance))
+        window.bind(
+            "<F6>", lambda event: self._choice_action(self._focus_spoken_guidance)
+        )
         window.bind("<F1>", lambda event: self._choice_action(self.show_keyboard_help))
         modifier = "Command" if platform == "darwin" else "Control"
-        window.bind(f"<{modifier}-Shift-Key-S>", lambda event: self._choice_action(self._toggle_speech_key))
+        window.bind(
+            f"<{modifier}-Shift-Key-S>",
+            lambda event: self._choice_action(self._toggle_speech_key),
+        )
         for index in range(3):
-            window.bind(f"<{modifier}-Key-{index + 1}>", lambda event, tab=index: self._choice_action(self._select_tab, tab))
-        window.bind("<Control-Tab>", lambda event: self._choice_action(self._switch_tab, 1))
-        window.bind("<Control-Shift-Tab>", lambda event: self._choice_action(self._switch_tab, -1))
+            window.bind(
+                f"<{modifier}-Key-{index + 1}>",
+                lambda event, tab=index: self._choice_action(self._select_tab, tab),
+            )
+        window.bind(
+            "<Control-Tab>", lambda event: self._choice_action(self._switch_tab, 1)
+        )
+        window.bind(
+            "<Control-Shift-Tab>",
+            lambda event: self._choice_action(self._switch_tab, -1),
+        )
 
     def _choice_action(self, callback, *args):
         if self.choice_picker is not None:
@@ -699,7 +774,9 @@ class TrustBenchDesktop:
         self.choice_picker = None
 
     def _ensure_models_loaded(self, *, force=False):
-        if (force or not getattr(self, "models_loaded", False)) and not self._evaluation_controls_busy():
+        if (
+            force or not getattr(self, "models_loaded", False)
+        ) and not self._evaluation_controls_busy():
             return self.check_ollama()
         return False
 
@@ -710,7 +787,11 @@ class TrustBenchDesktop:
 
     def _focus_next(self, event):
         if hasattr(self, "speech_toggle"):
-            if event.widget in (self.report_display, self.comparison_display, self.evaluation_display):
+            if event.widget in (
+                self.report_display,
+                self.comparison_display,
+                self.evaluation_display,
+            ):
                 return self._focus_spoken_guidance()
             if event.widget is self.speech_toggle:
                 target = self._read_button_or_help()
@@ -731,14 +812,20 @@ class TrustBenchDesktop:
                 self.keyboard_help_button.focus_set()
                 return "break"
             if event.widget is self.keyboard_help_button:
-                target = self.speech_toggle if self.read_view_button.instate(["disabled"]) else self.read_view_button
+                target = (
+                    self.speech_toggle
+                    if self.read_view_button.instate(["disabled"])
+                    else self.read_view_button
+                )
                 target.focus_set()
                 return "break"
             if event.widget is self.read_view_button:
                 return self._focus_spoken_guidance()
             if event.widget is self.speech_toggle:
                 index = self.notebook.index("current")
-                (self.report_display, self.comparison_display, self.evaluation_display)[index].focus_set()
+                (self.report_display, self.comparison_display, self.evaluation_display)[
+                    index
+                ].focus_set()
                 return "break"
         event.widget.tk_focusPrev().focus_set()
         return "break"
@@ -749,7 +836,11 @@ class TrustBenchDesktop:
         ]
 
     def _read_button_or_help(self):
-        return self.keyboard_help_button if self.read_view_button.instate(["disabled"]) else self.read_view_button
+        return (
+            self.keyboard_help_button
+            if self.read_view_button.instate(["disabled"])
+            else self.read_view_button
+        )
 
     def _focus_spoken_guidance(self):
         self.speech_toggle.focus_set()
@@ -801,21 +892,32 @@ class TrustBenchDesktop:
             if root is not None and not getattr(self, "window_closed", False):
                 try:
                     root.focus_set()
-                    usable = origin is not None and origin.winfo_exists() and origin.winfo_viewable()
-                    if usable and origin.winfo_class() in ("TButton", "TCombobox", "TEntry"):
+                    usable = (
+                        origin is not None
+                        and origin.winfo_exists()
+                        and origin.winfo_viewable()
+                    )
+                    if usable and origin.winfo_class() in (
+                        "TButton",
+                        "TCombobox",
+                        "TEntry",
+                    ):
                         usable = not origin.instate(["disabled"])
                     if usable:
                         origin.focus_set()
                     elif hasattr(self, "notebook"):
                         index = self.notebook.index("current")
-                        (self.report_list, self.previous_report, self.dataset_entry)[index].focus_set()
+                        (self.report_list, self.previous_report, self.dataset_entry)[
+                            index
+                        ].focus_set()
                 except TclError:
                     pass
 
     def show_keyboard_help(self):
         modifier = "Command" if platform == "darwin" else "Control"
         self._dialog(
-            showinfo, "Keyboard Help",
+            showinfo,
+            "Keyboard Help",
             f"TrustBench {PREVIEW_LABEL}\n\n"
             f"Jump directly to tabs: {modifier}+1 Reports, {modifier}+2 Compare, "
             f"{modifier}+3 Evaluate. Control+Tab goes forward; Control+Shift+Tab goes back.\n\n"
@@ -848,8 +950,11 @@ class TrustBenchDesktop:
         if not self.narrator.set_enabled(enabled):
             self.speech_enabled.set(False)
             self.read_view_button.configure(state="disabled")
-            self._dialog(showinfo, "Spoken Guidance Unavailable",
-                         "Local macOS speech is unavailable. Keyboard navigation still works.")
+            self._dialog(
+                showinfo,
+                "Spoken Guidance Unavailable",
+                "Local macOS speech is unavailable. Keyboard navigation still works.",
+            )
             return
         self.read_view_button.configure(state="normal" if enabled else "disabled")
         if not enabled and getattr(self, "choice_picker", None) is not None:
@@ -860,7 +965,11 @@ class TrustBenchDesktop:
 
     def _announce(self, text, immediate=False):
         narrator = getattr(self, "narrator", None)
-        if narrator is None or not narrator.enabled or getattr(self, "window_closed", False):
+        if (
+            narrator is None
+            or not narrator.enabled
+            or getattr(self, "window_closed", False)
+        ):
             return
         if self.speech_timer is not None:
             self.root.after_cancel(self.speech_timer)
@@ -886,7 +995,9 @@ class TrustBenchDesktop:
             if getattr(self, "choice_picker", None) is not None:
                 self.choice_picker.cancel()
             self._cancel_speech_callbacks()
-            self.keyboard_hint.set("Spoken guidance could not run and was turned off. Keyboard navigation still works.")
+            self.keyboard_hint.set(
+                "Spoken guidance could not run and was turned off. Keyboard navigation still works."
+            )
         elif self.narrator.enabled:
             self.speech_poll_timer = self.root.after(500, self._poll_speech)
 
@@ -925,7 +1036,11 @@ class TrustBenchDesktop:
             index = 0
         else:
             index = selection[0] if selection else None
-        spoken = self._spoken_report(index) if index is not None else "Saved reports. No reports available"
+        spoken = (
+            self._spoken_report(index)
+            if index is not None
+            else "Saved reports. No reports available"
+        )
         self._set_keyboard_hint(
             "Keyboard focus: Saved reports. Up/Down Arrow chooses a report and scrolls "
             "the list; Enter/Return opens it. Tab moves to the next control, not the next report.",
@@ -966,7 +1081,11 @@ class TrustBenchDesktop:
 
     def read_current_view(self):
         index = self.notebook.index("current")
-        display = (self.report_display, self.comparison_display, self.evaluation_display)[index]
+        display = (
+            self.report_display,
+            self.comparison_display,
+            self.evaluation_display,
+        )[index]
         text = display.get("1.0", END).strip()
         if len(text) > 3600:
             text = text[:3600] + ". End of excerpt. More text is available in the view."
@@ -979,7 +1098,8 @@ class TrustBenchDesktop:
         self.progress_counts.set(self.progress.count_text())
         self.progress_elapsed.set(self.progress.elapsed_text())
         self.progress_bar.configure(
-            maximum=max(1, self.progress.total or 0), value=self.progress.completed,
+            maximum=max(1, self.progress.total or 0),
+            value=self.progress.completed,
         )
         if self.progress.status != getattr(self, "_last_announced_status", None):
             self._last_announced_status = self.progress.status
@@ -988,7 +1108,8 @@ class TrustBenchDesktop:
     def browse_dataset(self):
         """Select a JSON dataset for live evaluation."""
 
-        filename = self._dialog(askopenfilename,
+        filename = self._dialog(
+            askopenfilename,
             title="Select Evaluation Dataset",
             initialdir=str(PROJECT_ROOT),
             filetypes=[
@@ -1009,7 +1130,8 @@ class TrustBenchDesktop:
                 self.model_name.get(),
             )
         except ValueError as error:
-            self._dialog(showerror,
+            self._dialog(
+                showerror,
                 "Invalid Evaluation Settings",
                 str(error),
             )
@@ -1027,7 +1149,8 @@ class TrustBenchDesktop:
 
     def open_ollama_download(self):
         """Open the official download page only when the user requests it."""
-        if not self._dialog(askyesno,
+        if not self._dialog(
+            askyesno,
             "Open Ollama Website?",
             "Open the official Ollama download page in your browser?\n\n"
             f"{OLLAMA_DOWNLOAD_URL}\n\n"
@@ -1042,7 +1165,8 @@ class TrustBenchDesktop:
         except OSError:
             opened = False
         if not opened:
-            self._dialog(showerror,
+            self._dialog(
+                showerror,
                 "Browser Could Not Open",
                 f"Open this address in your browser: {OLLAMA_DOWNLOAD_URL}",
                 parent=self.root,
@@ -1051,7 +1175,8 @@ class TrustBenchDesktop:
 
     def show_ollama_setup(self):
         """Explain separate setup without installing software or models."""
-        self._dialog(showinfo,
+        self._dialog(
+            showinfo,
             "Ollama Setup",
             "1. Use Get Ollama (website) to open the official download page:\n"
             f"{OLLAMA_DOWNLOAD_URL}\n"
@@ -1063,8 +1188,7 @@ class TrustBenchDesktop:
             "You can also download a model in Terminal: ollama pull gemma3:1b\n"
             "Model downloads need internet and disk space. TrustBench does not "
             "install Ollama or download models automatically.\n\n"
-            "Reports and Compare work without Ollama.\n\n"
-            + self.ollama_status.get(),
+            "Reports and Compare work without Ollama.\n\n" + self.ollama_status.get(),
         )
 
     def check_ollama(self):
@@ -1084,8 +1208,12 @@ class TrustBenchDesktop:
 
     def _evaluation_controls_busy(self):
         return (
-            self.evaluation_running or self.shutdown_pending or self.shutdown_unverified
-            or self.close_requested or self.readiness_pending or self.window_closed
+            self.evaluation_running
+            or self.shutdown_pending
+            or self.shutdown_unverified
+            or self.close_requested
+            or self.readiness_pending
+            or self.window_closed
         )
 
     def _begin_ollama_check(self, command=None):
@@ -1101,7 +1229,9 @@ class TrustBenchDesktop:
         self.refresh_models_button.configure(state="disabled")
         self.ollama_status.set("Checking Ollama and the selected model...")
         worker = Thread(
-            target=self._check_ollama_worker, args=(request_id, model), daemon=True,
+            target=self._check_ollama_worker,
+            args=(request_id, model),
+            daemon=True,
         )
         try:
             worker.start()
@@ -1122,12 +1252,15 @@ class TrustBenchDesktop:
         """Only enqueue data here; every Tkinter operation stays on its thread."""
         try:
             result = (
-                check_ollama_readiness(model) if model
+                check_ollama_readiness(model)
+                if model
                 else check_ollama_readiness(model, allow_empty=True)
             )
         except Exception:
             result = OllamaReadiness(
-                "CHECK_FAILED", model, "Could not verify Ollama. Please check again.",
+                "CHECK_FAILED",
+                model,
+                "Could not verify Ollama. Please check again.",
             )
         self.evaluation_events.put(("readiness", (request_id, model, result)))
 
@@ -1197,7 +1330,8 @@ class TrustBenchDesktop:
                 self.model_name.get(),
             )
         except ValueError as error:
-            self._dialog(showerror,
+            self._dialog(
+                showerror,
                 "Invalid Evaluation Settings",
                 str(error),
             )
@@ -1243,7 +1377,8 @@ class TrustBenchDesktop:
         """Close safely, stopping an active evaluation first."""
 
         if self.shutdown_unverified:
-            self._dialog(showwarning,
+            self._dialog(
+                showwarning,
                 "Shutdown Not Verified",
                 "The previous evaluation may still be running. "
                 "The window will remain open.",
@@ -1274,7 +1409,8 @@ class TrustBenchDesktop:
 
         if self.shutdown_unverified:
             self.close_requested = False
-            self._dialog(showwarning,
+            self._dialog(
+                showwarning,
                 "Shutdown Not Verified",
                 "Evaluation shutdown could not be verified. "
                 "The window will remain open.",
@@ -1471,7 +1607,9 @@ class TrustBenchDesktop:
             elif event_type == "process":
                 self.active_evaluation_process = value
                 if self.progress.total is None and not self.stop_requested:
-                    self.progress.status = "Evaluation running; waiting for progress details"
+                    self.progress.status = (
+                        "Evaluation running; waiting for progress details"
+                    )
 
                 if self.stop_requested and not self.evaluation_finished:
                     self._begin_evaluation_shutdown(value)
@@ -1566,13 +1704,19 @@ class TrustBenchDesktop:
                     f"\nEvaluation startup/read error: {value}\n",
                 )
                 self.evaluation_display.configure(state="disabled")
-                self.progress.finish("Evaluation failed; see Evaluation Output", monotonic())
+                self.progress.finish(
+                    "Evaluation failed; see Evaluation Output", monotonic()
+                )
 
         if not self.window_closed:
             if self.shutdown_unverified:
-                self.progress.status = "Shutdown not verified; evaluation may still be running"
+                self.progress.status = (
+                    "Shutdown not verified; evaluation may still be running"
+                )
             elif self.shutdown_pending:
-                self.progress.status = "Stopping evaluation; waiting for process cleanup"
+                self.progress.status = (
+                    "Stopping evaluation; waiting for process cleanup"
+                )
             elif self.stop_requested and not self.evaluation_running:
                 self.progress.status = "Evaluation stopped"
             self._render_progress()
@@ -1594,7 +1738,8 @@ class TrustBenchDesktop:
         try:
             reports = list_saved_reports(str(REPORTS_DIRECTORY))
         except (OSError, ValueError) as error:
-            self._dialog(showerror,
+            self._dialog(
+                showerror,
                 "Unable to List Reports",
                 str(error),
             )
@@ -1641,14 +1786,16 @@ class TrustBenchDesktop:
         current_index = self.current_report.current()
 
         if previous_index < 0 or current_index < 0:
-            self._dialog(showwarning,
+            self._dialog(
+                showwarning,
                 "Select Two Reports",
                 "Choose a previous and current report first.",
             )
             return False
 
         if previous_index == current_index:
-            self._dialog(showwarning,
+            self._dialog(
+                showwarning,
                 "Select Two Reports",
                 "Choose two different reports to compare.",
             )
@@ -1663,7 +1810,8 @@ class TrustBenchDesktop:
                 current_path,
             )
         except (OSError, ValueError) as error:
-            self._dialog(showerror,
+            self._dialog(
+                showerror,
                 "Unable to Compare Reports",
                 str(error),
             )
@@ -1680,7 +1828,8 @@ class TrustBenchDesktop:
     def open_report(self):
         """Ask the user to select a JSON evaluation report."""
 
-        filename = self._dialog(askopenfilename,
+        filename = self._dialog(
+            askopenfilename,
             title="Select TrustBench Evaluation Report",
             filetypes=[
                 ("JSON reports", "*.json"),
@@ -1699,7 +1848,8 @@ class TrustBenchDesktop:
         try:
             output = generate_text_report(filename)
         except (OSError, ValueError) as error:
-            self._dialog(showerror,
+            self._dialog(
+                showerror,
                 "Unable to Open Report",
                 str(error),
             )

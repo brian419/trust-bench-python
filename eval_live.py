@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 from datetime import datetime, timezone
-from json import dump, JSONDecodeError, loads
+from json import JSONDecodeError, dump, loads
 from pathlib import Path
 from sys import exit
 from time import perf_counter
@@ -10,11 +10,11 @@ from uuid import uuid4
 from answer_scorer import score_answer
 from eval import calculate_accuracy, compare_answers, validate_dataset
 from evaluation_progress import emit_progress
-from ollama_client import generate_response, MalformedResponseError
+from ollama_client import MalformedResponseError, generate_response
 from provenance import (
     ALTERNATIVE_SCORING_ID,
-    bytes_sha256,
     EXACT_SCORING_ID,
+    bytes_sha256,
     python_runtime_version,
 )
 from reference_validator import validate_reference_dataset
@@ -201,7 +201,9 @@ def main(
         }
 
         results.append(result)
-        emit_progress("case_completed", completed=len(results), outcome=result["status"])
+        emit_progress(
+            "case_completed", completed=len(results), outcome=result["status"]
+        )
 
     emit_progress("saving")
     print("Collected results:", results)
@@ -265,9 +267,7 @@ def main(
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(
-        description="Evaluate answers using a local Ollama model."
-    )
+    parser = ArgumentParser(description="Evaluate answers using a local Ollama model.")
     parser.add_argument(
         "--dataset",
         default="eval-read-live.json",

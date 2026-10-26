@@ -5,7 +5,6 @@ from pathlib import Path
 from subprocess import run
 from sys import executable, exit
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent
 
 
@@ -28,9 +27,7 @@ def readable_dataset(value: str) -> Path:
         with path.open("r", encoding="utf-8"):
             pass
     except OSError as error:
-        raise ArgumentTypeError(
-            f"Cannot read dataset file: {error}"
-        ) from error
+        raise ArgumentTypeError(f"Cannot read dataset file: {error}") from error
 
     return path
 
