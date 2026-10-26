@@ -7,7 +7,6 @@ from uuid import uuid4
 from consistency_report_reader import load_verified_report
 from consistency_review import review_prompt
 
-
 SOURCE_REPORT = Path("reports/consistency-f0503c787fec46e1a4052f5c17743f5d.json")
 
 SOURCE_SHA256 = "b4a4a5cd5e2c04f98e585bca144efb5cd9e06bc44c0e2be7d9641d89d41fd70c"

@@ -9,7 +9,6 @@ from traceback import print_exc
 
 from trustbench import nonempty_model, readable_dataset
 
-
 WORKER_FLAG = "--trustbench-evaluate"
 
 
