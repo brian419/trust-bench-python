@@ -729,6 +729,24 @@ No dependency was added. Native Mac layout, audible browsing and automatic model
 loading still need validation. See the
 [usability checkpoint](docs/milestone-5f-choice-speech-discovery.md).
 
+### Friendly report narration (implemented; Mac validation pending)
+
+The user confirmed the preceding speech-focus styling and concise speech and
+reported everything else working, but random JSON report filenames were difficult
+to listen to. Report speech now describes current list position, run date/time
+and model. Report filenames remain visible and are not renamed. The same
+formatting is used for Reports selection and Compare focus, highlighted choices
+and confirmation. Metadata is optional and bounded to a 1 MiB read, with explicit
+file-modification-date/unavailable fallbacks. Metadata descriptions are cached
+until report refresh; speech-off operation does not read report contents for labels.
+Common model notation is expanded only for speech.
+
+**663 tests passed** on Linux/Python 3.12.14, including 20 new cases for metadata,
+missing/malformed/large files, model notation, caching, list ordering and narration
+entry points. No dependencies were added. Existing reports, scoring, visual
+filenames and model values are unchanged. Native audible pronunciation remains
+for the user's Mac check.
+
 ### Architecture and scope rules
 
 - Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.

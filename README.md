@@ -216,8 +216,20 @@ Reports-only startup makes no service request.
 
 The updated suite passes **643 agent tests** on Linux/Python 3.12.14, including
 23 new cases for focus appearance, concise speech, observable choice browsing,
-selection/cancellation, changed report lists and lazy model loading. These latest
-changes need native Mac validation.
+selection/cancellation, changed report lists and lazy model loading. The user subsequently confirmed the focus styling and concise speech and reported
+other behavior working, with report-filename pronunciation as the remaining issue.
+
+Report speech now uses the report's position, recorded run date/time and model
+instead of reading its random filename. This applies to Reports selection and
+Compare focus, browsing and confirmation. Missing/unreadable metadata falls back
+to an explicitly labeled file-modification date or unavailable-date message.
+Raw filenames remain visible and files/selection mappings are unchanged. Common
+model notation is expanded for speech, such as "gemma 3 version 1 billion
+parameters". Descriptions are bounded, cached until report refresh, and not read
+from disk when guidance is off.
+
+This follow-up passes **663 agent tests** on Linux/Python 3.12.14, including
+20 new description/narration cases. Audible pronunciation needs Mac validation.
 See the [progress and accessibility checkpoint](docs/milestone-5f-progress-accessibility.md).
 
 ## Requirements
