@@ -708,6 +708,27 @@ Command+Shift+S toggles on macOS (Control+Shift+S elsewhere), with visible help.
 three workflows and both directions. Speech remains off by default. Native Mac
 Tab/Shift-Tab and shortcut validation is pending.
 
+### Speech focus, choice narration and model discovery (implemented; Mac validation pending)
+
+The user passed **620 tests in 8.23 seconds** on macOS/Python 3.12.12 and
+confirmed F6, the speech toggle shortcut and audible guidance. They identified
+weak checkbox focus styling, repetitive spoken prefixes, silent highlighted
+report choices and an empty fresh-launch model list before manual refresh.
+
+This checkpoint adds an explicit speech-control focus outline and focused On/Off
+label, concise focus speech, and an app-controlled report/model chooser when
+speech is enabled. Highlighted choices are announced before confirmation; Escape
+preserves the old selection and changed lists are resolved by value. Native
+choosers remain available when speech is off. First entry to Evaluate discovers
+models asynchronously; opening an empty model chooser requests refresh without
+starting inference or changing the selected name. Reports-only startup stays
+local/offline and Refresh Models remains available.
+
+**643 tests passed** on Linux/Python 3.12.14, including 23 new regression cases.
+No dependency was added. Native Mac layout, audible browsing and automatic model
+loading still need validation. See the
+[usability checkpoint](docs/milestone-5f-choice-speech-discovery.md).
+
 ### Architecture and scope rules
 
 - Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.

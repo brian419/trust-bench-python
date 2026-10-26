@@ -198,9 +198,26 @@ the speech controls. Disabled Read current view is skipped. F6 focuses the speec
 checkbox without changing it; Command+Shift+S toggles speech on macOS
 (Control+Shift+S elsewhere). These shortcuts are displayed in the app and help.
 
-The updated suite passes **620 agent tests** on Linux/Python 3.12.14, including
-14 additional focus-navigation cases. The user reported the previous workflows
-working except Tab access to speech; the latest native focus fix needs Mac testing.
+The user passed the 620-test checkpoint on macOS. A further usability fix adds
+a visible blue outline and explicit focused On/Off text to the speech control.
+Spoken focus labels omit the repeated "Keyboard focus" prefix and long usage
+instructions; detailed visual hints and Keyboard Help remain available.
+
+With spoken guidance on, report/model choices open in an app-controlled chooser
+that announces each highlighted item before confirmation. Arrow keys browse;
+Enter/Return, keypad Enter or Space confirms; Escape cancels without changing
+the field. With speech off, native dropdowns remain in use.
+
+Ollama model discovery runs in the background on the first Evaluate visit rather
+than leaving a fresh-launch list empty until manual refresh. Opening an empty
+model chooser also requests a refresh. This does not install or download models,
+change the selected name, or start evaluation. Refresh Models remains available.
+Reports-only startup makes no service request.
+
+The updated suite passes **643 agent tests** on Linux/Python 3.12.14, including
+23 new cases for focus appearance, concise speech, observable choice browsing,
+selection/cancellation, changed report lists and lazy model loading. These latest
+changes need native Mac validation.
 See the [progress and accessibility checkpoint](docs/milestone-5f-progress-accessibility.md).
 
 ## Requirements
