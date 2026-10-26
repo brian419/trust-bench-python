@@ -1,6 +1,6 @@
 # Milestone 5F-3: local Intel macOS app and DMG build
 
-Status: **build 5002 package checks passed; build 5004 icon refresh awaits final Mac validation**.
+Status: **local Intel Mac preview validated at `472e176` (build 5004).**
 Branch: `feature/milestone-5f-macos-packaging`.
 Starting evidence: 681 tests passed in 9.50 seconds on the user's Mac/Python
 3.12.12, with app-controlled spoken guidance explicitly approved.
@@ -201,7 +201,7 @@ The icon is checked in as `macos/TrustBench.icns`. Its optional authoring script
 `tools/generate_macos_icon.py`, uses Pillow; regenerating artwork is not part of
 the app build and adds no runtime dependency.
 
-Follow the [remaining-work checklist](milestone-5f-macos-packaging-plan.md#remaining-work)
+Follow the [remaining-work checklist](milestone-5f-macos-packaging-plan.md#completion-evidence)
 for final validation. See the [installation guide](macos-preview-guide.md) for
 user-facing instructions.
 
@@ -235,3 +235,13 @@ print("Opening:", dmg)
 run(["/usr/bin/open", str(dmg)], check=True)
 PY
 ```
+
+## Final 5F validation
+
+Build 5004 from `472e176` produced candidate
+`TrustBench-0.5.0-x86_64-20261026T130126Z-16adb796` on Intel macOS 15.7.9.
+All scripted package checks completed and the DMG checksum was verified.
+The installed app completed a two-case gemma3:1b evaluation, saved the report,
+opened it in Reports and compared it with an earlier run. Expand Output and
+Show Settings were checked before and during evaluation. The final icon and
+layout were accepted. This closes local-preview validation for Milestone 5F.

@@ -5,11 +5,12 @@ Base: `feature/milestone-5` at `c70826a`
 
 ## Current status
 
-Implementation is complete for the local Intel preview. Build 5001 passed
-installed-app workflow checks. Build 5002 passed the Mac package checks, and
-screenshots confirmed installation, launch, version display and a retained report.
-Build 5004 replaces the chart icon with a two-color TB monogram;
-its native build and final installed-app check remain pending.
+**Complete for the local Intel macOS preview.** Build 5004 from `472e176`
+completed native package checks and was installed and accepted on macOS 15.7.9.
+Final checks confirmed the approved TB icon, live evaluation, report saving,
+Reports/Compare, and Expand Output/Show Settings during a running evaluation.
+Earlier installed-app checks covered cancellation/restart, keyboard/spoken
+guidance, report persistence and Ollama recovery.
 
 **724 tests passed on macOS/Python 3.12.12 and Linux/Python 3.12.14.**
 
@@ -39,25 +40,27 @@ decisions.
 | --- | --- |
 | 5F-1: Resources, report storage and packaged worker | Implemented; validated in build 5001 |
 | 5F-2: Ollama readiness, setup and model discovery | Implemented; service recovery validated |
-| 5F-3: App and DMG build | Build 5002 package checks passed; build 5004 icon refresh pending |
-| 5F-4: Progress, keyboard access and spoken guidance | Implemented and manually validated; repeat a short check after rebuilding |
-| 5F-5: Installation and sharing documentation | Preview guide and release draft prepared; final artifact evidence pending |
+| 5F-3: App and DMG build | Build 5004 package and installed-app checks passed |
+| 5F-4: Progress, keyboard access and spoken guidance | Implemented and manually validated |
+| 5F-5: Installation and sharing documentation | Preview documentation and local validation complete |
 
 Installed-app validation covered launch from Applications, evaluation/report
 saving, report viewing/comparison, stop/restart, keyboard/spoken guidance,
 report persistence after reopening, and Ollama unavailable/recovery.
 
-## Remaining work
+## Completion evidence
 
-1. Pull the icon update and rerun the 724-test suite on macOS/Python 3.12.12.
-2. Build candidate 5004. Review the build output, checksum, build record and
-   `bundle-audit.json` for failures or unexpected files/dependencies.
-3. Install the refreshed candidate and confirm its icon/version, evaluation,
-   Reports/Compare, stop/restart, keyboard/spoken guidance and retained reports.
-4. Record the exact candidate, source commit and results; update the validation
-   summary and release notes accordingly.
+- Source: `472e176`, application version 0.5.0 preview, build 5004.
+- Candidate: `TrustBench-0.5.0-x86_64-20261026T130126Z-16adb796`.
+- Environment: Intel macOS 15.7.9, Python 3.12.12, Tcl/Tk 8.6.18,
+  PyInstaller 6.22.3.
+- Native resource, signature, dependency audit, frozen-worker and DMG checks passed.
+- A packaged `gemma3:1b` evaluation completed with 2 PASS and 0 request errors.
+  Its report was saved, opened in Reports and compared with an earlier run.
+- Screenshots and final acceptance confirmed the larger output view and approved icon.
 
-These steps complete validation of the local Intel preview.
+No implementation or local-preview validation work remains in 5F. The branch
+is ready for the planned code-quality follow-up and integration review.
 
 If a downloadable preview is published later, review the project license and
 bundled third-party notices, verify the downloaded copy's installation behavior,

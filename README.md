@@ -10,7 +10,7 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 Milestones 1–4 are available on `main`. The Milestone 5 branches add the unified
 CLI, report provenance and comparisons, a native desktop interface, and an Intel
-macOS app preview. Milestone 5F is in final packaging validation on
+macOS app preview. Milestone 5F is complete for the local Intel macOS preview on
 `feature/milestone-5f-macos-packaging`; it has not been merged into `main`.
 
 Implemented:
@@ -124,9 +124,9 @@ datasets. Live evaluation requires a separate Ollama installation and local mode
 Source commands remain available for development and CLI workflows.
 
 - **Target:** Intel x86_64, macOS 15.7.9.
-- **Validation:** the app's core workflows passed installed-app checks on an
-  Intel MacBook Air. Build 5002 passed Mac packaging checks; build 5004 replaces
-  the icon and awaits its final installation check.
+- **Validation:** build 5004 from `472e176` passed Mac packaging checks.
+  Installation, live evaluation, report viewing/comparison and the expanded
+  output layout were verified on an Intel MacBook Air.
 - **Tests:** 724 passed on macOS/Python 3.12.12 and Linux/Python 3.12.14.
 - **Availability:** a public download has not been published.
 

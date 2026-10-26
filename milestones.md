@@ -792,23 +792,23 @@ No native Mac artifact was built by the agent. The user must build on macOS and
 validate from Applications before moving to clean-install/sharing preparation.
 See the [5F-3 build guide](docs/milestone-5f-3-macos-build.md).
 
-### Milestone 5F macOS preview (final icon validation pending)
+### Milestone 5F macOS preview (complete)
 
-The local Intel preview includes the app/DMG build, bundled Python/Tcl/Tk,
-model discovery, evaluation progress, keyboard access and optional spoken
-guidance. Build 5001 passed installed-app workflow checks on macOS 15.7.9.
+The local Intel preview includes app/DMG packaging, bundled Python/Tcl/Tk,
+Ollama readiness/model discovery, progress, keyboard access, optional spoken
+guidance and an expandable evaluation output pane.
 
-Build 5002 passed **724 tests in 10.53 seconds** on macOS/Python 3.12.12 and
-completed package, dependency, frozen-worker and DMG checks. Screenshots confirmed
-installation, launch, version display and retained reports. Build 5004 replaces
-the chart icon with a two-color TB monogram. Its final Mac rebuild
-and installed-app check remain pending; the automated suite still has 724 tests.
+**724 automated tests passed on macOS/Python 3.12.12 and Linux/Python 3.12.14.**
+Build 5004 from `472e176` completed native package checks on macOS 15.7.9.
+Final installed-app validation confirmed the approved icon, live evaluation,
+saved report viewing/comparison and expanded output. Earlier checks covered
+stop/restart, report persistence, keyboard/speech and Ollama recovery.
 
-The preview is ad-hoc signed. Developer ID signing and notarization are outside
-this milestone's scope. After final validation, Ruff configuration and cleanup
-will proceed on a separate branch before integration into main.
+The preview is ad-hoc signed. Public distribution and integration remain
+separate decisions. Ruff configuration and reviewed cleanup are the next task,
+on a separate branch before integration into main.
 
-See the [5F checklist](docs/milestone-5f-macos-packaging-plan.md#remaining-work).
+See the [5F validation record](docs/milestone-5f-macos-packaging-plan.md#completion-evidence).
 
 ### Architecture and scope rules
 
