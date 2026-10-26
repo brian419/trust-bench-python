@@ -6,3 +6,6 @@ venv/
 .DS_Store
 .vscode/
 reports/
+/build/
+/dist/
+/.venv-macos-build/

@@ -1,0 +1,22 @@
+TrustBench local macOS build candidate
+
+Drag TrustBench.app to Applications, eject the disk image, then launch the app
+from Applications. End users do not need Python, Git or the source checkout.
+
+This checkpoint is an Intel Mac development candidate, ad-hoc signed and not
+notarized. It is not yet a public release. If macOS blocks it, record the exact
+message for the build review. Do not disable Gatekeeper globally.
+
+Live evaluation needs Ollama and a downloaded local model, installed separately.
+Use Setup Help in Evaluate. Reports and Compare work without Ollama.
+
+New reports are stored in:
+~/Library/Application Support/TrustBench/reports
+
+Existing source-checkout reports remain where they are. Open Evaluation Report
+can view a report elsewhere. To include selected older reports in the Reports
+and Compare lists, copy their evaluation-*.json files into the folder above.
+No reports are bundled, moved, overwritten or deleted automatically.
+
+Spoken guidance is optional and off at launch. Keyboard Help lists shortcuts.
+The app-controlled speech feature is separate from Apple's VoiceOver.

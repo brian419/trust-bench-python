@@ -1,0 +1,2 @@
+# Build tooling only. Install in .venv-macos-build, not in the application.
+PyInstaller==6.22.3
