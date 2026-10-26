@@ -1,6 +1,6 @@
 # Milestone 5F-3: local Intel macOS app and DMG build
 
-Status: **build 5002 package checks passed; build 5003 icon refresh awaits final Mac validation**.
+Status: **build 5002 package checks passed; build 5004 icon refresh awaits final Mac validation**.
 Branch: `feature/milestone-5f-macos-packaging`.
 Starting evidence: 681 tests passed in 9.50 seconds on the user's Mac/Python
 3.12.12, with app-controlled spoken guidance explicitly approved.
@@ -214,7 +214,24 @@ signature, dependency audit, frozen-worker and DMG verification. Installation,
 launch, version display and a retained report were confirmed in screenshots.
 This evidence supplements build 5001's installed-app workflow checks.
 
-Build 5003 changes the icon to a geometric TB monogram and test-result cells.
+Build 5004 changes the icon to a geometric two-color TB monogram.
 Rebuild and perform the final installed-app check before recording 5F completion.
 The icon generator remains an optional authoring tool; the build uses the
 checked-in ICNS and does not require Pillow.
+
+## Build and open the new DMG
+
+This command opens the DMG from the candidate it just built:
+
+```bash
+.venv-macos-build/bin/python - <<'PY'
+from subprocess import run
+
+from build_macos import build_candidate
+
+candidate = build_candidate()
+dmg = candidate / "TrustBench-0.5.0-macos-x86_64.dmg"
+print("Opening:", dmg)
+run(["/usr/bin/open", str(dmg)], check=True)
+PY
+```

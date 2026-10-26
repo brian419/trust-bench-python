@@ -800,8 +800,8 @@ guidance. Build 5001 passed installed-app workflow checks on macOS 15.7.9.
 
 Build 5002 passed **724 tests in 10.53 seconds** on macOS/Python 3.12.12 and
 completed package, dependency, frozen-worker and DMG checks. Screenshots confirmed
-installation, launch, version display and retained reports. Build 5003 replaces
-the chart icon with a TB monogram and test-result cells. Its final Mac rebuild
+installation, launch, version display and retained reports. Build 5004 replaces
+the chart icon with a two-color TB monogram. Its final Mac rebuild
 and installed-app check remain pending; the automated suite still has 724 tests.
 
 The preview is ad-hoc signed. Developer ID signing and notarization are outside

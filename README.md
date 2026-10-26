@@ -125,7 +125,7 @@ Source commands remain available for development and CLI workflows.
 
 - **Target:** Intel x86_64, macOS 15.7.9.
 - **Validation:** the app's core workflows passed installed-app checks on an
-  Intel MacBook Air. Build 5002 passed Mac packaging checks; build 5003 replaces
+  Intel MacBook Air. Build 5002 passed Mac packaging checks; build 5004 replaces
   the icon and awaits its final installation check.
 - **Tests:** 724 passed on macOS/Python 3.12.12 and Linux/Python 3.12.14.
 - **Availability:** a public download has not been published.

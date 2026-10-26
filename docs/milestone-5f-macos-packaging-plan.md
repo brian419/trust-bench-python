@@ -8,7 +8,7 @@ Base: `feature/milestone-5` at `c70826a`
 Implementation is complete for the local Intel preview. Build 5001 passed
 installed-app workflow checks. Build 5002 passed the Mac package checks, and
 screenshots confirmed installation, launch, version display and a retained report.
-Build 5003 replaces the chart icon with a TB monogram and test-result cells;
+Build 5004 replaces the chart icon with a two-color TB monogram;
 its native build and final installed-app check remain pending.
 
 **724 tests passed on macOS/Python 3.12.12 and Linux/Python 3.12.14.**
@@ -39,7 +39,7 @@ decisions.
 | --- | --- |
 | 5F-1: Resources, report storage and packaged worker | Implemented; validated in build 5001 |
 | 5F-2: Ollama readiness, setup and model discovery | Implemented; service recovery validated |
-| 5F-3: App and DMG build | Build 5002 package checks passed; build 5003 icon refresh pending |
+| 5F-3: App and DMG build | Build 5002 package checks passed; build 5004 icon refresh pending |
 | 5F-4: Progress, keyboard access and spoken guidance | Implemented and manually validated; repeat a short check after rebuilding |
 | 5F-5: Installation and sharing documentation | Preview guide and release draft prepared; final artifact evidence pending |
 
@@ -50,7 +50,7 @@ report persistence after reopening, and Ollama unavailable/recovery.
 ## Remaining work
 
 1. Pull the icon update and rerun the 724-test suite on macOS/Python 3.12.12.
-2. Build candidate 5003. Review the build output, checksum, build record and
+2. Build candidate 5004. Review the build output, checksum, build record and
    `bundle-audit.json` for failures or unexpected files/dependencies.
 3. Install the refreshed candidate and confirm its icon/version, evaluation,
    Reports/Compare, stop/restart, keyboard/spoken guidance and retained reports.
