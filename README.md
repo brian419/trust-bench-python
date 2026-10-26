@@ -229,7 +229,15 @@ parameters". Descriptions are bounded, cached until report refresh, and not read
 from disk when guidance is off.
 
 This follow-up passes **663 agent tests** on Linux/Python 3.12.14, including
-20 new description/narration cases. Audible pronunciation needs Mac validation.
+20 new description/narration cases. The user then passed **663 tests in 8.52 seconds** on macOS and reported Compare
+speech working. A follow-up fixes two interaction gaps: entering Saved reports
+now selects/announces the first report if none is selected, or announces the
+existing selection, without opening it. Spoken mouse choosers now open after
+the originating click finishes, ignore unmatched opening-release events, and
+do not treat transient native focus changes as outside clicks. This is shared
+by both report selectors and the model selector; speech-off native menus remain
+unchanged. The follow-up passes **681 agent tests** on Linux/Python 3.12.14,
+including 18 new regression cases. Native Mac mouse/focus retesting is pending.
 See the [progress and accessibility checkpoint](docs/milestone-5f-progress-accessibility.md).
 
 ## Requirements

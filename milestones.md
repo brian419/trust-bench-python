@@ -747,6 +747,26 @@ entry points. No dependencies were added. Existing reports, scoring, visual
 filenames and model values are unchanged. Native audible pronunciation remains
 for the user's Mac check.
 
+### First report announcement and spoken mouse chooser fix (Mac retest pending)
+
+The user passed **663 tests in 8.52 seconds** on macOS/Python 3.12.12. Compare
+speech worked, but entering Saved reports only announced the section name and
+left-clicking readonly report selectors with speech on could close the chooser.
+
+Saved reports now selects/announces its first item on entry when no selection
+exists, or announces the existing selection; no report is opened automatically.
+Mouse-triggered spoken choosers defer creation until release/idle, consume the
+originating native click, and require an actual list press before release can
+confirm a choice. Transient missing/origin focus is not treated as an outside
+click. Explicit outside clicks, Escape, ordinary selection, shortcuts and window
+cleanup remain available. The shared code covers all three selectors; native
+speech-off dropdown behavior is retained.
+
+**681 tests passed** on Linux/Python 3.12.14, including 18 new cases. Reports entry
+selection, all-selector mouse sequencing, changed-context cancellation, focus
+transitions, unmatched release and speech-off behavior are covered. Native Mac
+validation is pending; no inference/scoring or report-schema changes were made.
+
 ### Architecture and scope rules
 
 - Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.
