@@ -69,9 +69,7 @@ def compare_scorers(filename="scoring-examples.json"):
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(
-        description="Compare exact and alternative answer scoring."
-    )
+    parser = ArgumentParser(description="Compare exact and alternative answer scoring.")
     parser.add_argument(
         "dataset",
         nargs="?",
