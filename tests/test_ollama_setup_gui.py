@@ -17,12 +17,22 @@ def app(tmp_path):
     desktop = TrustBenchDesktop.__new__(TrustBenchDesktop)
     desktop.root = MagicMock()
     desktop.progress = EvaluationProgress()
-    for name in ("progress_status", "progress_counts", "progress_elapsed", "progress_bar"):
+    for name in (
+        "progress_status",
+        "progress_counts",
+        "progress_elapsed",
+        "progress_bar",
+    ):
         setattr(desktop, name, MagicMock())
     desktop.evaluation_events = Queue()
     for name in (
-        "evaluation_running", "shutdown_pending", "shutdown_unverified",
-        "close_requested", "readiness_pending", "window_closed", "event_poll_scheduled",
+        "evaluation_running",
+        "shutdown_pending",
+        "shutdown_unverified",
+        "close_requested",
+        "readiness_pending",
+        "window_closed",
+        "event_poll_scheduled",
         "stop_requested",
     ):
         setattr(desktop, name, False)
@@ -38,10 +48,18 @@ def app(tmp_path):
     desktop.ollama_status = MagicMock()
     desktop.ollama_status.get.return_value = "Not checked"
     for name in (
-        "start_button", "stop_button", "check_ollama_button", "refresh_models_button",
-        "model_selector", "report_path",
-        "report_display", "comparison_display", "report_list", "previous_report",
-        "current_report", "evaluation_display",
+        "start_button",
+        "stop_button",
+        "check_ollama_button",
+        "refresh_models_button",
+        "model_selector",
+        "report_path",
+        "report_display",
+        "comparison_display",
+        "report_list",
+        "previous_report",
+        "current_report",
+        "evaluation_display",
     ):
         setattr(desktop, name, MagicMock())
     desktop.saved_reports = []
@@ -51,10 +69,16 @@ def app(tmp_path):
 
 def queue_result(app, status="READY", request_id=None, model="gemma3:1b"):
     result = OllamaReadiness(status, model, f"Result: {status}")
-    app.evaluation_events.put((
-        "readiness", (app.readiness_request_id if request_id is None else request_id,
-                      model, result),
-    ))
+    app.evaluation_events.put(
+        (
+            "readiness",
+            (
+                app.readiness_request_id if request_id is None else request_id,
+                model,
+                result,
+            ),
+        )
+    )
 
 
 def begin_start(app):
@@ -204,6 +228,7 @@ def test_auto_start_schedules_only_one_evaluation_poller(app):
     def start():
         app.evaluation_running = True
         app._schedule_event_poll()
+
     app.start_evaluation.side_effect = start
     begin_start(app)
     queue_result(app)
@@ -216,6 +241,7 @@ def test_duplicate_ready_event_cannot_reenable_controls_during_evaluation(app):
     def start():
         app.evaluation_running = True
         app.start_button.configure(state="disabled")
+
     app.start_evaluation.side_effect = start
     begin_start(app)
     queue_result(app)
@@ -228,20 +254,28 @@ def test_duplicate_ready_event_cannot_reenable_controls_during_evaluation(app):
 def test_interface_wires_ui_start_to_preflight_without_startup_network(app):
     app.refresh_reports = MagicMock()
     with (
-        patch("desktop_gui.Frame"), patch("desktop_gui.Label"),
+        patch("desktop_gui.Frame"),
+        patch("desktop_gui.Label"),
         patch("desktop_gui.FocusFrame"),
-        patch("desktop_gui.LabelFrame"), patch("desktop_gui.Entry"),
-        patch("desktop_gui.Combobox"), patch("desktop_gui.Notebook"),
-        patch("desktop_gui.Listbox"), patch("desktop_gui.StringVar"),
-        patch("desktop_gui.BooleanVar"), patch("desktop_gui.Checkbutton"),
-        patch("desktop_gui.ScrolledText"), patch("desktop_gui.Button") as button,
+        patch("desktop_gui.LabelFrame"),
+        patch("desktop_gui.Entry"),
+        patch("desktop_gui.Combobox"),
+        patch("desktop_gui.Notebook"),
+        patch("desktop_gui.Listbox"),
+        patch("desktop_gui.StringVar"),
+        patch("desktop_gui.BooleanVar"),
+        patch("desktop_gui.Checkbutton"),
+        patch("desktop_gui.ScrolledText"),
+        patch("desktop_gui.Button") as button,
         patch("desktop_gui.Progressbar"),
         patch("desktop_gui.Thread") as thread,
         patch("desktop_gui.check_ollama_readiness") as check,
     ):
         app.build_interface()
-    commands = {call.kwargs["text"]: call.kwargs.get("command")
-                for call in button.call_args_list}
+    commands = {
+        call.kwargs["text"]: call.kwargs.get("command")
+        for call in button.call_args_list
+    }
     assert commands["Start Evaluation"] == app.check_and_start_evaluation
     assert commands["Check Ollama"] == app.check_ollama
     assert commands["Setup Help"] == app.show_ollama_setup
@@ -272,7 +306,9 @@ def test_help_and_download_are_explicit_user_actions(app):
     ):
         app.show_ollama_setup()
         browser.assert_not_called()
-        assert "Reports and Compare work without Ollama" in help_dialog.call_args.args[1]
+        assert (
+            "Reports and Compare work without Ollama" in help_dialog.call_args.args[1]
+        )
         app.open_ollama_download()
     browser.assert_called_once_with("https://ollama.com/download/mac")
 
@@ -293,16 +329,26 @@ def test_reports_and_comparison_work_while_check_is_blocked(app, tmp_path):
 
     report = {
         "metadata": {
-            "model": "gemma3:1b", "dataset": "cases.json", "timestamp": "2026-10-25",
+            "model": "gemma3:1b",
+            "dataset": "cases.json",
+            "timestamp": "2026-10-25",
             "provenance": {
-                "dataset_sha256": "a" * 64, "primary_scoring": "normalized-exact-v1",
+                "dataset_sha256": "a" * 64,
+                "primary_scoring": "normalized-exact-v1",
                 "alternative_scoring": None,
                 "model_options": None,
                 "model_version": None,
             },
         },
-        "results": [{"id": "one", "question": "One?", "expected": "1",
-                     "generated": "1", "status": "PASS"}],
+        "results": [
+            {
+                "id": "one",
+                "question": "One?",
+                "expected": "1",
+                "generated": "1",
+                "status": "PASS",
+            }
+        ],
     }
     paths = [tmp_path / "previous.json", tmp_path / "current.json"]
     for path in paths:
@@ -352,8 +398,9 @@ def test_empty_model_worker_requests_discovery_without_touching_widgets(app):
 
 def test_missing_model_populates_choices_without_replacing_typed_name(app):
     begin_start(app)
-    result = OllamaReadiness("MODEL_MISSING", "gemma3:1b", "Choose another.",
-                             ("other:latest",))
+    result = OllamaReadiness(
+        "MODEL_MISSING", "gemma3:1b", "Choose another.", ("other:latest",)
+    )
     app._handle_ollama_result(app.readiness_request_id, "gemma3:1b", result)
     app.model_selector.configure.assert_called_once_with(values=("other:latest",))
     app.model_name.set.assert_not_called()
@@ -378,8 +425,10 @@ def test_stale_refresh_cannot_replace_model_choices(app):
 
 
 def test_cancel_external_link_does_not_open_browser(app):
-    with patch("desktop_gui.askyesno", return_value=False) as confirm, \
-            patch("desktop_gui.open_browser") as browser:
+    with (
+        patch("desktop_gui.askyesno", return_value=False) as confirm,
+        patch("desktop_gui.open_browser") as browser,
+    ):
         assert app.open_ollama_download() is False
     assert "https://ollama.com/download/mac" in confirm.call_args.args[1]
     assert "separate software" in confirm.call_args.args[1]
@@ -390,10 +439,14 @@ def test_cancel_external_link_does_not_open_browser(app):
 def test_browser_failure_shows_address_for_manual_navigation(app, outcome):
     with (
         patch("desktop_gui.askyesno", return_value=True),
-        patch("desktop_gui.open_browser", **(
-            {"side_effect": outcome} if isinstance(outcome, OSError)
-            else {"return_value": outcome}
-        )),
+        patch(
+            "desktop_gui.open_browser",
+            **(
+                {"side_effect": outcome}
+                if isinstance(outcome, OSError)
+                else {"return_value": outcome}
+            ),
+        ),
         patch("desktop_gui.showerror") as error,
     ):
         assert app.open_ollama_download() is False

@@ -46,7 +46,12 @@ def make_test_app():
     app.model_selector = MagicMock()
     app.ollama_status = MagicMock()
     app.progress = EvaluationProgress()
-    for name in ("progress_status", "progress_counts", "progress_elapsed", "progress_bar"):
+    for name in (
+        "progress_status",
+        "progress_counts",
+        "progress_elapsed",
+        "progress_bar",
+    ):
         setattr(app, name, MagicMock())
     return app
 
@@ -130,9 +135,7 @@ def test_refresh_reports():
 
     assert result is True
 
-    browser.assert_called_once_with(
-        str(PROJECT_ROOT / "reports")
-    )
+    browser.assert_called_once_with(str(PROJECT_ROOT / "reports"))
 
     assert app.saved_reports == [
         "reports/evaluation-first.json",
