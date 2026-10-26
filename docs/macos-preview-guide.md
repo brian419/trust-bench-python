@@ -32,6 +32,10 @@ See [Apple's guidance on opening apps safely](https://support.apple.com/102445).
 3. Choose a model, such as `gemma3:1b`, and a dataset.
 4. Select **Start Evaluation**. Progress and output appear in the window.
 
+**Expand Output** hides the setup controls to give the output pane more room.
+Start, Stop and progress stay visible. **Show Settings** restores the controls
+with the current dataset and model selection.
+
 **Setup Help** explains Ollama setup. **Check Ollama** checks the selected model,
 and **Stop Evaluation** ends a running evaluation. Ollama and models are
 installed separately.

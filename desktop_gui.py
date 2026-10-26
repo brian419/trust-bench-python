@@ -312,7 +312,7 @@ class TrustBenchDesktop:
         # Evaluate tab
         # --------------------
 
-        evaluation_frame = LabelFrame(
+        self.evaluation_settings = evaluation_frame = LabelFrame(
             self.evaluate_tab,
             text="Live Ollama Evaluation",
             padding=10,
@@ -400,8 +400,12 @@ class TrustBenchDesktop:
             justify="left",
         ).pack(fill="x", pady=(0, 8))
 
-        actions = Frame(evaluation_frame)
-        actions.pack(fill="x")
+        self.evaluation_actions = actions = Frame(self.evaluate_tab)
+        actions.pack(fill="x", pady=(0, 6))
+        self.expand_output_button = Button(
+            actions, text="Expand Output", command=self.toggle_evaluation_settings,
+        )
+        self.expand_output_button.pack(side="right")
         Button(
             actions,
             text="Preview Command",
@@ -512,6 +516,20 @@ class TrustBenchDesktop:
         ))
         self.progress_bar.configure(takefocus=False)
         self.refresh_reports()
+
+    def toggle_evaluation_settings(self):
+        """Give output the setup area while keeping run controls available."""
+        if self.evaluation_settings.winfo_manager():
+            self.evaluation_settings.pack_forget()
+            self.expand_output_button.configure(text="Show Settings")
+            self._announce("Evaluation output expanded. Setup controls hidden.")
+        else:
+            self.evaluation_settings.pack(
+                fill="x", pady=(0, 10), before=self.evaluation_actions,
+            )
+            self.expand_output_button.configure(text="Expand Output")
+            self._announce("Evaluation settings shown.")
+        self.expand_output_button.focus_set()
 
     def _configure_button_keys(self, parent):
         """Use explicit traversal/activation instead of platform-dependent defaults."""
