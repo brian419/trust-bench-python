@@ -86,6 +86,7 @@ def test_load_report_error_preserves_display():
     error_dialog.assert_called_once_with(
         "Unable to Open Report",
         "Invalid report",
+        parent=app.root,
     )
 
 
@@ -251,6 +252,7 @@ def test_compare_error_preserves_display():
     error_dialog.assert_called_once_with(
         "Unable to Compare Reports",
         "Reports are incompatible",
+        parent=app.root,
     )
 
 
@@ -272,6 +274,8 @@ def test_build_interface_creates_separate_tabs():
         patch("desktop_gui.Notebook") as notebook,
         patch("desktop_gui.Listbox"),
         patch("desktop_gui.StringVar"),
+        patch("desktop_gui.BooleanVar"),
+        patch("desktop_gui.Checkbutton"),
         patch(
             "desktop_gui.ScrolledText",
             side_effect=[report_view, comparison_view, evaluation_view],
@@ -339,6 +343,7 @@ def test_preview_evaluation_invalid_settings():
     error_dialog.assert_called_once_with(
         "Invalid Evaluation Settings",
         "Choose an evaluation dataset.",
+        parent=app.root,
     )
 
 

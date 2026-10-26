@@ -232,6 +232,7 @@ def test_interface_wires_ui_start_to_preflight_without_startup_network(app):
         patch("desktop_gui.LabelFrame"), patch("desktop_gui.Entry"),
         patch("desktop_gui.Combobox"), patch("desktop_gui.Notebook"),
         patch("desktop_gui.Listbox"), patch("desktop_gui.StringVar"),
+        patch("desktop_gui.BooleanVar"), patch("desktop_gui.Checkbutton"),
         patch("desktop_gui.ScrolledText"), patch("desktop_gui.Button") as button,
         patch("desktop_gui.Progressbar"),
         patch("desktop_gui.Thread") as thread,
@@ -246,6 +247,12 @@ def test_interface_wires_ui_start_to_preflight_without_startup_network(app):
     assert commands["Get Ollama (website)"] == app.open_ollama_download
     assert commands["Refresh Models"] == app.check_ollama
     assert commands["Stop Evaluation"] == app.stop_evaluation
+    assert commands["Keyboard Help"] == app.show_keyboard_help
+    assert commands["Read current view"] == app.read_current_view
+    bindings = {call.args[0]: call.args[1] for call in app.root.bind.call_args_list}
+    assert "<Control-Tab>" in bindings
+    for number in (1, 2, 3):
+        assert any(key.endswith(f"-Key-{number}>") for key in bindings)
     app.model_selector.bind.assert_any_call("<Return>", app._open_dropdown)
     app.report_list.bind.assert_any_call("<Return>", app.open_selected_report)
     thread.assert_not_called()

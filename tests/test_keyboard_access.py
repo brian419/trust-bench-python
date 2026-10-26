@@ -63,7 +63,7 @@ def test_focus_names_the_actual_button_and_requests_native_highlight():
     event.widget.configure.assert_called_once_with(default="active")
     hint = app.keyboard_hint.set.call_args.args[0]
     assert "Compare Reports" in hint
-    assert "Space or Return" in hint
+    assert "Space or Enter/Return" in hint
 
 
 def test_return_on_dropdown_forwards_to_native_down_binding():
