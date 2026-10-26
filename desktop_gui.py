@@ -475,6 +475,7 @@ class TrustBenchDesktop:
             widget.bind("<space>", self._dropdown_space)
             widget.bind("<Down>", self._dropdown_down)
             widget.bind("<Button-1>", self._dropdown_click)
+            widget.bind("<ButtonRelease-1>", self._dropdown_release)
             widget.bind("<FocusIn>", lambda event, label=name: self._set_keyboard_hint(
                 f"Keyboard focus: {label}. Down Arrow or Enter/Return opens choices; "
                 "Up/Down Arrow moves through choices; Enter/Return confirms; Escape closes.",
@@ -498,10 +499,7 @@ class TrustBenchDesktop:
         self.report_list.bind("<Return>", self.open_selected_report)
         self.report_list.bind("<KP_Enter>", self.open_selected_report)
         self.report_list.configure(takefocus=True)
-        self.report_list.bind("<FocusIn>", lambda event: self._set_keyboard_hint(
-            "Keyboard focus: Saved reports. Up/Down Arrow chooses a report and scrolls "
-            "the list; Enter/Return opens it. Tab moves to the next control, not the next report."
-        ))
+        self.report_list.bind("<FocusIn>", self._reports_focus_in)
         self.report_list.bind("<FocusOut>", self._clear_keyboard_hint)
         self.report_list.bind("<<ListboxSelect>>", self._announce_report_selection)
         self.speech_toggle.bind("<FocusIn>", self._speech_focus_in)
@@ -607,9 +605,46 @@ class TrustBenchDesktop:
 
     def _dropdown_click(self, event):
         widget = event.widget
+        if widget.instate(["disabled"]):
+            return None
         if widget.instate(["readonly"]) or "arrow" in widget.identify(event.x, event.y):
+            narrator = getattr(self, "narrator", None)
+            if narrator is not None and narrator.enabled:
+                # Finish the originating click before creating a grabbed window.
+                # Native readonly release/focus events must not close the chooser.
+                self._mouse_choice_pending = widget
+                widget.focus_set()
+                return "break"
             return self._dropdown_down(event)
         return None
+
+    def _dropdown_release(self, event):
+        widget = getattr(self, "_mouse_choice_pending", None)
+        if widget is not event.widget:
+            return None
+        self._mouse_choice_pending = None
+        timer = getattr(self, "choice_open_timer", None)
+        if timer is not None:
+            self.root.after_cancel(timer)
+        self.choice_open_timer = self.root.after_idle(lambda: self._finish_mouse_choice(widget))
+        return "break"
+
+    def _finish_mouse_choice(self, widget):
+        self.choice_open_timer = None
+        if self.window_closed or not widget.winfo_exists() or not widget.winfo_viewable():
+            return
+        try:
+            focused = self.root.focus_get()
+        except (KeyError, TclError):
+            return
+        if focused is widget:
+            # Recheck speech/state: a toggle or workflow change may have happened.
+            narrator = getattr(self, "narrator", None)
+            if narrator is not None and narrator.enabled and not widget.instate(["disabled"]):
+                if widget is self.model_selector and not widget.cget("values"):
+                    self._ensure_models_loaded(force=True)
+                else:
+                    self._show_spoken_choices(widget)
 
     def _show_spoken_choices(self, combo):
         if not combo.cget("values"):
@@ -843,6 +878,11 @@ class TrustBenchDesktop:
             setattr(self, name, None)
 
     def _close_accessibility(self):
+        timer = getattr(self, "choice_open_timer", None)
+        if timer is not None:
+            self.root.after_cancel(timer)
+        self.choice_open_timer = None
+        self._mouse_choice_pending = None
         picker = getattr(self, "choice_picker", None)
         if picker is not None:
             picker.cancel(restore_focus=False)
@@ -855,6 +895,22 @@ class TrustBenchDesktop:
         selection = self.report_list.curselection()
         if selection:
             self._announce(self._spoken_report(selection[0]))
+
+    def _reports_focus_in(self, event):
+        selection = self.report_list.curselection()
+        if not selection and self.saved_reports:
+            self.report_list.selection_set(0)
+            self.report_list.activate(0)
+            self.report_list.see(0)
+            index = 0
+        else:
+            index = selection[0] if selection else None
+        spoken = self._spoken_report(index) if index is not None else "Saved reports. No reports available"
+        self._set_keyboard_hint(
+            "Keyboard focus: Saved reports. Up/Down Arrow chooses a report and scrolls "
+            "the list; Enter/Return opens it. Tab moves to the next control, not the next report.",
+            spoken=spoken,
+        )
 
     def _spoken_report(self, index):
         reports = self.saved_reports

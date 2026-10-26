@@ -16,6 +16,7 @@ class SpokenChoices:
         self.closed = False
         self.last_highlight = None
         self.focus_timer = None
+        self.pointer_pressed = False
         self.window = Toplevel(root)
         self.window.withdraw()
         self.window.title(f"Choose {label}")
@@ -45,13 +46,15 @@ class SpokenChoices:
             self.listbox.see(index)
         self.listbox.bind("<<ListboxSelect>>", self.highlight)
         self.listbox.bind("<Motion>", self.pointer_highlight)
-        self.listbox.bind("<ButtonRelease-1>", self.commit)
+        self.listbox.bind("<ButtonPress-1>", self._pointer_press)
+        self.listbox.bind("<ButtonRelease-1>", self._pointer_release)
         for key in ("Return", "KP_Enter", "space"):
             self.window.bind(f"<{key}>", self.commit)
         self.window.bind("<Escape>", self.cancel)
         self.window.bind("<Tab>", lambda event: self.traverse(1))
         self.window.bind("<Shift-Tab>", lambda event: self.traverse(-1))
         self.window.bind("<FocusOut>", self._schedule_focus_check)
+        self.window.bind("<Deactivate>", self._schedule_focus_check)
         self.window.bind("<ButtonPress-1>", self._outside_click, add="+")
         width = min(max(combo.winfo_width(), 540), root.winfo_screenwidth() - 40)
         x = min(combo.winfo_rootx(), root.winfo_screenwidth() - width - 20)
@@ -62,6 +65,7 @@ class SpokenChoices:
         if self.closed:
             return
         self.window.grab_set()
+        self.window.focus_set()
         self.listbox.focus_set()
         self.highlight()
 
@@ -87,6 +91,19 @@ class SpokenChoices:
         self.listbox.selection_set(index)
         self.listbox.activate(index)
         self.highlight()
+
+    def _pointer_press(self, event):
+        if not self.closed:
+            self.pointer_pressed = True
+
+    def _pointer_release(self, event):
+        if self.closed:
+            return "break"
+        pressed = getattr(self, "pointer_pressed", False)
+        self.pointer_pressed = False
+        if pressed:
+            return self.commit(event)
+        return "break"
 
     def commit(self, event=None):
         if self.closed:
@@ -133,7 +150,11 @@ class SpokenChoices:
             focus = self.window.focus_get()
         except (KeyError, TclError):
             focus = None
-        if focus is None or focus.winfo_toplevel() != self.window:
+        # Cocoa can transiently report no focus, or restore the originating
+        # combobox while completing its click. Neither is an outside action.
+        # Explicit outside clicks and Escape still close; transient activation
+        # changes are checked after the native event completes.
+        if focus is not None and focus is not self.combo and focus.winfo_toplevel() != self.window:
             self.cancel()
 
     def _schedule_focus_check(self, event):
