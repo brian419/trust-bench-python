@@ -33,10 +33,7 @@ def classify_failures(
             )
             source = "human" if attempt_number in human_labels else "unreviewed"
 
-            if (
-                attempt_number in human_labels
-                and classification not in VALID_LABELS
-            ):
+            if attempt_number in human_labels and classification not in VALID_LABELS:
                 raise ValueError("Unknown classification label.")
 
         else:

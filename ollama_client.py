@@ -1,4 +1,4 @@
-from json import dumps, JSONDecodeError, load
+from json import JSONDecodeError, dumps, load
 from urllib.request import Request, urlopen
 
 
@@ -7,18 +7,14 @@ class MalformedResponseError(ValueError):
 
 
 def generate_response(
-        prompt: str,
-        model: str,
-        options: dict | None = None,
-    ) -> str:
+    prompt: str,
+    model: str,
+    options: dict | None = None,
+) -> str:
 
     url = "http://localhost:11434/api/generate"
 
-    data = {
-        "model": model,
-        "prompt": prompt,
-        "stream": False
-    }
+    data = {"model": model, "prompt": prompt, "stream": False}
 
     if options is not None:
         data["options"] = options
@@ -26,10 +22,7 @@ def generate_response(
     json_data = dumps(data).encode("utf-8")
 
     request = Request(
-        url,
-        data=json_data,
-        headers={"Content-Type": "application/json"},
-        method="POST"
+        url, data=json_data, headers={"Content-Type": "application/json"}, method="POST"
     )
 
     with urlopen(request, timeout=120) as response:
@@ -41,9 +34,7 @@ def generate_response(
             ) from error
 
     if not isinstance(result, dict):
-        raise MalformedResponseError(
-            "Invalid Ollama response: expected a JSON object."
-        )
+        raise MalformedResponseError("Invalid Ollama response: expected a JSON object.")
 
     if not isinstance(result.get("response"), str):
         raise MalformedResponseError(

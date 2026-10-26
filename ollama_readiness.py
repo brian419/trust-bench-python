@@ -6,7 +6,6 @@ from shlex import quote
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-
 MODELS_URL = "http://localhost:11434/api/tags"
 CHECK_TIMEOUT_SECONDS = 2.0
 MAX_RESPONSE_BYTES = 1024 * 1024
@@ -42,13 +41,15 @@ def check_ollama_readiness(model: str, *, allow_empty: bool = False) -> OllamaRe
             raw = response.read(MAX_RESPONSE_BYTES + 1)
     except HTTPError as error:
         return OllamaReadiness(
-            "CHECK_FAILED", model,
+            "CHECK_FAILED",
+            model,
             f"Ollama's model check returned HTTP {error.code}. "
             "Open or update Ollama, then choose Check Ollama again.",
         )
     except (URLError, TimeoutError, OSError):
         return OllamaReadiness(
-            "UNAVAILABLE", model,
+            "UNAVAILABLE",
+            model,
             "Cannot reach Ollama. Open it if installed, or use Get Ollama to "
             "install it. Then choose Check Ollama again. "
             "Reports and Compare still work without Ollama.",
@@ -70,7 +71,8 @@ def check_ollama_readiness(model: str, *, allow_empty: bool = False) -> OllamaRe
             names.append(name.strip())
     except ValueError:
         return OllamaReadiness(
-            "CHECK_FAILED", model,
+            "CHECK_FAILED",
+            model,
             "Ollama replied, but its model list could not be read. "
             "Open or update Ollama, then choose Check Ollama again.",
         )
@@ -78,15 +80,18 @@ def check_ollama_readiness(model: str, *, allow_empty: bool = False) -> OllamaRe
     models = tuple(sorted(set(names), key=str.casefold))
     if not model:
         return OllamaReadiness(
-            "MODELS_AVAILABLE" if models else "NO_MODELS", model,
+            "MODELS_AVAILABLE" if models else "NO_MODELS",
+            model,
             "Models refreshed. Choose a model from the dropdown, then Start Evaluation."
-            if models else "Ollama is running, but no models are listed. "
+            if models
+            else "Ollama is running, but no models are listed. "
             "Download a local model in Ollama, then choose Refresh Models.",
             models,
         )
     if _canonical_name(model) not in {_canonical_name(name) for name in models}:
         return OllamaReadiness(
-            "MODEL_MISSING", model,
+            "MODEL_MISSING",
+            model,
             f"Ollama is running, but '{model}' is not available. "
             "Choose an installed model from the dropdown, or check the name. "
             f"Download that model in Ollama, or run: ollama pull {quote(model)}. "
@@ -95,7 +100,8 @@ def check_ollama_readiness(model: str, *, allow_empty: bool = False) -> OllamaRe
         )
 
     return OllamaReadiness(
-        "READY", model,
+        "READY",
+        model,
         f"Ollama is available and '{model}' is listed. You can start an evaluation.",
         models,
     )
