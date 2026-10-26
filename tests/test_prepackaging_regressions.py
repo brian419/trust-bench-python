@@ -11,13 +11,14 @@ from pytest import mark, raises
 from desktop_gui import TrustBenchDesktop
 from eval_live import main as run_live
 from evaluation_launcher import (
-    build_live_command,
     PROJECT_ROOT,
+    build_live_command,
     run_live_command,
     stop_evaluation_group,
 )
-from generate_report import generate_text_report, main as report_cli
-from ollama_client import generate_response, MalformedResponseError
+from generate_report import generate_text_report
+from generate_report import main as report_cli
+from ollama_client import MalformedResponseError, generate_response
 from report_comparison import compare_live_reports
 from report_compatibility import compare_report_compatibility
 from report_summary import (
@@ -240,7 +241,10 @@ def test_malformed_response_is_saved_as_error_and_next_request_runs(
             report = loads(paths[0].read_text(encoding="utf-8"))
             assert report == returned
             assert report["summary"] == {
-                "passed": 1, "failed": 0, "errors": 1, "accuracy": 100.0
+                "passed": 1,
+                "failed": 0,
+                "errors": 1,
+                "accuracy": 100.0,
             }
             results = report["results"]
             assert results[1]["status"] == "PASS"
@@ -299,7 +303,10 @@ def test_malformed_response_in_reference_mode_preserves_error_scoring(
     with patch("ollama_client.urlopen", return_value=BytesIO(b"{}")):
         report = run_live(str(dataset))
     assert report["summary"] == {
-        "passed": 0, "failed": 0, "errors": 1, "accuracy": None,
+        "passed": 0,
+        "failed": 0,
+        "errors": 1,
+        "accuracy": None,
     }
     result = report["results"][0]
     assert result["status"] == "ERROR"

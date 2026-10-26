@@ -12,7 +12,8 @@ from unittest.mock import patch
 
 from pytest import fixture, mark, raises
 
-from app_entry import main as app_main, run_evaluation_worker, WORKER_FLAG
+from app_entry import WORKER_FLAG, run_evaluation_worker
+from app_entry import main as app_main
 from eval_live import main as evaluate
 from evaluation_launcher import (
     build_live_command,
@@ -25,7 +26,6 @@ from runtime_paths import (
     resource_directory,
     user_data_directory,
 )
-
 
 SOURCE_ROOT = Path(__file__).resolve().parents[1]
 
@@ -101,8 +101,14 @@ def test_packaged_command_uses_app_worker_and_writable_reports(packaged_environm
     with patch("evaluation_launcher.executable", app):
         command = build_live_command(dataset.name, "  gemma3:1b  ")
     assert command == [
-        app, WORKER_FLAG, "--dataset", str(dataset), "--model", "gemma3:1b",
-        "--reports-dir", str(reports_directory()),
+        app,
+        WORKER_FLAG,
+        "--dataset",
+        str(dataset),
+        "--model",
+        "gemma3:1b",
+        "--reports-dir",
+        str(reports_directory()),
     ]
     assert not (user / "Library").exists()
     assert not (bundle / "reports").exists()
@@ -157,10 +163,16 @@ def test_worker_creates_report_in_explicit_directory_without_gui(tmp_path):
         patch("ollama_client.urlopen", return_value=BytesIO(b'{"response":"1"}')),
         patch("desktop_gui.main") as gui,
     ):
-        result = run_evaluation_worker([
-            "--dataset", str(dataset), "--model", "gemma3:1b",
-            "--reports-dir", str(reports),
-        ])
+        result = run_evaluation_worker(
+            [
+                "--dataset",
+                str(dataset),
+                "--model",
+                "gemma3:1b",
+                "--reports-dir",
+                str(reports),
+            ]
+        )
     assert result == 0
     gui.assert_not_called()
     saved = list(reports.glob("evaluation-*.json"))
@@ -179,10 +191,16 @@ def test_worker_save_error_returns_failure_without_opening_gui(tmp_path):
         patch("desktop_gui.main") as gui,
         raises(SystemExit) as error,
     ):
-        run_evaluation_worker([
-            "--dataset", str(dataset), "--model", "gemma3:1b",
-            "--reports-dir", str(reports),
-        ])
+        run_evaluation_worker(
+            [
+                "--dataset",
+                str(dataset),
+                "--model",
+                "gemma3:1b",
+                "--reports-dir",
+                str(reports),
+            ]
+        )
     assert error.value.code == 1
     assert reports.read_text(encoding="utf-8") == "not a directory"
     gui.assert_not_called()
@@ -216,13 +234,31 @@ def test_invalid_entry_arguments_never_launch_gui(arguments):
 
 def test_source_cli_accepts_explicit_dataset_outside_checkout(tmp_path):
     dataset = tmp_path / "offline.json"
-    dataset.write_text(dumps([{
-        "id": "one", "question": "What is one?", "expected": "1", "response": "1"
-    }]), encoding="utf-8")
+    dataset.write_text(
+        dumps(
+            [
+                {
+                    "id": "one",
+                    "question": "What is one?",
+                    "expected": "1",
+                    "response": "1",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
     completed = run(
-        [executable, str(SOURCE_ROOT / "trustbench.py"), "offline",
-         "--dataset", str(dataset)],
-        cwd=tmp_path, capture_output=True, text=True, timeout=5,
+        [
+            executable,
+            str(SOURCE_ROOT / "trustbench.py"),
+            "offline",
+            "--dataset",
+            str(dataset),
+        ],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=5,
     )
     assert completed.returncode == 0, completed.stderr
     assert "Passed 1 test" in completed.stdout
@@ -236,13 +272,16 @@ def test_gui_uses_bundle_resources_and_user_reports_at_frozen_startup(
     reports = reports_directory()
     reports.mkdir(parents=True)
     legacy = reports / "evaluation-legacy.json"
-    original = dumps({
-        "metadata": {
-            "model": "gemma3:1b", "dataset": "cases.json",
-            "timestamp": "2026-10-25T21:00:00+00:00",
-        },
-        "results": [],
-    })
+    original = dumps(
+        {
+            "metadata": {
+                "model": "gemma3:1b",
+                "dataset": "cases.json",
+                "timestamp": "2026-10-25T21:00:00+00:00",
+            },
+            "results": [],
+        }
+    )
     legacy.write_text(original, encoding="utf-8")
     script = (
         "from json import dumps\n"
@@ -269,8 +308,11 @@ def test_gui_uses_bundle_resources_and_user_reports_at_frozen_startup(
         "    }))\n"
     )
     completed = run(
-        [executable, "-c", script], cwd=tmp_path,
-        capture_output=True, text=True, timeout=5,
+        [executable, "-c", script],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=5,
     )
     assert completed.returncode == 0, completed.stderr
     settings = loads(completed.stdout)
@@ -306,7 +348,7 @@ def test_real_worker_streams_stops_and_restarts_without_gui_or_bundle_writes(
         "    deadline = monotonic() + 15\n"
         f"    while Path({str(blocker)!r}).exists() and monotonic() < deadline:\n"
         "        sleep(0.01)\n"
-        "    return BytesIO(b'{\"response\":\"1\"}')\n"
+        '    return BytesIO(b\'{"response":"1"}\')\n'
         "from app_entry import main\n"
         "modules['sys'].stdout = None\n"
         "modules['sys'].stderr = None\n"
@@ -356,7 +398,10 @@ def test_real_worker_streams_stops_and_restarts_without_gui_or_bundle_writes(
         assert len(saved) == 1
         report = loads(saved[0].read_text(encoding="utf-8"))
         assert report["summary"] == {
-            "passed": 1, "failed": 0, "errors": 0, "accuracy": 100.0,
+            "passed": 1,
+            "failed": 0,
+            "errors": 0,
+            "accuracy": 100.0,
         }
         assert not (bundle / "reports").exists()
         assert not (user_data_directory() / "eval-read-live.json").exists()

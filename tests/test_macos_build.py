@@ -13,18 +13,17 @@ from pytest import fixture, mark, raises
 
 from app_identity import BUILD_NUMBER
 from build_macos import (
+    APP_VERSION,
+    BUNDLE_ID,
+    DATA_FILES,
+    PYINSTALLER_VERSION,
     _verify_bundle,
     _worker_smoke_test,
-    APP_VERSION,
     build_candidate,
     build_plan,
-    BUNDLE_ID,
     check_build_environment,
-    DATA_FILES,
     main,
-    PYINSTALLER_VERSION,
 )
-
 
 SOURCE = Path(__file__).resolve().parents[1]
 
@@ -37,7 +36,9 @@ def build_root(tmp_path, monkeypatch):
         (root / name).write_bytes((SOURCE / name).read_bytes())
     (root / "macos").mkdir()
     (root / "macos" / "INSTALL.txt").write_text("Development candidate")
-    (root / "macos" / "TrustBench.icns").write_bytes((SOURCE / "macos" / "TrustBench.icns").read_bytes())
+    (root / "macos" / "TrustBench.icns").write_bytes(
+        (SOURCE / "macos" / "TrustBench.icns").read_bytes()
+    )
     monkeypatch.setattr("build_macos.ROOT", root)
     return root
 
@@ -52,14 +53,22 @@ def test_plan_is_dependency_free_and_does_not_write_output(build_root, capsys):
     assert not (build_root / "dist").exists()
 
 
-@mark.parametrize("system, arch, python, message", [
-    ("linux", "x86_64", "3.12.12", "require macOS"),
-    ("darwin", "arm64", "3.12.12", "Intel"),
-    ("darwin", "x86_64", "3.13.0", "3.12.12"),
-])
-def test_wrong_build_host_is_rejected_before_writes(system, arch, python, message, build_root):
-    with patch("build_macos.platform", system), patch("build_macos.machine", return_value=arch), \
-            patch("build_macos.python_version", return_value=python):
+@mark.parametrize(
+    "system, arch, python, message",
+    [
+        ("linux", "x86_64", "3.12.12", "require macOS"),
+        ("darwin", "arm64", "3.12.12", "Intel"),
+        ("darwin", "x86_64", "3.13.0", "3.12.12"),
+    ],
+)
+def test_wrong_build_host_is_rejected_before_writes(
+    system, arch, python, message, build_root
+):
+    with (
+        patch("build_macos.platform", system),
+        patch("build_macos.machine", return_value=arch),
+        patch("build_macos.python_version", return_value=python),
+    ):
         with raises(RuntimeError, match=message):
             check_build_environment()
     assert not (build_root / "dist").exists()
@@ -112,17 +121,30 @@ def test_missing_native_tool_fails_preflight_before_tk(build_root):
 
 def test_check_cli_returns_clear_failure_without_building():
     errors = StringIO()
-    with patch("build_macos.check_build_environment", side_effect=RuntimeError("No Mac")), \
-            patch("build_macos.stderr", errors):
+    with (
+        patch(
+            "build_macos.check_build_environment", side_effect=RuntimeError("No Mac")
+        ),
+        patch("build_macos.stderr", errors),
+    ):
         assert main(["--check"]) == 1
     assert "No Mac" in errors.getvalue()
 
 
 def test_spec_executes_as_onedir_windowed_intel_with_explicit_data_only():
     analysis = MagicMock()
-    calls = {name: MagicMock() for name in ("Analysis", "PYZ", "EXE", "COLLECT", "BUNDLE")}
+    calls = {
+        name: MagicMock() for name in ("Analysis", "PYZ", "EXE", "COLLECT", "BUNDLE")
+    }
     calls["Analysis"].return_value = analysis
-    exec(compile((SOURCE / "macos" / "TrustBench.spec").read_text(), "TrustBench.spec", "exec"), calls)
+    exec(
+        compile(
+            (SOURCE / "macos" / "TrustBench.spec").read_text(),
+            "TrustBench.spec",
+            "exec",
+        ),
+        calls,
+    )
     settings = calls["EXE"].call_args.kwargs
     assert settings["target_arch"] == "x86_64"
     assert settings["console"] is False
@@ -132,7 +154,9 @@ def test_spec_executes_as_onedir_windowed_intel_with_explicit_data_only():
     data = calls["Analysis"].call_args.kwargs["datas"]
     assert {Path(source).name for source, destination in data} == set(DATA_FILES)
     assert all(destination == "." for source, destination in data)
-    assert not any("reports/" in source or ".venv" in source for source, destination in data)
+    assert not any(
+        "reports/" in source or ".venv" in source for source, destination in data
+    )
     assert calls["BUNDLE"].call_args.kwargs["bundle_identifier"] == BUNDLE_ID
 
 
@@ -144,9 +168,18 @@ def make_bundle(root):
     binary.parent.mkdir()
     binary.write_bytes(b"fake executable")
     with (app / "Contents" / "Info.plist").open("wb") as output:
-        dump_plist({"CFBundleIdentifier": BUNDLE_ID, "CFBundleShortVersionString": APP_VERSION,
-                    "CFBundleVersion": BUILD_NUMBER, "CFBundleIconFile": "TrustBench.icns"}, output)
-    (resources / "TrustBench.icns").write_bytes((root / "macos" / "TrustBench.icns").read_bytes())
+        dump_plist(
+            {
+                "CFBundleIdentifier": BUNDLE_ID,
+                "CFBundleShortVersionString": APP_VERSION,
+                "CFBundleVersion": BUILD_NUMBER,
+                "CFBundleIconFile": "TrustBench.icns",
+            },
+            output,
+        )
+    (resources / "TrustBench.icns").write_bytes(
+        (root / "macos" / "TrustBench.icns").read_bytes()
+    )
     for name in DATA_FILES:
         (resources / name).write_bytes((root / name).read_bytes())
     for name in ("_tkinter.so", "init.tcl", "tk.tcl", "libpython3.12.dylib"):
@@ -156,20 +189,40 @@ def make_bundle(root):
 
 def verification_run(command, **kwargs):
     if command[0].endswith("file"):
-        return CompletedProcess(command, 0, stdout="Mach-O 64-bit executable x86_64", stderr="")
+        return CompletedProcess(
+            command, 0, stdout="Mach-O 64-bit executable x86_64", stderr=""
+        )
     return CompletedProcess(command, 0, stdout="", stderr="Signature=adhoc\n")
 
 
-def test_bundle_verification_checks_resources_runtime_architecture_and_signature(build_root):
+def test_bundle_verification_checks_resources_runtime_architecture_and_signature(
+    build_root,
+):
     app = make_bundle(build_root)
     with patch("build_macos.run", side_effect=verification_run) as command:
         result = _verify_bundle(app)
-    assert result == {"architecture": "x86_64", "signature": "ad-hoc verified", "notarized": False}
-    assert any("--deep" in call.args[0] and "--strict" in call.args[0] for call in command.call_args_list)
+    assert result == {
+        "architecture": "x86_64",
+        "signature": "ad-hoc verified",
+        "notarized": False,
+    }
+    assert any(
+        "--deep" in call.args[0] and "--strict" in call.args[0]
+        for call in command.call_args_list
+    )
 
 
-@mark.parametrize("missing", ["_tkinter.so", "init.tcl", "tk.tcl", "libpython3.12.dylib",
-                             "eval-read-live.json", "TrustBench.icns"])
+@mark.parametrize(
+    "missing",
+    [
+        "_tkinter.so",
+        "init.tcl",
+        "tk.tcl",
+        "libpython3.12.dylib",
+        "eval-read-live.json",
+        "TrustBench.icns",
+    ],
+)
 def test_missing_bundle_component_blocks_candidate(build_root, missing):
     app = make_bundle(build_root)
     (app / "Contents" / "Resources" / missing).unlink()
@@ -207,9 +260,13 @@ def test_frozen_smoke_command_uses_private_worker_and_temporary_data(build_root)
         assert kwargs["timeout"] == 30
         assert "--trustbench-evaluate" in command
         reports.mkdir()
-        (reports / "evaluation-smoke.json").write_text('{"results":[],"summary":{"errors":0}}')
+        (reports / "evaluation-smoke.json").write_text(
+            '{"results":[],"summary":{"errors":0}}'
+        )
         seen.append(dataset.parent)
-        return CompletedProcess(command, 0, stdout="Report saved to: temporary.json", stderr="")
+        return CompletedProcess(
+            command, 0, stdout="Report saved to: temporary.json", stderr=""
+        )
 
     with patch("build_macos.run", side_effect=worker):
         assert _worker_smoke_test(build_root / "TrustBench.app")["ollama_requests"] == 0
@@ -220,10 +277,18 @@ def test_smoke_failure_stops_dmg_stage(build_root):
     fake_api = ModuleType("PyInstaller.__main__")
     fake_api.run = MagicMock()
     with (
-        patch.dict("sys.modules", {"PyInstaller": ModuleType("PyInstaller"), "PyInstaller.__main__": fake_api}),
+        patch.dict(
+            "sys.modules",
+            {
+                "PyInstaller": ModuleType("PyInstaller"),
+                "PyInstaller.__main__": fake_api,
+            },
+        ),
         patch("build_macos.check_build_environment", return_value={}),
         patch("build_macos._verify_bundle", return_value={}),
-        patch("build_macos._worker_smoke_test", side_effect=RuntimeError("worker failed")),
+        patch(
+            "build_macos._worker_smoke_test", side_effect=RuntimeError("worker failed")
+        ),
         patch("build_macos.run") as command,
     ):
         with raises(RuntimeError, match="worker failed"):
@@ -235,10 +300,18 @@ def test_failed_package_audit_stops_worker_and_dmg_creation(build_root):
     fake_api = ModuleType("PyInstaller.__main__")
     fake_api.run = MagicMock()
     with (
-        patch.dict("sys.modules", {"PyInstaller": ModuleType("PyInstaller"), "PyInstaller.__main__": fake_api}),
+        patch.dict(
+            "sys.modules",
+            {
+                "PyInstaller": ModuleType("PyInstaller"),
+                "PyInstaller.__main__": fake_api,
+            },
+        ),
         patch("build_macos.check_build_environment", return_value={}),
         patch("build_macos._verify_bundle", return_value={}),
-        patch("build_macos._audit_bundle", side_effect=RuntimeError("external dependency")),
+        patch(
+            "build_macos._audit_bundle", side_effect=RuntimeError("external dependency")
+        ),
         patch("build_macos._worker_smoke_test") as smoke,
         patch("build_macos.run") as command,
     ):
@@ -270,11 +343,26 @@ def test_candidate_staging_checksum_and_record_never_publish_or_overwrite(build_
         return CompletedProcess(args, 0)
 
     with (
-        patch.dict("sys.modules", {"PyInstaller": ModuleType("PyInstaller"), "PyInstaller.__main__": fake_api}),
-        patch("build_macos.check_build_environment", return_value={"python": "3.12.12"}),
-        patch("build_macos._verify_bundle", return_value={"signature": "ad-hoc verified"}),
-        patch("build_macos._worker_smoke_test", return_value={"frozen_worker": "passed"}),
-        patch("build_macos._source_evidence", return_value={"commit": "test", "dirty": False}),
+        patch.dict(
+            "sys.modules",
+            {
+                "PyInstaller": ModuleType("PyInstaller"),
+                "PyInstaller.__main__": fake_api,
+            },
+        ),
+        patch(
+            "build_macos.check_build_environment", return_value={"python": "3.12.12"}
+        ),
+        patch(
+            "build_macos._verify_bundle", return_value={"signature": "ad-hoc verified"}
+        ),
+        patch(
+            "build_macos._worker_smoke_test", return_value={"frozen_worker": "passed"}
+        ),
+        patch(
+            "build_macos._source_evidence",
+            return_value={"commit": "test", "dirty": False},
+        ),
         patch("build_macos.distributions", return_value=[]),
         patch("build_macos.run", side_effect=command),
     ):
@@ -297,5 +385,8 @@ def test_candidate_staging_checksum_and_record_never_publish_or_overwrite(build_
 
 
 def test_build_requirement_is_separate_and_pinned():
-    assert f"PyInstaller=={PYINSTALLER_VERSION}" in (SOURCE / "requirements-build-macos.txt").read_text()
+    assert (
+        f"PyInstaller=={PYINSTALLER_VERSION}"
+        in (SOURCE / "requirements-build-macos.txt").read_text()
+    )
     assert build_plan()["bundled_datasets"] == list(DATA_FILES)
