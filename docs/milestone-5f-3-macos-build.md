@@ -1,6 +1,6 @@
 # Milestone 5F-3: local Intel macOS app and DMG build
 
-Status: build tooling implemented; **native Mac build and installed-app validation pending**.
+Status: **local Intel Mac build and installed-app checks passed; broader release validation pending**.
 Branch: `feature/milestone-5f-macos-packaging`.
 Starting evidence: 681 tests passed in 9.50 seconds on the user's Mac/Python
 3.12.12, with app-controlled spoken guidance explicitly approved.
@@ -158,3 +158,22 @@ accessibility checks and release preparation follow native build validation.
 - [PyInstaller usage options](https://pyinstaller.org/en/stable/usage.html).
 - [Bundled resource lookup](https://pyinstaller.org/en/stable/runtime-information.html).
 - [Symlink preservation](https://pyinstaller.org/en/stable/common-issues-and-pitfalls.html).
+
+## User-verified native checkpoint, October 26, 2026 (UTC)
+
+At source commit `789887c`, the user passed **702 tests in 13.75 seconds** on
+Intel macOS 15.7.9 / Python 3.12.12, with Tcl/Tk 8.6.18 and PyInstaller 6.22.3.
+The build completed all scripted checks and produced a verified DMG in candidate
+`TrustBench-0.5.0-x86_64-20261026T033014Z-941e8f3d`.
+
+The user installed the app in Applications and confirmed launching without a
+Python command, real evaluation and report saving, Reports viewing and Compare.
+The user additionally confirmed all four follow-up checks: stop/restart,
+keyboard navigation and spoken guidance, report persistence after closing and
+reopening, and unavailable-Ollama guidance followed by recovery after restarting
+Ollama. These are user-reported results for this installed candidate on one Mac.
+The original build record remains unchanged and retains its pre-validation flags.
+
+A fresh macOS account, another machine/architecture, downloaded/quarantined
+installation, Developer ID signing/notarization and public distribution remain
+unverified. No release was published or branch merged at this checkpoint.
