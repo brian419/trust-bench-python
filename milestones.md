@@ -792,26 +792,23 @@ No native Mac artifact was built by the agent. The user must build on macOS and
 validate from Applications before moving to clean-install/sharing preparation.
 See the [5F-3 build guide](docs/milestone-5f-3-macos-build.md).
 
-### Milestone 5F preview preparation (build 5002; native refresh pending)
+### Milestone 5F macOS preview (final icon validation pending)
 
-The user validated the first Intel DMG/app on their existing Mac: launch from
-Applications, live evaluation, Reports/Compare, stop/restart, keyboard/speech,
-report persistence, and Ollama unavailable/recovery. Their suite passed 702 tests
-in 13.75 seconds. Evidence for build 5001 is recorded in the native checkpoint.
+The local Intel preview includes the app/DMG build, bundled Python/Tcl/Tk,
+model discovery, evaluation progress, keyboard access and optional spoken
+guidance. Build 5001 passed installed-app workflow checks on macOS 15.7.9.
 
-Build 5002 adds a checked-in original ICNS, shared version metadata and visible
-preview label, icon/version verification, package inventory and native dependency
-checks before DMG creation, plus clearer install/update/privacy instructions and
-an unpublished release draft. **724 agent tests passed on Linux/Python 3.12.14**,
-including 22 additional regression cases over the previous 702 baseline. Native
-build and same-Mac installed-app rechecks for build 5002 are pending.
+Build 5002 passed **724 tests in 10.53 seconds** on macOS/Python 3.12.12 and
+completed package, dependency, frozen-worker and DMG checks. Screenshots confirmed
+installation, launch, version display and retained reports. Build 5003 replaces
+the chart icon with a TB monogram and test-result cells. Its final Mac rebuild
+and installed-app check remain pending; the automated suite still has 724 tests.
 
-Validation targets Intel macOS 15.7.9. Other configurations and downloaded-app
-behavior remain unverified. The preview is ad-hoc signed; Apple Developer ID
-signing and notarization are outside the current scope. The refreshed build,
-installed-app recheck and final evidence update remain before branch review.
-See the [5F checklist](docs/milestone-5f-macos-packaging-plan.md#remaining-work)
-and [installation guide](docs/macos-preview-guide.md).
+The preview is ad-hoc signed. Developer ID signing and notarization are outside
+this milestone's scope. After final validation, Ruff configuration and cleanup
+will proceed on a separate branch before integration into main.
+
+See the [5F checklist](docs/milestone-5f-macos-packaging-plan.md#remaining-work).
 
 ### Architecture and scope rules
 

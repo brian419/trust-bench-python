@@ -124,11 +124,10 @@ datasets. Live evaluation requires a separate Ollama installation and local mode
 Source commands remain available for development and CLI workflows.
 
 - **Target:** Intel x86_64, macOS 15.7.9.
-- **Validation:** build 5001 passed installed-app checks on an Intel MacBook Air.
-  Build 5002 adds the app icon, preview version and package audits; its Mac build
-  and installation checks are pending.
-- **Tests:** 724 passed on Linux/Python 3.12.14. The preceding 702-test checkpoint
-  also passed on macOS/Python 3.12.12.
+- **Validation:** the app's core workflows passed installed-app checks on an
+  Intel MacBook Air. Build 5002 passed Mac packaging checks; build 5003 replaces
+  the icon and awaits its final installation check.
+- **Tests:** 724 passed on macOS/Python 3.12.12 and Linux/Python 3.12.14.
 - **Availability:** a public download has not been published.
 
 The preview is ad-hoc signed and is not signed with Apple Developer ID or

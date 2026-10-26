@@ -5,13 +5,13 @@ Base: `feature/milestone-5` at `c70826a`
 
 ## Current status
 
-The first Intel macOS app and DMG (build 5001) passed native build checks and
-installed-app validation on macOS 15.7.9. The refreshed build 5002 adds the
-TrustBench icon, visible preview version and package audits. Its Mac build and
-installed-app checks are pending.
+Implementation is complete for the local Intel preview. Build 5001 passed
+installed-app workflow checks. Build 5002 passed the Mac package checks, and
+screenshots confirmed installation, launch, version display and a retained report.
+Build 5003 replaces the chart icon with a TB monogram and test-result cells;
+its native build and final installed-app check remain pending.
 
-The latest automated suite passed **724 tests on Linux/Python 3.12.14**.
-The preceding **702-test suite passed on macOS/Python 3.12.12**.
+**724 tests passed on macOS/Python 3.12.12 and Linux/Python 3.12.14.**
 
 ## Scope
 
@@ -39,7 +39,7 @@ decisions.
 | --- | --- |
 | 5F-1: Resources, report storage and packaged worker | Implemented; validated in build 5001 |
 | 5F-2: Ollama readiness, setup and model discovery | Implemented; service recovery validated |
-| 5F-3: App and DMG build | Build 5001 validated; build 5002 refresh pending |
+| 5F-3: App and DMG build | Build 5002 package checks passed; build 5003 icon refresh pending |
 | 5F-4: Progress, keyboard access and spoken guidance | Implemented and manually validated; repeat a short check after rebuilding |
 | 5F-5: Installation and sharing documentation | Preview guide and release draft prepared; final artifact evidence pending |
 
@@ -49,22 +49,28 @@ report persistence after reopening, and Ollama unavailable/recovery.
 
 ## Remaining work
 
-1. Pull the latest branch and run the 724-test suite on macOS/Python 3.12.12.
-2. Build candidate 5002. Review the build output, checksum, build record and
+1. Pull the icon update and rerun the 724-test suite on macOS/Python 3.12.12.
+2. Build candidate 5003. Review the build output, checksum, build record and
    `bundle-audit.json` for failures or unexpected files/dependencies.
 3. Install the refreshed candidate and confirm its icon/version, evaluation,
    Reports/Compare, stop/restart, keyboard/spoken guidance and retained reports.
 4. Record the exact candidate, source commit and results; update the validation
    summary and release notes accordingly.
 
-These steps complete validation of the local Intel preview. Additional devices,
-accounts, VMs and external testers are not required for this milestone.
+These steps complete validation of the local Intel preview.
 
 If a downloadable preview is published later, review the project license and
 bundled third-party notices, verify the downloaded copy's installation behavior,
 and attach the validated DMG and checksum. Publication is not required to retain
 or demonstrate the working local package. Signing/notarization is not a
 completion requirement for this preview.
+
+## Follow-up
+
+After the final Mac check, record 5F completion and begin a separate code-quality
+branch with Ruff configuration, an initial audit and reviewed cleanup. Preserve
+the explicit-import convention and run the regression suite before integration.
+Ruff adoption is separate from this packaging milestone.
 
 ## Documentation
 
