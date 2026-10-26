@@ -7,17 +7,17 @@ from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError, URLError
 
 from pytest import mark, raises
+from test_desktop_gui import make_test_app
 
 from eval_live import main as evaluate
 from evaluation_launcher import run_live_command, stop_evaluation_group
 from evaluation_progress import (
-    emit_progress,
-    EvaluationProgress,
     PROGRESS_FILE_ENV,
+    EvaluationProgress,
     ProgressReader,
+    emit_progress,
 )
 from ollama_client import MalformedResponseError
-from test_desktop_gui import make_test_app
 
 
 def test_elapsed_updates_during_silent_request_without_advancing_case_bar():
@@ -50,15 +50,18 @@ def test_every_completed_outcome_counts_once(outcome):
     assert "process to finish" in state.status
 
 
-@mark.parametrize("event", [
-    {"stage": "started", "total": True},
-    {"stage": "started", "total": -1},
-    {"stage": "started", "total": "2"},
-    {"stage": "case_completed", "completed": 1, "outcome": "PASS"},
-    {"stage": "case_started", "index": 1},
-    {"stage": "saving"},
-    {"stage": "saved"},
-])
+@mark.parametrize(
+    "event",
+    [
+        {"stage": "started", "total": True},
+        {"stage": "started", "total": -1},
+        {"stage": "started", "total": "2"},
+        {"stage": "case_completed", "completed": 1, "outcome": "PASS"},
+        {"stage": "case_started", "index": 1},
+        {"stage": "saving"},
+        {"stage": "saved"},
+    ],
+)
 def test_invalid_or_out_of_order_initial_events_do_not_fake_progress(event):
     state = EvaluationProgress()
     state.start(0)
@@ -110,20 +113,30 @@ def test_unavailable_telemetry_does_not_break_reader_or_writer(tmp_path, monkeyp
     output.assert_not_called()
 
 
-@mark.parametrize("response, outcome", [
-    ("1", "PASS"), ("different", "FAIL"),
-    (HTTPError("url", 500, "failed", None, None), "ERROR"),
-    (URLError("offline"), "ERROR"), (TimeoutError(), "ERROR"),
-    (MalformedResponseError("bad payload"), "ERROR"),
-])
+@mark.parametrize(
+    "response, outcome",
+    [
+        ("1", "PASS"),
+        ("different", "FAIL"),
+        (HTTPError("url", 500, "failed", None, None), "ERROR"),
+        (URLError("offline"), "ERROR"),
+        (TimeoutError(), "ERROR"),
+        (MalformedResponseError("bad payload"), "ERROR"),
+    ],
+)
 def test_evaluator_emits_exact_case_counts_and_preserves_report(
     tmp_path, monkeypatch, response, outcome
 ):
     dataset = tmp_path / "cases.json"
-    dataset.write_text(dumps([
-        {"id": "one", "question": "One?", "expected": "1"},
-        {"id": "two", "question": "One?", "expected": "1"},
-    ]), encoding="utf-8")
+    dataset.write_text(
+        dumps(
+            [
+                {"id": "one", "question": "One?", "expected": "1"},
+                {"id": "two", "question": "One?", "expected": "1"},
+            ]
+        ),
+        encoding="utf-8",
+    )
     events = tmp_path / "events.jsonl"
     monkeypatch.setenv(PROGRESS_FILE_ENV, str(events))
     with patch("eval_live.generate_response", side_effect=[response, "1"]):
@@ -135,7 +148,8 @@ def test_evaluator_emits_exact_case_counts_and_preserves_report(
         {"stage": "case_completed", "completed": 1, "outcome": outcome},
         {"stage": "case_started", "index": 2},
         {"stage": "case_completed", "completed": 2, "outcome": "PASS"},
-        {"stage": "saving"}, {"stage": "saved"},
+        {"stage": "saving"},
+        {"stage": "saved"},
     ]
     saved = next((tmp_path / "reports").glob("*.json"))
     assert loads(saved.read_text()) == report
@@ -180,7 +194,9 @@ def test_generated_output_cannot_increment_progress_counts():
     app = make_test_app()
     app.evaluation_running = True
     app.progress.start(0)
-    app.evaluation_events.put(("output", 'Result: PASS\n{"stage":"started","total":5}\n'))
+    app.evaluation_events.put(
+        ("output", 'Result: PASS\n{"stage":"started","total":5}\n')
+    )
     app._drain_evaluation_events()
     assert app.progress.total is None
     assert app.progress.completed == 0
@@ -208,17 +224,26 @@ def test_stop_status_is_not_replaced_by_queued_case_update():
     app.progress.apply({"stage": "started", "total": 2})
     app.progress.apply({"stage": "case_started", "index": 1})
     assert app.stop_evaluation() is True
-    app.evaluation_events.put(("progress", {
-        "stage": "case_completed", "completed": 1, "outcome": "ERROR",
-    }))
+    app.evaluation_events.put(
+        (
+            "progress",
+            {
+                "stage": "case_completed",
+                "completed": 1,
+                "outcome": "ERROR",
+            },
+        )
+    )
     app._drain_evaluation_events()
     assert "Stopping" in app.progress.status
 
 
 def test_start_thread_failure_restores_controls_and_finishes_progress():
     app = make_test_app()
-    with patch("desktop_gui.build_live_command", return_value=["unused"]), \
-            patch("desktop_gui.Thread") as thread:
+    with (
+        patch("desktop_gui.build_live_command", return_value=["unused"]),
+        patch("desktop_gui.Thread") as thread,
+    ):
         thread.return_value.start.side_effect = RuntimeError("failed")
         app.start_evaluation()
     app._drain_evaluation_events()
@@ -283,7 +308,11 @@ def test_real_subprocess_progress_works_in_source_and_private_worker_modes(
     assert "Result: PASS" in output
     assert "stage" not in output
     assert [e["stage"] for e in ProgressReader(events).read()] == [
-        "started", "case_started", "case_completed", "saving", "saved",
+        "started",
+        "case_started",
+        "case_completed",
+        "saving",
+        "saved",
     ]
     assert next(report_dir.glob("*.json")).is_file()
 
