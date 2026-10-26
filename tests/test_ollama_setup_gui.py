@@ -251,6 +251,10 @@ def test_interface_wires_ui_start_to_preflight_without_startup_network(app):
     assert commands["Read current view"] == app.read_current_view
     bindings = {call.args[0]: call.args[1] for call in app.root.bind.call_args_list}
     assert "<Control-Tab>" in bindings
+    assert "<F6>" in bindings
+    assert "<Tab>" in bindings
+    assert "<Shift-Tab>" in bindings
+    assert any(key.endswith("-Shift-Key-S>") for key in bindings)
     for number in (1, 2, 3):
         assert any(key.endswith(f"-Key-{number}>") for key in bindings)
     app.model_selector.bind.assert_any_call("<Return>", app._open_dropdown)

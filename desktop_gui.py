@@ -123,9 +123,10 @@ class TrustBenchDesktop:
             command=self.read_current_view, state="disabled",
         )
         self.read_view_button.pack(side="left", padx=(8, 0))
-        Button(
+        self.keyboard_help_button = Button(
             accessibility_controls, text="Keyboard Help", command=self.show_keyboard_help,
-        ).pack(side="right")
+        )
+        self.keyboard_help_button.pack(side="right")
 
         # Tabs keep each workflow in its own space.
         self.notebook = Notebook(frame)
@@ -147,7 +148,8 @@ class TrustBenchDesktop:
         Label(
             frame,
             text=f"Tabs: {modifier}+1 Reports; {modifier}+2 Compare; "
-            f"{modifier}+3 Evaluate. Control+Tab moves to the next tab.",
+            f"{modifier}+3 Evaluate. Control+Tab moves to the next tab. "
+            f"F6 focuses Spoken guidance; {modifier}+Shift+S toggles it.",
             wraplength=680, justify="left",
         ).pack(fill="x", pady=(4, 0))
         for index in range(3):
@@ -158,6 +160,10 @@ class TrustBenchDesktop:
         self.root.bind("<Control-Tab>", lambda event: self._switch_tab(1))
         self.root.bind("<Control-Shift-Tab>", lambda event: self._switch_tab(-1))
         self.root.bind("<F1>", lambda event: self.show_keyboard_help())
+        self.root.bind("<F6>", lambda event: self._focus_spoken_guidance())
+        self.root.bind(f"<{modifier}-Shift-Key-S>", lambda event: self._toggle_speech_key())
+        self.root.bind("<Tab>", self._focus_next)
+        self.root.bind("<Shift-Tab>", self._focus_previous)
 
         # --------------------
         # Reports tab
@@ -170,11 +176,12 @@ class TrustBenchDesktop:
         )
         browser_frame.pack(fill="x", pady=(0, 10))
 
-        Button(
+        self.refresh_reports_button = Button(
             browser_frame,
             text="Refresh Reports",
             command=self.refresh_reports,
-        ).pack(anchor="w", pady=(0, 8))
+        )
+        self.refresh_reports_button.pack(anchor="w", pady=(0, 8))
 
         self.report_list = Listbox(
             browser_frame,
@@ -480,6 +487,10 @@ class TrustBenchDesktop:
         ))
         self.speech_toggle.bind("<KP_Enter>", lambda event: self._toggle_speech_key())
         self.speech_toggle.bind("<FocusOut>", self._clear_keyboard_hint)
+        self.speech_toggle.configure(takefocus=lambda widget_path=None: (
+            not self.speech_toggle.instate(["disabled"])
+            and bool(self.speech_toggle.winfo_viewable())
+        ))
         self.progress_bar.configure(takefocus=False)
         self.refresh_reports()
 
@@ -543,11 +554,50 @@ class TrustBenchDesktop:
         return None  # Keep ordinary editing in the model-name entry.
 
     def _focus_next(self, event):
+        if hasattr(self, "speech_toggle"):
+            if event.widget in (self.report_display, self.comparison_display, self.evaluation_display):
+                return self._focus_spoken_guidance()
+            if event.widget is self.speech_toggle:
+                target = self._read_button_or_help()
+                target.focus_set()
+                return "break"
+            if event.widget is self.read_view_button:
+                self.keyboard_help_button.focus_set()
+                return "break"
+            if event.widget is self.keyboard_help_button:
+                self._first_workflow_control().focus_set()
+                return "break"
         event.widget.tk_focusNext().focus_set()
         return "break"
 
     def _focus_previous(self, event):
+        if hasattr(self, "speech_toggle"):
+            if event.widget is self._first_workflow_control():
+                self.keyboard_help_button.focus_set()
+                return "break"
+            if event.widget is self.keyboard_help_button:
+                target = self.speech_toggle if self.read_view_button.instate(["disabled"]) else self.read_view_button
+                target.focus_set()
+                return "break"
+            if event.widget is self.read_view_button:
+                return self._focus_spoken_guidance()
+            if event.widget is self.speech_toggle:
+                index = self.notebook.index("current")
+                (self.report_display, self.comparison_display, self.evaluation_display)[index].focus_set()
+                return "break"
         event.widget.tk_focusPrev().focus_set()
+        return "break"
+
+    def _first_workflow_control(self):
+        return (self.refresh_reports_button, self.previous_report, self.dataset_entry)[
+            self.notebook.index("current")
+        ]
+
+    def _read_button_or_help(self):
+        return self.keyboard_help_button if self.read_view_button.instate(["disabled"]) else self.read_view_button
+
+    def _focus_spoken_guidance(self):
+        self.speech_toggle.focus_set()
         return "break"
 
     def _switch_tab(self, direction):
@@ -610,6 +660,9 @@ class TrustBenchDesktop:
             showinfo, "Keyboard Help",
             f"Jump directly to tabs: {modifier}+1 Reports, {modifier}+2 Compare, "
             f"{modifier}+3 Evaluate. Control+Tab goes forward; Control+Shift+Tab goes back.\n\n"
+            f"F6 focuses Spoken guidance from any workflow. {modifier}+Shift+S toggles "
+            "it directly. Tab from the last output area reaches Spoken guidance; "
+            "Shift+Tab from the first workflow control reaches Keyboard Help.\n\n"
             "Tab/Shift+Tab moves between controls. In Saved reports, Up/Down Arrow "
             "chooses and scrolls reports; Enter/Return opens the selected report. "
             "The list is one Tab stop, regardless of how many reports it contains.\n\n"
