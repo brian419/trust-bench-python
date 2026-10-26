@@ -6,7 +6,6 @@ from subprocess import DEVNULL, PIPE, Popen, TimeoutExpired
 from sys import platform
 from threading import Lock, Thread
 
-
 SAY_EXECUTABLE = "/usr/bin/say"
 MAX_SPEECH_CHARACTERS = 4000
 
@@ -95,11 +94,19 @@ class SpokenGuidance:
             process = None
             try:
                 with self._lock:
-                    if not self.enabled or self.closed or generation != self._generation:
+                    if (
+                        not self.enabled
+                        or self.closed
+                        or generation != self._generation
+                    ):
                         continue
                     process = Popen(
-                        [SAY_EXECUTABLE, "-f", "-"], stdin=PIPE,
-                        stdout=DEVNULL, stderr=DEVNULL, text=True, encoding="utf-8",
+                        [SAY_EXECUTABLE, "-f", "-"],
+                        stdin=PIPE,
+                        stdout=DEVNULL,
+                        stderr=DEVNULL,
+                        text=True,
+                        encoding="utf-8",
                     )
                     self._process = process
                 try:

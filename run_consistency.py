@@ -6,7 +6,6 @@ from uuid import uuid4
 from consistency_runner import run_consistency_experiment
 from provenance import consistency_inputs_sha256, python_runtime_version
 
-
 MODEL = "gemma3:1b"
 REPETITIONS = 3
 

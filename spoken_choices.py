@@ -26,13 +26,17 @@ class SpokenChoices:
         body.pack(fill="both", expand=True)
         Label(body, text=f"Choose {label}").pack(anchor="w")
         Label(
-            body, text="Arrow keys browse; Enter/Return or Space chooses; Escape cancels.",
-            wraplength=520, justify="left",
+            body,
+            text="Arrow keys browse; Enter/Return or Space chooses; Escape cancels.",
+            wraplength=520,
+            justify="left",
         ).pack(fill="x", pady=(4, 6))
         choices = Frame(body)
         choices.pack(fill="both", expand=True)
         self.listbox = Listbox(choices, exportselection=False, height=8, takefocus=True)
-        scrollbar = Scrollbar(choices, orient="vertical", command=self.listbox.yview, takefocus=False)
+        scrollbar = Scrollbar(
+            choices, orient="vertical", command=self.listbox.yview, takefocus=False
+        )
         self.listbox.configure(yscrollcommand=scrollbar.set)
         self.listbox.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
@@ -78,8 +82,10 @@ class SpokenChoices:
         index = selection[0]
         self.last_highlight = index
         describe = getattr(self, "describe", None)
-        text = describe(index, self.values[index]) if describe is not None else (
-            f"{index + 1} of {len(self.values)}. {self.values[index]}"
+        text = (
+            describe(index, self.values[index])
+            if describe is not None
+            else (f"{index + 1} of {len(self.values)}. {self.values[index]}")
         )
         self.announce(text)
 
@@ -114,7 +120,9 @@ class SpokenChoices:
             current_values = tuple(self.combo.cget("values"))
             if value not in current_values:
                 self.cancel()
-                self.announce("That choice is no longer available. Refresh and try again.")
+                self.announce(
+                    "That choice is no longer available. Refresh and try again."
+                )
                 return "break"
             self.combo.current(current_values.index(value))
             self.cancel()
@@ -138,7 +146,9 @@ class SpokenChoices:
         if self.closed:
             return "break"
         self.cancel()
-        target = self.combo.tk_focusNext() if direction > 0 else self.combo.tk_focusPrev()
+        target = (
+            self.combo.tk_focusNext() if direction > 0 else self.combo.tk_focusPrev()
+        )
         target.focus_set()
         return "break"
 
@@ -154,7 +164,11 @@ class SpokenChoices:
         # combobox while completing its click. Neither is an outside action.
         # Explicit outside clicks and Escape still close; transient activation
         # changes are checked after the native event completes.
-        if focus is not None and focus is not self.combo and focus.winfo_toplevel() != self.window:
+        if (
+            focus is not None
+            and focus is not self.combo
+            and focus.winfo_toplevel() != self.window
+        ):
             self.cancel()
 
     def _schedule_focus_check(self, event):
@@ -165,7 +179,9 @@ class SpokenChoices:
         if self.closed:
             return
         x, y = self.window.winfo_rootx(), self.window.winfo_rooty()
-        if not (x <= event.x_root < x + self.window.winfo_width()
-                and y <= event.y_root < y + self.window.winfo_height()):
+        if not (
+            x <= event.x_root < x + self.window.winfo_width()
+            and y <= event.y_root < y + self.window.winfo_height()
+        ):
             self.cancel()
             return "break"
