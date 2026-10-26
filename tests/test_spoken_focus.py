@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock
 
 from pytest import mark
-
 from test_navigation_guidance import navigation_app
 
 
@@ -20,7 +19,9 @@ def focus_app(index):
 def test_tab_from_workflow_output_enters_spoken_guidance(index):
     app = focus_app(index)
     event = MagicMock()
-    event.widget = (app.report_display, app.comparison_display, app.evaluation_display)[index]
+    event.widget = (app.report_display, app.comparison_display, app.evaluation_display)[
+        index
+    ]
     assert app._focus_next(event) == "break"
     app.speech_toggle.focus_set.assert_called_once()
     event.widget.tk_focusNext.assert_not_called()
@@ -30,7 +31,9 @@ def test_tab_from_workflow_output_enters_spoken_guidance(index):
 def test_shift_tab_from_first_workflow_control_reaches_global_help(index):
     app = focus_app(index)
     event = MagicMock()
-    event.widget = (app.refresh_reports_button, app.previous_report, app.dataset_entry)[index]
+    event.widget = (app.refresh_reports_button, app.previous_report, app.dataset_entry)[
+        index
+    ]
     assert app._focus_previous(event) == "break"
     app.keyboard_help_button.focus_set.assert_called_once()
 

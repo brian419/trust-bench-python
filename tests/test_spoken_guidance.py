@@ -16,7 +16,10 @@ def available_guidance():
 
 
 def test_disabled_by_default_does_not_launch_threads_or_processes():
-    with patch("spoken_guidance.Thread") as thread, patch("spoken_guidance.Popen") as launch:
+    with (
+        patch("spoken_guidance.Thread") as thread,
+        patch("spoken_guidance.Popen") as launch,
+    ):
         narrator = SpokenGuidance()
         narrator.speak("Hello")
         narrator.close()

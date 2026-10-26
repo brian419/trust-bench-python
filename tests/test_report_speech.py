@@ -4,28 +4,42 @@ from json import dumps
 from unittest.mock import MagicMock, patch
 
 from pytest import mark
-
-from report_speech import MAX_DESCRIPTION_BYTES, report_speech_details, spoken_model_name
-from spoken_choices import SpokenChoices
 from test_navigation_guidance import navigation_app
 
+from report_speech import (
+    MAX_DESCRIPTION_BYTES,
+    report_speech_details,
+    spoken_model_name,
+)
+from spoken_choices import SpokenChoices
 
-@mark.parametrize("name, expected", [
-    ("gemma3:1b", "gemma 3 version 1 billion parameters"),
-    ("llama3.2:3b", "llama 3.2 version 3 billion parameters"),
-    ("team/my_model:latest", "team slash my model version latest"),
-    (None, "model not recorded"),
-    ("a" * 32, "model name unavailable"),
-])
+
+@mark.parametrize(
+    "name, expected",
+    [
+        ("gemma3:1b", "gemma 3 version 1 billion parameters"),
+        ("llama3.2:3b", "llama 3.2 version 3 billion parameters"),
+        ("team/my_model:latest", "team slash my model version latest"),
+        (None, "model not recorded"),
+        ("a" * 32, "model name unavailable"),
+    ],
+)
 def test_model_notation_is_spoken_as_words(name, expected):
     assert spoken_model_name(name) == expected
 
 
 def test_report_metadata_replaces_long_identifier_and_extension(tmp_path):
     path = tmp_path / ("evaluation-" + "a" * 32 + ".json")
-    path.write_text(dumps({"metadata": {
-        "timestamp": "2026-10-25T19:04:04", "model": "gemma3:1b",
-    }}))
+    path.write_text(
+        dumps(
+            {
+                "metadata": {
+                    "timestamp": "2026-10-25T19:04:04",
+                    "model": "gemma3:1b",
+                }
+            }
+        )
+    )
     text = report_speech_details(path)
     assert "October 25, 2026 at 7:04:04 PM" in text
     assert "time zone not recorded" in text
@@ -34,9 +48,19 @@ def test_report_metadata_replaces_long_identifier_and_extension(tmp_path):
     assert ".json" not in text and str(tmp_path) not in text
 
 
-@mark.parametrize("content", ["invalid", "null", "[]", '{"metadata":[]}',
-                                   '{"metadata":{"timestamp":"invalid"}}'])
-def test_unreadable_metadata_uses_file_time_without_speaking_filename(tmp_path, content):
+@mark.parametrize(
+    "content",
+    [
+        "invalid",
+        "null",
+        "[]",
+        '{"metadata":[]}',
+        '{"metadata":{"timestamp":"invalid"}}',
+    ],
+)
+def test_unreadable_metadata_uses_file_time_without_speaking_filename(
+    tmp_path, content
+):
     path = tmp_path / "evaluation-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.json"
     path.write_text(content)
     text = report_speech_details(path)
@@ -60,8 +84,10 @@ def test_description_read_is_bounded_for_large_reports(tmp_path):
 def speech_app():
     app = navigation_app()
     app.narrator.enabled = True
-    app.saved_reports = ["/reports/evaluation-" + "a" * 32 + ".json",
-                         "/reports/evaluation-" + "b" * 32 + ".json"]
+    app.saved_reports = [
+        "/reports/evaluation-" + "a" * 32 + ".json",
+        "/reports/evaluation-" + "b" * 32 + ".json",
+    ]
     app.model_selector = MagicMock()
     app._announce = MagicMock()
     return app
@@ -69,7 +95,9 @@ def speech_app():
 
 def test_report_details_cached_but_ordinal_stays_in_current_list_order():
     app = speech_app()
-    with patch("desktop_gui.report_speech_details", return_value="Run on October 25") as describe:
+    with patch(
+        "desktop_gui.report_speech_details", return_value="Run on October 25"
+    ) as describe:
         first = app._spoken_report(0)
         app._spoken_report(0)
         app.saved_reports.reverse()
@@ -93,7 +121,9 @@ def test_compare_focus_and_confirm_use_same_friendly_report_description(field):
     combo = getattr(app, field)
     combo.get.return_value = "evaluation-" + "b" * 32 + ".json"
     combo.current.return_value = 1
-    with patch("desktop_gui.report_speech_details", return_value="Run on October 25. Gemma 3"):
+    with patch(
+        "desktop_gui.report_speech_details", return_value="Run on October 25. Gemma 3"
+    ):
         text = app._spoken_field(combo, "Current report")
     assert text == "Current report. Report 2 of 2. Run on October 25. Gemma 3"
     assert "bbbbbbbb" not in text
