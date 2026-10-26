@@ -90,7 +90,7 @@ Reference URLs and human labels are curated evidence, not automatic fact verific
 The project uses Python's standard library for runtime functionality, `pytest` for automated tests, and [Ruff](https://docs.astral.sh/ruff/) for linting and formatting.
 
 ```bash
-python3 -m pip install -r requirements-dev.txt
+python3 -m pip install pytest -r requirements-dev.txt
 python3 -m pytest -q
 ruff check .
 ruff format --check .
