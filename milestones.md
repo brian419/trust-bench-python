@@ -806,13 +806,12 @@ an unpublished release draft. **724 agent tests passed on Linux/Python 3.12.14**
 including 22 additional regression cases over the previous 702 baseline. Native
 build and same-Mac installed-app rechecks for build 5002 are pending.
 
-The user explicitly declined extra hardware/testers, fresh accounts and virtual
-machines. They are not required tasks. The tested scope remains one Intel Mac
-running macOS 15.7.9; broader configuration and downloaded-app behavior remain
-unverified. Paid Developer ID signing/notarization is deferred; no enrollment,
-credentials, charge, upload, tag, CI workflow or merge was performed. Remaining
-distribution/license review and exact-artifact validation precede publication.
-See the [preview guide](docs/macos-preview-guide.md).
+Validation targets Intel macOS 15.7.9. Other configurations and downloaded-app
+behavior remain unverified. The preview is ad-hoc signed; Apple Developer ID
+signing and notarization are outside the current scope. The refreshed build,
+installed-app recheck and final evidence update remain before branch review.
+See the [5F checklist](docs/milestone-5f-macos-packaging-plan.md#remaining-work)
+and [installation guide](docs/macos-preview-guide.md).
 
 ### Architecture and scope rules
 

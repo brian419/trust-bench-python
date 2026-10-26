@@ -17,8 +17,8 @@ The source CLI, evaluation behavior and all existing functionality are retained.
 This is an internal `0.5.0` build candidate, not a published release. The spec
 targets x86_64, disables argv emulation to avoid Tk event interference, and uses
 a directory app bundle rather than one-file self-extraction. PyInstaller's
-default ad-hoc signing is checked explicitly; no Developer ID, paid enrollment,
-notarization, release upload or installation is performed. Build 5002 includes the original TrustBench ICNS and visible preview version.
+default ad-hoc signing is checked explicitly. The build does not perform
+Developer ID signing, notarization, publication or installation. Build 5002 includes the original TrustBench ICNS and visible preview version.
 
 The bundle's minimum macOS version is conservatively set to the build host's
 version. Only the user's Intel Mac is the immediate validation target. Apple
@@ -40,8 +40,7 @@ git status
 ```
 
 Expect **724 automated tests** for the refreshed preview candidate. The separate build venv keeps build packages out
-of application runtime requirements and the existing test environment. No GitHub
-Actions jobs or paid services are used. Pip needs internet to fetch build tools.
+of application runtime requirements and the existing test environment. Pip needs internet to fetch build tools.
 
 `--check` verifies macOS, Intel architecture, Python 3.12.12, the pinned packager,
 datasets and native tools, and initializes/destroys a hidden Tk window to check
@@ -183,4 +182,25 @@ See the [preview guide](macos-preview-guide.md) for the updated icon/version,
 package audit, installation instructions, unpublished release draft and current
 scope. The refreshed candidate passes 724 agent tests; it must be rebuilt and
 checked on the same Mac. The earlier native checkpoint remains evidence only
-for build 5001. No extra accounts, VMs, testers or hardware are required.
+for build 5001.
+
+## Build 5002 package audit
+
+The build verifies the checked-in ICNS and application version/build metadata.
+It audits the output and staged bundles for development/user directories, .env
+files, broken or external symlinks, and absolute symlinks that would break after
+moving the app. Native Mach-O libraries are checked with `otool -L` for absolute
+dependencies outside /System/Library and /usr/lib.
+
+The output includes `bundle-audit.json` with file hashes, symlink targets and
+native library references. Build records include audit counts and the preview
+target. These checks supplement installed-app testing; @rpath references are
+inventoried rather than fully resolved by this audit.
+
+The icon is checked in as `macos/TrustBench.icns`. Its optional authoring script,
+`tools/generate_macos_icon.py`, uses Pillow; regenerating artwork is not part of
+the app build and adds no runtime dependency.
+
+Follow the [remaining-work checklist](milestone-5f-macos-packaging-plan.md#remaining-work)
+for final validation. See the [installation guide](macos-preview-guide.md) for
+user-facing instructions.

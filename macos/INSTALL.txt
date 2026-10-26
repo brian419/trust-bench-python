@@ -1,40 +1,35 @@
 TrustBench 0.5.0 preview
 
-Preview target: Intel (x86_64) Mac, macOS 15.7.9.
-The previous candidate was tested on this configuration. Other Mac models,
-Apple Silicon and other macOS versions have not been verified.
+Requirements
+Intel Mac running macOS 15.7.9. Other configurations have not been verified.
+Live evaluations require Ollama and a downloaded local model.
+No separate Python or Git installation is required.
 
-Drag TrustBench.app to Applications, eject the disk image, then launch the app
-from Applications. End users do not need Python, Git or the source checkout.
+Install
+Drag TrustBench.app into Applications, eject the disk image, then launch it.
+The preview is ad-hoc signed and is not signed with Apple Developer ID or
+notarized. macOS may display a security warning when opening a downloaded copy.
+Apple's guidance: https://support.apple.com/102445
 
-This checkpoint is an Intel Mac development candidate, ad-hoc signed and not
-notarized. It is not yet a public release. If macOS blocks it, record the exact
-message for the build review. Do not disable Gatekeeper globally.
+Get started
+Open Evaluate and select Refresh Models to choose an installed Ollama model.
+Use Setup Help for setup instructions, then select a dataset and Start Evaluation.
+Reports and Compare work without Ollama. Keyboard Help lists navigation shortcuts;
+optional Spoken guidance is off at startup.
 
-Live evaluation needs Ollama and a downloaded local model, installed separately.
-Use Setup Help in Evaluate. Reports and Compare work without Ollama.
-
-New reports are stored in:
+Reports
+Saved evaluations are stored in:
 ~/Library/Application Support/TrustBench/reports
 
-Existing source-checkout reports remain where they are. Open Evaluation Report
-can view a report elsewhere. To include selected older reports in the Reports
-and Compare lists, copy their evaluation-*.json files into the folder above.
-No reports are bundled, moved, overwritten or deleted automatically.
+Open Evaluation Report can view a file elsewhere. Copy selected older evaluation
+JSON files into the folder above to include them in Reports and Compare.
+Reports may contain prompts, answers and local paths; review them before sharing.
 
-Spoken guidance is optional and off at launch. Keyboard Help lists shortcuts.
-The app-controlled speech feature is separate from Apple's VoiceOver.
+Update or uninstall
+Quit TrustBench before replacing the app in Applications. Back up important
+reports before updating. To uninstall, move the app to Trash. The separate report
+directory remains until you remove it.
 
-Your reports can include questions, expected answers, generated answers, model
-names, dataset paths and timestamps. Review their contents before sharing them.
-Live prompts go to your local Ollama service at localhost:11434. Opening Get
-Ollama launches an external website only after confirmation.
-
-Updating: quit TrustBench before replacing its app in Applications. Replacing
-the app does not intentionally remove reports in Application Support. Back up
-important reports first. To uninstall, move only TrustBench.app to Trash; saved
-reports remain until you explicitly remove their separate data folder.
-
-If something fails, record the app version/build from Finder Get Info, macOS
-version, action attempted and exact error. Avoid including private report data.
-Source and issue tracker: https://github.com/brian419/trust-bench-python
+Support
+Include app version/build, macOS version, the action attempted and any error.
+Source and issues: https://github.com/brian419/trust-bench-python

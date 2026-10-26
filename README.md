@@ -8,9 +8,10 @@ The command-line project supports both **offline evaluation of prerecorded JSON 
 
 ## Current status
 
-**Milestones 1–4 are complete on `main` (155 tests at merge). On `feature/milestone-5`, milestones 5A–5E provide the unified CLI, provenance metadata, live-report comparisons, readable reports, and a native Tkinter desktop GUI. The GUI implementation was committed and pushed as `8ebd025` on October 25, 2026. The latest prepackaging fix checkpoint passed 450 automated tests on Linux/Python 3.12.14. The user also passed all 450 tests on macOS/Python 3.12.12 and rechecked real Ollama completion, cancellation/restart, saved-report listing/comparison and normal closure. Milestone 5F (packaging, accessibility, and release readiness) remains open.**
-
-Milestone 3 merged into `main` on October 21, 2026. Milestone 4 (stages 4A–4E) was fast-forward merged and pushed to `main` on October 23, 2026 at commit `72a4842`, after 155 tests passed locally. The historical `feature/milestone-4` branch remains available, but all Milestone 4 workflows are now on `main`. Milestone 5A provides the tested CLI foundation; the 5B provenance checkpoint adds report metadata on the same feature branch. Neither stage has been merged into `main`.
+Milestones 1–4 are available on `main`. The Milestone 5 branches add the unified
+CLI, report provenance and comparisons, a native desktop interface, and an Intel
+macOS app preview. Milestone 5F is in final packaging validation on
+`feature/milestone-5f-macos-packaging`; it has not been merged into `main`.
 
 Implemented:
 
@@ -85,7 +86,7 @@ Replace the example input path with a real report from your local `reports/` fol
 
 ## Desktop GUI (Milestone 5E)
 
-**Status (October 25, 2026):** Implemented and pushed on `feature/milestone-5` in commit `8ebd025`. The feature branch passed **389 automated tests**; macOS smoke tests covered report browsing, comparisons, command preview, cancellation, restarting, completed Ollama inference, and normal window closure. This is a source-run desktop application, **not yet a packaged installer**.
+The desktop interface is available from source and as a locally validated Intel macOS preview. See [macOS preview](#macos-preview) for installation details and current build status.
 
 From the repository root, launch the native Tkinter interface:
 
@@ -103,175 +104,39 @@ The application has three tabs:
 
 **To run a live evaluation:** Start the local Ollama service and make sure the requested model is installed (for example `ollama pull gemma3:1b`). Reports and comparisons do **not** require Ollama. The GUI currently launches the existing unified CLI live mode rather than duplicating scoring logic. Offline, consistency, scorer, and injection workflows remain available through the CLI; the GUI Evaluate tab currently supports **live mode only**.
 
-**Validation and limitations:** A controlled macOS live test recorded 2 PASS, 0 FAIL, and 0 request errors (100% exact-match accuracy **on those two questions only**). Another test stopped a live run with process exit code `-15` (SIGTERM) and successfully started a fresh run. Automated tests cover GUI events, subprocess shutdown coordination, macOS process-group termination and parent/child group behavior. Cancellation can interrupt a run without saving a complete report. The live output pane still displays verbose evaluator output. No signed installer, accessibility audit, or cross-platform release testing has been completed.
+**Validation and limitations:** A controlled macOS live test recorded 2 PASS, 0 FAIL, and 0 request errors (100% exact-match accuracy **on those two questions only**). Another test stopped a live run with process exit code `-15` (SIGTERM) and successfully started a fresh run. Automated tests cover GUI events, subprocess shutdown coordination, macOS process-group termination and parent/child group behavior. Cancellation can interrupt a run without saving a complete report. The live output pane still displays verbose evaluator output. See the macOS preview section below for packaging status and the tested configuration.
 
-## macOS packaging runtime foundation (5F-1)
+## Desktop usability
 
-Work continues on `feature/milestone-5f-macos-packaging`. The runtime foundation
-is implemented in `ec4396b`. The agent passed **468 tests** on Linux; the
-user passed **468 tests in 5.56 seconds** on macOS/Python 3.12.12 and verified
-source entry-point launch, report viewing/comparison, live evaluation,
-stop/restart and normal closure. An installable app/DMG has not been built yet.
+The Evaluate tab provides installed-model discovery, Ollama setup guidance,
+live output, completed-case progress and an elapsed timer. Reports and Compare
+remain available without Ollama.
 
-`python3 app_entry.py` opens the same source GUI as `python3 desktop_gui.py`.
-Source GUI reports remain in the checkout's `reports/` folder; source CLI
-defaults are unchanged. The future packaged app uses bundled datasets and
-writes reports outside the application to
-`~/Library/Application Support/TrustBench/reports/`. Older reports remain
-untouched and can be opened with **Open Evaluation Report**.
+Use Tab/Shift-Tab to move between controls and arrow keys to browse lists.
+On macOS, Command+1/2/3 switches to Reports, Compare and Evaluate.
+Keyboard Help lists the available shortcuts. Optional spoken guidance reads
+control labels, report choices and evaluation status; it is off at startup.
 
-The packaged worker dispatch and output/report path behavior have automated
-and real-subprocess coverage using simulated frozen settings and mocked HTTP.
-Actual macOS bundle validation remains part of the later build checkpoint.
-See the [5F-1 runtime notes](docs/milestone-5f-1-runtime-foundation.md).
+## macOS preview
 
-### Ollama setup and readiness (5F-2)
+The preview packages TrustBench as a desktop app with Python, Tcl/Tk and example
+datasets. Live evaluation requires a separate Ollama installation and local model.
+Source commands remain available for development and CLI workflows.
 
-The original readiness checkpoint passed **520 tests on macOS/Python 3.12.12**.
-The model-selection follow-up passed **532 tests on macOS/Python 3.12.12**;
-dropdown refresh, blank-field recovery, preview, evaluation and stop/restart
-were manually verified. The Evaluate tab provides an editable model dropdown, **Refresh Models**,
-**Check Ollama**, **Setup Help** and **Get Ollama (website)**.
+- **Target:** Intel x86_64, macOS 15.7.9.
+- **Validation:** build 5001 passed installed-app checks on an Intel MacBook Air.
+  Build 5002 adds the app icon, preview version and package audits; its Mac build
+  and installation checks are pending.
+- **Tests:** 724 passed on Linux/Python 3.12.14. The preceding 702-test checkpoint
+  also passed on macOS/Python 3.12.12.
+- **Availability:** a public download has not been published.
 
-Opening TrustBench makes no automatic service request. Check Ollama only checks
-the local service/model list. Start Evaluation performs a fresh background
-check and starts inference once the selected model is available and settings
-are unchanged. Unavailable services, missing models and unreadable replies
-produce different setup messages. Open/install Ollama, download the requested
-local model explicitly, then check again in the same window.
+The preview is ad-hoc signed and is not signed with Apple Developer ID or
+notarized. macOS may display a security warning when opening a downloaded copy.
 
-Reports and Compare work without Ollama, including while a check runs.
-Refresh Models fills the dropdown from Ollama, even with an empty model field.
-Exact names and tags are preserved; refreshing never changes your selection or
-starts inference. Manual entry remains available.
-
-The official download URL is visible in the app. Get Ollama (website) shows the
-full HTTPS destination and asks before opening the external browser. Setup Help
-points to Download manually on the official page. TrustBench does not
-automatically install software, run setup commands or download models.
-Ollama and model files remain separate installations.
-
-See the [5F-2 setup and validation notes](docs/milestone-5f-2-ollama-readiness.md).
-The app/DMG build and accessibility/release checks remain later work.
-
-### Evaluation progress and keyboard access
-
-The Evaluate tab now has a persistent status area above Evaluation Output:
-current activity, completed-case bar/count and elapsed time. While Ollama is
-quiet, the status identifies the pending case and the timer continues. Cases
-advance the bar only when finished, including request errors. The bar measures
-completed cases, not remaining time or model health. Report saving, stopping,
-unverified shutdown and process failures have separate textual states.
-
-No continuous activity animation is required. Existing detailed output remains
-available. Tab/Shift-Tab can leave read-only text areas; Control-Tab and
-Control-Shift-Tab switch workflow tabs, including from those text areas.
-
-The user manually verified progress, elapsed time, reset after stop/restart,
-resizing and normal closure on macOS. Keyboard testing exposed unclear button
-focus and dropdown activation. The follow-up adds a persistent keyboard hint,
-explicit enabled-button traversal, native focused-button emphasis, and
-Space/Return activation. Down Arrow opens dropdowns; Return also opens them.
-Space opens readonly report choices but remains text input in the model field.
-
-The preceding keyboard checkpoint passed **577 tests on the user's Mac**.
-Further user testing prompted direct workflow shortcuts, clearer list/dropdown
-instructions and focus recovery after native dialogs. On macOS, **Command+1/2/3**
-jumps to Reports/Compare/Evaluate. Control+Tab cycles tabs. **Keyboard Help** (F1)
-explains how arrow keys choose within lists while Tab moves between controls.
-Enter and Return refer to the same confirmation action; keypad Enter is supported.
-
-**Spoken guidance** is optional and off at every launch. Its checkbox enables
-local macOS speech for focused-control hints, selected report/model names,
-dialog messages and evaluation status changes. **Read current view** explicitly
-reads an excerpt of the displayed text. Toggling off or closing stops speech;
-rapid navigation replaces old hints rather than building a backlog. This uses
-macOS `/usr/bin/say`, with no system VoiceOver setting change, paid service,
-microphone permission or new runtime dependency. It complements screen-reader
-accessibility and does not establish VoiceOver support. Other platforms retain
-visual and keyboard operation; this speech backend targets macOS only.
-
-The navigation/speech checkpoint passed **606 agent tests**. A follow-up fixes
-Tab access to the global speech controls: Tab from workflow output reaches Spoken
-guidance; Shift-Tab from the first workflow control reaches Keyboard Help, then
-the speech controls. Disabled Read current view is skipped. F6 focuses the speech
-checkbox without changing it; Command+Shift+S toggles speech on macOS
-(Control+Shift+S elsewhere). These shortcuts are displayed in the app and help.
-
-The user passed the 620-test checkpoint on macOS. A further usability fix adds
-a visible blue outline and explicit focused On/Off text to the speech control.
-Spoken focus labels omit the repeated "Keyboard focus" prefix and long usage
-instructions; detailed visual hints and Keyboard Help remain available.
-
-With spoken guidance on, report/model choices open in an app-controlled chooser
-that announces each highlighted item before confirmation. Arrow keys browse;
-Enter/Return, keypad Enter or Space confirms; Escape cancels without changing
-the field. With speech off, native dropdowns remain in use.
-
-Ollama model discovery runs in the background on the first Evaluate visit rather
-than leaving a fresh-launch list empty until manual refresh. Opening an empty
-model chooser also requests a refresh. This does not install or download models,
-change the selected name, or start evaluation. Refresh Models remains available.
-Reports-only startup makes no service request.
-
-The updated suite passes **643 agent tests** on Linux/Python 3.12.14, including
-23 new cases for focus appearance, concise speech, observable choice browsing,
-selection/cancellation, changed report lists and lazy model loading. The user subsequently confirmed the focus styling and concise speech and reported
-other behavior working, with report-filename pronunciation as the remaining issue.
-
-Report speech now uses the report's position, recorded run date/time and model
-instead of reading its random filename. This applies to Reports selection and
-Compare focus, browsing and confirmation. Missing/unreadable metadata falls back
-to an explicitly labeled file-modification date or unavailable-date message.
-Raw filenames remain visible and files/selection mappings are unchanged. Common
-model notation is expanded for speech, such as "gemma 3 version 1 billion
-parameters". Descriptions are bounded, cached until report refresh, and not read
-from disk when guidance is off.
-
-This follow-up passes **663 agent tests** on Linux/Python 3.12.14, including
-20 new description/narration cases. The user then passed **663 tests in 8.52 seconds** on macOS and reported Compare
-speech working. A follow-up fixes two interaction gaps: entering Saved reports
-now selects/announces the first report if none is selected, or announces the
-existing selection, without opening it. Spoken mouse choosers now open after
-the originating click finishes, ignore unmatched opening-release events, and
-do not treat transient native focus changes as outside clicks. This is shared
-by both report selectors and the model selector; speech-off native menus remain
-unchanged. The follow-up passes **681 agent tests** on Linux/Python 3.12.14,
-including 18 new regression cases. The user then passed **681 tests in 9.50 seconds**
-on macOS/Python 3.12.12, verified spoken guidance throughout the app including
-Start Evaluation, and explicitly approved this work. Next is the macOS app/DMG
-build. These are source-run results; installed-app testing remains required.
-See the [progress and accessibility checkpoint](docs/milestone-5f-progress-accessibility.md).
-
-### Local macOS app/DMG build (5F-3)
-
-Build tooling is available on the packaging branch for an internal Intel Mac
-candidate. PyInstaller 6.22.3 is a build-only dependency installed in a separate
-venv. `build_macos.py --plan` shows the plan; `--check` checks the Mac build
-interpreter and native tools; running it without flags builds/verifies a candidate.
-The output includes TrustBench.app, a DMG, checksum and environment/build records.
-It does not install, publish, bundle Ollama/models or include existing reports.
-
-**702 agent tests pass** on Linux/Python 3.12.14. Native Mac building and
-installed-app validation remain pending. Candidates are ad-hoc signed and not
-notarized; this checkpoint is not a public-release readiness claim. See the
-[Mac build commands and validation guide](docs/milestone-5f-3-macos-build.md).
-
-
-### Preview release preparation (build 5002)
-
-The user completed the local Intel Mac build and installed-app checks for build
-5001, including 702 passing tests on macOS 15.7.9. The next candidate has an
-original TrustBench icon, visible 0.5.0 preview identity, build 5002 metadata,
-stronger package audits and an unpublished release draft. **724 tests pass in the
-agent Linux environment; rebuilding and validating this refreshed Mac candidate
-remain pending.**
-
-The preview target stays Intel x86_64/macOS 15.7.9. Additional accounts, virtual
-machines, testers and hardware are not required. Broader compatibility remains
-unverified. Signing stays ad-hoc; no paid enrollment, CI workflow, publication or
-merge has occurred. See the [preview installation/build guide](docs/macos-preview-guide.md)
-and [unpublished release text](docs/releases/0.5.0-preview.md).
+See the [installation guide](docs/macos-preview-guide.md),
+[build instructions](docs/milestone-5f-3-macos-build.md), and
+[Milestone 5F status](docs/milestone-5f-macos-packaging-plan.md).
 
 ## Requirements
 

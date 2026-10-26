@@ -1,156 +1,86 @@
-# Milestone 5F: macOS packaging, accessibility and sharing
+# Milestone 5F: macOS packaging and accessibility
 
-Status: source runtime, Ollama guidance, progress, keyboard and optional spoken
-guidance checkpoints implemented. The user passed 681 tests in 9.50 seconds on
-macOS/Python 3.12.12 at `11384c3`, confirmed spoken guidance throughout the app
-including Start Evaluation, and explicitly approved the spoken-guidance work.
-5F-3 native build and installed-app checks passed on the user's Intel Mac,
-with 702 tests. Build 5002 preview polish/audits pass 724 agent tests; its native
-refresh is pending. No public release or signing/notarization is claimed.
-Additional hardware, fresh accounts, VMs and testers are not required under the
-user's current scope. Paid signing is deferred. See the
-[preview guide](macos-preview-guide.md) and unpublished release draft.
-Branch: `feature/milestone-5f-macos-packaging`.
-Base: `feature/milestone-5` at `c70826ab340288d1cd393e802acb787bd82ed6c4`.
-Baseline: 450 tests passed on the user's Mac with Python 3.12.12, with
-completed Ollama evaluation, cancellation/restart, report comparison and
-normal closure validated.
+Branch: `feature/milestone-5f-macos-packaging`  
+Base: `feature/milestone-5` at `c70826a`
 
-## Agreed release scope
+## Current status
 
-- Target a downloadable macOS desktop application for general users.
-- Provide one official TrustBench download location using GitHub Releases,
-  with an intended DMG containing TrustBench.app.
-- Bundle Python and required GUI components. End users should not need Python,
-  Git, a source checkout or terminal commands to launch TrustBench.
-- Build and manually validate Intel macOS first using the user's Mac.
-  Apple Silicon compatibility must be established separately; do not claim
-  a tested universal build without evidence.
-- Preserve the existing CLI, source-run application, public callables, datasets,
-  scoring behavior, reports and explicit-import convention.
-- Keep reports in a writable user location outside the installed application,
-  so an application update does not remove them.
-- Linux is a later target. Windows is deferred for separate discussion.
-- Keep work on this branch until integration is approved. Do not merge into
-  main or publish a release during implementation checkpoints.
+The first Intel macOS app and DMG (build 5001) passed native build checks and
+installed-app validation on macOS 15.7.9. The refreshed build 5002 adds the
+TrustBench icon, visible preview version and package audits. Its Mac build and
+installed-app checks are pending.
 
-## Ollama decision and required follow-up
+The latest automated suite passed **724 tests on Linux/Python 3.12.14**.
+The preceding **702-test suite passed on macOS/Python 3.12.12**.
 
-For this first release, Ollama and downloaded models remain separate
-installations. TrustBench does not bundle either of them. Reading and comparing
-existing reports must work without Ollama.
+## Scope
 
-This is a release requirement to implement and validate, not a dependency
-problem to ignore until after packaging:
+Deliver an Intel macOS preview while preserving the CLI, source-run GUI,
+evaluation behavior, report formats and explicit-import convention.
 
-- Distinguish a reachable local Ollama service from an unavailable service and
-  distinguish an unavailable requested model from a ready model.
-- Give actionable setup guidance from the GUI when live evaluation is not ready.
-  An unavailable service alone does not prove that Ollama is not installed.
-- Preserve working report browsing and comparison when Ollama is unavailable.
-- Recheck readiness after the user completes setup; do not require editing code
-  or restarting the entire application merely to retry.
-- Keep installation and model downloads explicit user actions, with their
-  storage requirements explained in the setup documentation.
-- Validate the first-run experience with Ollama absent/unreachable, the service
-  running without the requested model, and the service/model ready.
-- Before release, explicitly review whether the separate dependency setup is
-  understandable for a new user. Address confusing instructions or failed
-  recovery during 5F, rather than silently accepting them.
-- After wider user feedback, revisit whether a more integrated setup is needed.
-  Bundling Ollama/models would be separately scoped work, with distribution,
-  size, update, licensing and resource implications reviewed then.
+- Bundle Python, Tcl/Tk and example datasets in TrustBench.app.
+- Provide a DMG with drag-to-Applications installation.
+- Keep reports outside the app in Application Support.
+- Keep Ollama and models as separate installations.
+- Preserve Reports and Compare when Ollama is unavailable.
+- Provide keyboard navigation, visible focus, progress and optional spoken guidance.
+- Document installation, updates, supported configuration and evaluation limits.
 
-## Incremental implementation checkpoints
+Validation targets the existing Intel Mac running macOS 15.7.9. Other hardware
+and operating systems remain unverified. Linux and Windows are later work.
 
-### 5F-1: Application resources, report storage and packaged execution
+The preview is ad-hoc signed; Apple Developer ID signing and notarization are
+outside the current scope. Public release and branch integration are separate
+decisions.
 
-**Implemented in `ec4396b`; 468 tests passed on Linux/Python 3.12.14.**
-See the [runtime checkpoint](milestone-5f-1-runtime-foundation.md) for paths,
-worker dispatch, executed evidence and the remaining Mac/build validation.
+## Checkpoints
 
-Audit and separate bundled read-only resources from writable user reports.
-Choose a macOS user-data location and preserve existing source-run paths and
-older reports. Provide a deliberate way to open/import older reports without
-silently deleting or relocating them.
+| Checkpoint | Status |
+| --- | --- |
+| 5F-1: Resources, report storage and packaged worker | Implemented; validated in build 5001 |
+| 5F-2: Ollama readiness, setup and model discovery | Implemented; service recovery validated |
+| 5F-3: App and DMG build | Build 5001 validated; build 5002 refresh pending |
+| 5F-4: Progress, keyboard access and spoken guidance | Implemented and manually validated; repeat a short check after rebuilding |
+| 5F-5: Installation and sharing documentation | Preview guide and release draft prepared; final artifact evidence pending |
 
-Make evaluator launch work in a packaged application. A bundled
-`sys.executable` is the application executable, so it must not be treated as an
-ordinary Python interpreter that can run an arbitrary source-script path.
-Choose and test an explicit packaged evaluation entry path while preserving
-process-group cancellation, real-time output, restart and the source CLI.
+Installed-app validation covered launch from Applications, evaluation/report
+saving, report viewing/comparison, stop/restart, keyboard/spoken guidance,
+report persistence after reopening, and Ollama unavailable/recovery.
 
-Test working directories outside the repository, resource lookup, writable
-report paths, retained source behavior and process dispatch.
+## Remaining work
 
-### 5F-2: Ollama readiness and first-run guidance
+1. Pull the latest branch and run the 724-test suite on macOS/Python 3.12.12.
+2. Build candidate 5002. Review the build output, checksum, build record and
+   `bundle-audit.json` for failures or unexpected files/dependencies.
+3. Install the refreshed candidate and confirm its icon/version, evaluation,
+   Reports/Compare, stop/restart, keyboard/spoken guidance and retained reports.
+4. Record the exact candidate, source commit and results; update the validation
+   summary and release notes accordingly.
 
-**Implemented in `57b466e`; 520 tests passed on Linux/Python 3.12.14.**
-See the [5F-2 checkpoint](milestone-5f-2-ollama-readiness.md) for behavior,
-thread/lifecycle tests and historical validation. The later source checks and
-user approval are recorded above. Opening TrustBench and
-using Reports/Compare do not require an Ollama check.
+These steps complete validation of the local Intel preview. Additional devices,
+accounts, VMs and external testers are not required for this milestone.
 
-Implement the readiness and recovery requirements above using bounded local
-checks. Keep HTTP/model work off Tkinter's event thread. Do not make report-only
-workflows depend on the model service. Preserve existing evaluation request
-errors and scoring semantics.
+If a downloadable preview is published later, review the project license and
+bundled third-party notices, verify the downloaded copy's installation behavior,
+and attach the validated DMG and checksum. Publication is not required to retain
+or demonstrate the working local package. Signing/notarization is not a
+completion requirement for this preview.
 
-### 5F-3: macOS app and DMG build
+## Documentation
 
-**Tooling implemented; native build pending.** See the
-[build guide](milestone-5f-3-macos-build.md) for the isolated build environment,
-commands, verification, signing status and installed-app checklist. The agent
-passed 702 tests on Linux; this does not establish Mac artifact validity.
+- [Installation and support](macos-preview-guide.md)
+- [Build commands and validation evidence](milestone-5f-3-macos-build.md)
+- [Draft release notes](releases/0.5.0-preview.md)
+- [Runtime foundation](milestone-5f-1-runtime-foundation.md)
+- [Ollama readiness](milestone-5f-2-ollama-readiness.md)
+- [Progress and keyboard access](milestone-5f-progress-accessibility.md)
 
-Prepare reproducible local build configuration and commands for the macOS app
-and DMG. Keep packaging tools as build-time dependencies where appropriate.
-Check the selected packager's current official documentation during
-implementation.
+## Completion criteria
 
-Validate the built app on the user's Intel Mac, outside the checkout and from
-Applications, with no reliance on the development virtual environment.
-Verify Python/Tcl/Tk/resource inclusion and process cleanup. State signing and
-notarization status accurately; do not require paid enrollment as an unstated
-prerequisite. Test any platform security prompts and document the actual result.
-
-### 5F-4: Accessibility and user-facing clarity
-
-Check keyboard navigation, focus visibility, control activation, report
-selection/viewing and comparison, text readability and error recovery.
-Include real macOS accessibility checks before claiming accessibility support.
-
-Source-run progress/status, keyboard navigation, focus recovery and optional
-app-controlled spoken guidance have been implemented and manually checked. The
-Evaluate tab has a persistent case bar/count, waiting status and elapsed time;
-scoring remains unchanged. The user approved spoken guidance after the 681-test
-Mac run. Repeat these checks with the bundled GUI runtime. Text scaling,
-contrast/system settings and actual VoiceOver exposure remain review targets;
-app speech is not a substitute for screen-reader accessibility.
-
-### 5F-5: Clean-install and sharing validation
-
-Test the DMG install and app launch, absent Ollama/model guidance, live
-evaluation, stop/restart, saved reports, comparisons, normal closure and update
-persistence. Preserve the full regression suite and add focused tests for new
-behavior.
-
-Prepare download/setup instructions, supported-platform details, release notes,
-checksums and explicit limitations. Confirm the release download permissions
-match the intended audience before publishing. A single official TrustBench
-download does not mean Ollama or models are included in that download.
-
-## Completion gates
-
-- All existing CLI/source functionality remains available and tested.
-- The macOS app launches without a Python/Git installation or a source checkout.
-- Bundled resources load independently of the working directory.
-- Reports persist outside the app across updates.
-- Ollama/model setup guidance and retry behavior are validated.
-- Report-only workflows work without Ollama.
-- Packaged live evaluation streams output and supports verified stop/restart.
-- Mac build, accessibility and clean-install evidence is recorded honestly.
-- A concrete release candidate is reviewable before any release publication.
-
-Source-run evidence and user approval are recorded above. Native app/DMG,
-signing/notarization, clean-install and release evidence remain pending.
+- Existing CLI and source GUI functionality remain tested.
+- The refreshed app launches from Applications with its bundled runtime.
+- Evaluation, cancellation/restart and report persistence work in that artifact.
+- Keyboard and optional spoken guidance remain usable.
+- Build evidence and documentation identify the tested configuration and current
+  signing status.
+- The branch is ready for review before any approved integration.
