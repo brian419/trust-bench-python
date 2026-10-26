@@ -12,21 +12,13 @@ def generate_icon(destination: Path):
     draw.rounded_rectangle((32, 32, 992, 992), radius=210, fill="#142C46")
 
     # Draw the TB monogram as geometry so regeneration does not depend on fonts.
-    draw.rectangle((192, 230, 466, 310), fill="white")
-    draw.rectangle((289, 310, 369, 594), fill="white")
-    draw.rounded_rectangle((530, 230, 822, 424), radius=90, fill="white")
-    draw.rounded_rectangle((530, 400, 822, 594), radius=90, fill="white")
-    draw.rectangle((530, 230, 610, 594), fill="white")
-    draw.rounded_rectangle((610, 302, 742, 352), radius=25, fill="#142C46")
-    draw.rounded_rectangle((610, 472, 742, 522), radius=25, fill="#142C46")
-
-    # Three result cells represent inspected test cases rather than a growth chart.
-    for left, color in ((194, "#46D8D0"), (434, "#47617B"), (674, "#46D8D0")):
-        draw.rounded_rectangle((left, 704, left + 156, 832), radius=26, fill=color)
-    for left in (194, 674):
-        draw.line([(left + 35, 765), (left + 65, 795), (left + 119, 741)],
-                  fill="#142C46", width=19, joint="curve")
-    draw.rounded_rectangle((475, 758, 549, 778), radius=10, fill="white")
+    draw.rectangle((174, 300, 474, 392), fill="#46D8D0")
+    draw.rectangle((278, 392, 370, 724), fill="#46D8D0")
+    draw.rounded_rectangle((530, 300, 850, 524), radius=108, fill="#47617B")
+    draw.rounded_rectangle((530, 500, 850, 724), radius=108, fill="#47617B")
+    draw.rectangle((530, 300, 622, 724), fill="#47617B")
+    draw.rounded_rectangle((622, 382, 758, 442), radius=30, fill="#142C46")
+    draw.rounded_rectangle((622, 582, 758, 642), radius=30, fill="#142C46")
     destination.parent.mkdir(parents=True, exist_ok=True)
     image.save(destination, format="ICNS")
 
