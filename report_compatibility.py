@@ -173,9 +173,7 @@ def compare_scoring_rules(first: dict, second: dict) -> dict:
                 "reason": f"Missing scoring metadata: {key}.",
             }
 
-        optional = (
-            first_type == "live" and key == "alternative_scoring"
-        ) or (
+        optional = (first_type == "live" and key == "alternative_scoring") or (
             first_type == "consistency" and key == "scoring_method"
         )
 

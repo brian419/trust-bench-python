@@ -5,7 +5,6 @@ from json import dumps
 from pathlib import Path
 from platform import python_version
 
-
 EXACT_SCORING_ID = "normalized-exact-v1"
 ALTERNATIVE_SCORING_ID = "accepted-alternatives-v1"
 

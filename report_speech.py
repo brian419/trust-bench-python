@@ -5,7 +5,6 @@ from json import loads
 from pathlib import Path
 from re import search, sub
 
-
 MAX_DESCRIPTION_BYTES = 1024 * 1024
 
 
@@ -58,7 +57,9 @@ def report_speech_details(filename: str | Path) -> str:
                 zone = ", local time"
             else:
                 zone = ", time zone not recorded" if "T" in timestamp else ""
-            parts.append("Run on " + _spoken_date(when, time_known="T" in timestamp) + zone)
+            parts.append(
+                "Run on " + _spoken_date(when, time_known="T" in timestamp) + zone
+            )
         except (ValueError, OverflowError, OSError):
             pass
     if not parts:
