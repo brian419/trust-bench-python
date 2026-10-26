@@ -8,7 +8,16 @@ from sys import platform
 from tempfile import TemporaryDirectory
 from threading import Lock, Thread
 from time import monotonic
-from tkinter import BooleanVar, END, Listbox, StringVar, TclError, Tk, WORD
+from tkinter import (
+    BooleanVar,
+    END,
+    Frame as FocusFrame,
+    Listbox,
+    StringVar,
+    TclError,
+    Tk,
+    WORD,
+)
 from tkinter.filedialog import askopenfilename
 from tkinter.messagebox import askyesno, showerror, showinfo, showwarning
 from tkinter.scrolledtext import ScrolledText
@@ -38,6 +47,7 @@ from report_browser import list_saved_reports
 from report_loader import load_report as load_saved_report
 from report_summary import summarize_live_report
 from runtime_paths import reports_directory, resource_directory
+from spoken_choices import SpokenChoices
 from spoken_guidance import SpokenGuidance
 
 
@@ -85,6 +95,8 @@ class TrustBenchDesktop:
         self.speech_timer = None
         self.speech_poll_timer = None
         self._last_announced_status = None
+        self.models_loaded = False
+        self.choice_picker = None
         self.root.protocol("WM_DELETE_WINDOW", self.on_window_close)
 
         self.build_interface()
@@ -111,12 +123,18 @@ class TrustBenchDesktop:
         accessibility_controls = Frame(frame)
         accessibility_controls.pack(fill="x", pady=(0, 6))
         self.speech_enabled = BooleanVar(value=False)
+        self.speech_has_focus = False
+        self.speech_focus_frame = FocusFrame(accessibility_controls, highlightthickness=3, borderwidth=0)
+        self.speech_focus_frame.pack(side="left")
+        self.speech_focus_background = self.speech_focus_frame.cget("background")
+        self.speech_focus_frame.configure(highlightbackground=self.speech_focus_background)
         self.speech_toggle = Checkbutton(
-            accessibility_controls, text="Spoken guidance (off by default)",
+            self.speech_focus_frame, text="Spoken guidance: Off",
             variable=self.speech_enabled, command=self.toggle_spoken_guidance,
             takefocus=True,
         )
         self.speech_toggle.pack(side="left")
+        self.speech_enabled.trace_add("write", self._update_speech_label)
         self.speech_toggle.bind("<Return>", lambda event: self._toggle_speech_key())
         self.read_view_button = Button(
             accessibility_controls, text="Read current view",
@@ -363,7 +381,7 @@ class TrustBenchDesktop:
             command=self.open_ollama_download,
         ).pack(side="left", padx=(8, 0))
         self.ollama_status = StringVar(
-            value="Choose Refresh Models to list models from Ollama on this computer. "
+            value="Models load when Evaluate is opened. Refresh Models updates the list. "
             "You can also type a model name."
         )
         Label(
@@ -454,9 +472,12 @@ class TrustBenchDesktop:
             widget.bind("<Return>", self._open_dropdown)
             widget.bind("<KP_Enter>", self._open_dropdown)
             widget.bind("<space>", self._dropdown_space)
+            widget.bind("<Down>", self._dropdown_down)
+            widget.bind("<Button-1>", self._dropdown_click)
             widget.bind("<FocusIn>", lambda event, label=name: self._set_keyboard_hint(
                 f"Keyboard focus: {label}. Down Arrow or Enter/Return opens choices; "
-                "Up/Down Arrow moves through choices; Enter/Return confirms; Escape closes."
+                "Up/Down Arrow moves through choices; Enter/Return confirms; Escape closes.",
+                spoken=f"{label}. {event.widget.get() or 'No selection'}",
             ))
             widget.bind("<FocusOut>", self._clear_keyboard_hint)
             widget.bind("<<ComboboxSelected>>", lambda event, label=name: self._announce(
@@ -482,11 +503,9 @@ class TrustBenchDesktop:
         ))
         self.report_list.bind("<FocusOut>", self._clear_keyboard_hint)
         self.report_list.bind("<<ListboxSelect>>", self._announce_report_selection)
-        self.speech_toggle.bind("<FocusIn>", lambda event: self._set_keyboard_hint(
-            "Keyboard focus: Spoken guidance. Space or Enter/Return toggles speech on or off."
-        ))
+        self.speech_toggle.bind("<FocusIn>", self._speech_focus_in)
         self.speech_toggle.bind("<KP_Enter>", lambda event: self._toggle_speech_key())
-        self.speech_toggle.bind("<FocusOut>", self._clear_keyboard_hint)
+        self.speech_toggle.bind("<FocusOut>", self._speech_focus_out)
         self.speech_toggle.configure(takefocus=lambda widget_path=None: (
             not self.speech_toggle.instate(["disabled"])
             and bool(self.speech_toggle.winfo_viewable())
@@ -527,9 +546,31 @@ class TrustBenchDesktop:
     def _clear_keyboard_hint(self, event):
         self.keyboard_hint.set(KEYBOARD_HINT)
 
-    def _set_keyboard_hint(self, text):
+    def _set_keyboard_hint(self, text, spoken=None):
         self.keyboard_hint.set(text)
-        self._announce(text)
+        concise = text.removeprefix("Keyboard focus: ").split(". ", 1)[0]
+        self._announce(spoken if spoken is not None else concise)
+
+    def _update_speech_label(self, *args):
+        state = "On" if self.speech_enabled.get() else "Off"
+        suffix = " [focused]" if self.speech_has_focus else ""
+        self.speech_toggle.configure(text=f"Spoken guidance: {state}{suffix}")
+
+    def _speech_focus_in(self, event):
+        self.speech_has_focus = True
+        self.speech_focus_frame.configure(highlightbackground="#007aff")
+        self._update_speech_label()
+        state = "On" if self.speech_enabled.get() else "Off"
+        self._set_keyboard_hint(
+            "Keyboard focus: Spoken guidance. Space or Enter/Return toggles speech.",
+            spoken=f"Spoken guidance, {state}",
+        )
+
+    def _speech_focus_out(self, event):
+        self.speech_has_focus = False
+        self.speech_focus_frame.configure(highlightbackground=self.speech_focus_background)
+        self._update_speech_label()
+        self._clear_keyboard_hint(event)
 
     def _press_button(self, event):
         self._keyboard_pressed_button = (event.widget, event.keysym)
@@ -544,9 +585,67 @@ class TrustBenchDesktop:
 
     def _open_dropdown(self, event):
         if not event.widget.instate(["disabled"]):
+            if event.widget is self.model_selector and not event.widget.cget("values"):
+                self._ensure_models_loaded(force=True)
+                return "break"
+            narrator = getattr(self, "narrator", None)
+            if narrator is not None and narrator.enabled:
+                self._show_spoken_choices(event.widget)
+                return "break"
             # Forward to Tk's public Down-key binding, including Aqua popdowns.
             event.widget.event_generate("<Down>")
         return "break"
+
+    def _dropdown_down(self, event):
+        narrator = getattr(self, "narrator", None)
+        if (event.widget is self.model_selector and not event.widget.cget("values")) or (
+            narrator is not None and narrator.enabled
+        ):
+            return self._open_dropdown(event)
+        return None
+
+    def _dropdown_click(self, event):
+        widget = event.widget
+        if widget.instate(["readonly"]) or "arrow" in widget.identify(event.x, event.y):
+            return self._dropdown_down(event)
+        return None
+
+    def _show_spoken_choices(self, combo):
+        if not combo.cget("values"):
+            self._announce("No choices available. Refresh the list and try again.")
+            return
+        picker = getattr(self, "choice_picker", None)
+        if picker is not None:
+            picker.cancel(restore_focus=False)
+        label = "Previous report" if combo is self.previous_report else (
+            "Current report" if combo is self.current_report else "Ollama model"
+        )
+        self.choice_picker = SpokenChoices(
+            self.root, combo, label, self._announce, self._choices_closed,
+        )
+        window = self.choice_picker.window
+        window.bind("<F6>", lambda event: self._choice_action(self._focus_spoken_guidance))
+        window.bind("<F1>", lambda event: self._choice_action(self.show_keyboard_help))
+        modifier = "Command" if platform == "darwin" else "Control"
+        window.bind(f"<{modifier}-Shift-Key-S>", lambda event: self._choice_action(self._toggle_speech_key))
+        for index in range(3):
+            window.bind(f"<{modifier}-Key-{index + 1}>", lambda event, tab=index: self._choice_action(self._select_tab, tab))
+        window.bind("<Control-Tab>", lambda event: self._choice_action(self._switch_tab, 1))
+        window.bind("<Control-Shift-Tab>", lambda event: self._choice_action(self._switch_tab, -1))
+
+    def _choice_action(self, callback, *args):
+        if self.choice_picker is not None:
+            self.choice_picker.cancel()
+        callback(*args)
+        return "break"
+
+    def _choices_closed(self):
+        self.choice_picker = None
+
+    def _ensure_models_loaded(self, *, force=False):
+        if (force or not getattr(self, "models_loaded", False)) and not self._evaluation_controls_busy():
+            return self.check_ollama()
+        return False
 
     def _dropdown_space(self, event):
         if event.widget.instate(["readonly"]):
@@ -611,7 +710,10 @@ class TrustBenchDesktop:
         return "break"
 
     def _on_tab_changed(self, event):
-        self._queue_tab_focus(self.notebook.index("current"))
+        index = self.notebook.index("current")
+        self._queue_tab_focus(index)
+        if index == 2:
+            self._ensure_models_loaded()
 
     def _queue_tab_focus(self, index):
         generation = getattr(self, "_tab_focus_generation", 0) + 1
@@ -693,6 +795,8 @@ class TrustBenchDesktop:
                          "Local macOS speech is unavailable. Keyboard navigation still works.")
             return
         self.read_view_button.configure(state="normal" if enabled else "disabled")
+        if not enabled and getattr(self, "choice_picker", None) is not None:
+            self.choice_picker.cancel()
         if enabled:
             self._announce("Spoken guidance on. " + KEYBOARD_HINT)
             self._poll_speech()
@@ -722,6 +826,8 @@ class TrustBenchDesktop:
             self.narrator.stop()
             self.speech_enabled.set(False)
             self.read_view_button.configure(state="disabled")
+            if getattr(self, "choice_picker", None) is not None:
+                self.choice_picker.cancel()
             self._cancel_speech_callbacks()
             self.keyboard_hint.set("Spoken guidance could not run and was turned off. Keyboard navigation still works.")
         elif self.narrator.enabled:
@@ -735,6 +841,9 @@ class TrustBenchDesktop:
             setattr(self, name, None)
 
     def _close_accessibility(self):
+        picker = getattr(self, "choice_picker", None)
+        if picker is not None:
+            picker.cancel(restore_focus=False)
         self._cancel_speech_callbacks()
         narrator = getattr(self, "narrator", None)
         if narrator is not None:
@@ -928,6 +1037,7 @@ class TrustBenchDesktop:
         if self.close_requested:
             return
         self.model_selector.configure(values=result.models or ())
+        self.models_loaded = result.models is not None
         if model != self.model_name.get().strip():
             self.ollama_status.set("The model changed. Choose Check Ollama again.")
             return

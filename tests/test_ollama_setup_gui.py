@@ -229,6 +229,7 @@ def test_interface_wires_ui_start_to_preflight_without_startup_network(app):
     app.refresh_reports = MagicMock()
     with (
         patch("desktop_gui.Frame"), patch("desktop_gui.Label"),
+        patch("desktop_gui.FocusFrame"),
         patch("desktop_gui.LabelFrame"), patch("desktop_gui.Entry"),
         patch("desktop_gui.Combobox"), patch("desktop_gui.Notebook"),
         patch("desktop_gui.Listbox"), patch("desktop_gui.StringVar"),

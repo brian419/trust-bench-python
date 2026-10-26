@@ -266,6 +266,7 @@ def test_build_interface_creates_separate_tabs():
 
     with (
         patch("desktop_gui.Frame"),
+        patch("desktop_gui.FocusFrame"),
         patch("desktop_gui.Label"),
         patch("desktop_gui.LabelFrame"),
         patch("desktop_gui.Button"),
