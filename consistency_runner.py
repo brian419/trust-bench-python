@@ -1,22 +1,19 @@
 from urllib.error import HTTPError, URLError
 
 from consistency_analyzer import analyze_consistency
-from ollama_client import generate_response, MalformedResponseError
+from ollama_client import MalformedResponseError, generate_response
 
 
 def run_consistency_experiment(
-        prompts: list[str],
-        repetitions: int = 3,
-        model: str = "gemma3:1b",
-        options: dict | None = None,
+    prompts: list[str],
+    repetitions: int = 3,
+    model: str = "gemma3:1b",
+    options: dict | None = None,
 ) -> list[dict]:
     if not 1 <= len(prompts) <= 3:
         raise ValueError("Provide between 1 and 3 prompts.")
 
-    if any(
-        not isinstance(prompt, str) or not prompt.strip()
-        for prompt in prompts
-    ):
+    if any(not isinstance(prompt, str) or not prompt.strip() for prompt in prompts):
         raise ValueError("Prompts must be nonempty strings.")
 
     if type(repetitions) is not int or not 1 <= repetitions <= 3:
@@ -48,30 +45,34 @@ def run_consistency_experiment(
                 if not isinstance(generated, str):
                     raise TypeError("Model response must be a string.")
 
-                attempts.append({
-                    "attempt": attempt_number,
-                    "status": "SUCCESS",
-                    "generated": generated,
-                })
+                attempts.append(
+                    {
+                        "attempt": attempt_number,
+                        "status": "SUCCESS",
+                        "generated": generated,
+                    }
+                )
 
                 successful_responses.append(generated)
 
             except (HTTPError, URLError, TimeoutError, MalformedResponseError) as error:
-                attempts.append({
-                    "attempt": attempt_number,
-                    "status": "ERROR",
-                    "generated": None,
-                    "error": str(error)
-                })
+                attempts.append(
+                    {
+                        "attempt": attempt_number,
+                        "status": "ERROR",
+                        "generated": None,
+                        "error": str(error),
+                    }
+                )
 
-        results.append({
-            "prompt": prompt,
-            "model": model,
-            "options": options.copy() if options is not None else None,
-            "attempts": attempts,
-            "consistency": analyze_consistency(
-                successful_responses
-            ),
-        })
+        results.append(
+            {
+                "prompt": prompt,
+                "model": model,
+                "options": options.copy() if options is not None else None,
+                "attempts": attempts,
+                "consistency": analyze_consistency(successful_responses),
+            }
+        )
 
     return results
