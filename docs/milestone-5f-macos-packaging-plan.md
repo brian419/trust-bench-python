@@ -4,10 +4,12 @@ Status: source runtime, Ollama guidance, progress, keyboard and optional spoken
 guidance checkpoints implemented. The user passed 681 tests in 9.50 seconds on
 macOS/Python 3.12.12 at `11384c3`, confirmed spoken guidance throughout the app
 including Start Evaluation, and explicitly approved the spoken-guidance work.
-5F-3 build tooling is implemented and passes 702 agent tests. Native macOS
-app/DMG creation and installed-app validation are pending. No actual app/DMG build,
-signing/notarization, clean-install result or public release is claimed yet.
-Service-unavailable recovery remains a clean-install validation item.
+5F-3 native build and installed-app checks passed on the user's Intel Mac,
+with 702 tests. Build 5002 preview polish/audits pass 724 agent tests; its native
+refresh is pending. No public release or signing/notarization is claimed.
+Additional hardware, fresh accounts, VMs and testers are not required under the
+user's current scope. Paid signing is deferred. See the
+[preview guide](macos-preview-guide.md) and unpublished release draft.
 Branch: `feature/milestone-5f-macos-packaging`.
 Base: `feature/milestone-5` at `c70826ab340288d1cd393e802acb787bd82ed6c4`.
 Baseline: 450 tests passed on the user's Mac with Python 3.12.12, with

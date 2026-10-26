@@ -257,6 +257,22 @@ installed-app validation remain pending. Candidates are ad-hoc signed and not
 notarized; this checkpoint is not a public-release readiness claim. See the
 [Mac build commands and validation guide](docs/milestone-5f-3-macos-build.md).
 
+
+### Preview release preparation (build 5002)
+
+The user completed the local Intel Mac build and installed-app checks for build
+5001, including 702 passing tests on macOS 15.7.9. The next candidate has an
+original TrustBench icon, visible 0.5.0 preview identity, build 5002 metadata,
+stronger package audits and an unpublished release draft. **724 tests pass in the
+agent Linux environment; rebuilding and validating this refreshed Mac candidate
+remain pending.**
+
+The preview target stays Intel x86_64/macOS 15.7.9. Additional accounts, virtual
+machines, testers and hardware are not required. Broader compatibility remains
+unverified. Signing stays ad-hoc; no paid enrollment, CI workflow, publication or
+merge has occurred. See the [preview installation/build guide](docs/macos-preview-guide.md)
+and [unpublished release text](docs/releases/0.5.0-preview.md).
+
 ## Requirements
 
 - Python 3.12 (developed/tested with Python 3.12; desktop GUI manually tested on macOS with Python 3.12.12).

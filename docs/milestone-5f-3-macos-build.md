@@ -1,6 +1,6 @@
 # Milestone 5F-3: local Intel macOS app and DMG build
 
-Status: **local Intel Mac build and installed-app checks passed; broader release validation pending**.
+Status: **build 5001 native checks passed; build 5002 refresh and broader release validation pending**.
 Branch: `feature/milestone-5f-macos-packaging`.
 Starting evidence: 681 tests passed in 9.50 seconds on the user's Mac/Python
 3.12.12, with app-controlled spoken guidance explicitly approved.
@@ -18,8 +18,7 @@ This is an internal `0.5.0` build candidate, not a published release. The spec
 targets x86_64, disables argv emulation to avoid Tk event interference, and uses
 a directory app bundle rather than one-file self-extraction. PyInstaller's
 default ad-hoc signing is checked explicitly; no Developer ID, paid enrollment,
-notarization, release upload or installation is performed. The initial icon is
-the packager default; branding is not claimed complete.
+notarization, release upload or installation is performed. Build 5002 includes the original TrustBench ICNS and visible preview version.
 
 The bundle's minimum macOS version is conservatively set to the build host's
 version. Only the user's Intel Mac is the immediate validation target. Apple
@@ -40,7 +39,7 @@ git status
 .venv-macos-build/bin/python build_macos.py --check
 ```
 
-Expect **702 automated tests**. The separate build venv keeps build packages out
+Expect **724 automated tests** for the refreshed preview candidate. The separate build venv keeps build packages out
 of application runtime requirements and the existing test environment. No GitHub
 Actions jobs or paid services are used. Pip needs internet to fetch build tools.
 
@@ -177,3 +176,11 @@ The original build record remains unchanged and retains its pre-validation flags
 A fresh macOS account, another machine/architecture, downloaded/quarantined
 installation, Developer ID signing/notarization and public distribution remain
 unverified. No release was published or branch merged at this checkpoint.
+
+## Build 5002 preview refresh
+
+See the [preview guide](macos-preview-guide.md) for the updated icon/version,
+package audit, installation instructions, unpublished release draft and current
+scope. The refreshed candidate passes 724 agent tests; it must be rebuilt and
+checked on the same Mac. The earlier native checkpoint remains evidence only
+for build 5001. No extra accounts, VMs, testers or hardware are required.

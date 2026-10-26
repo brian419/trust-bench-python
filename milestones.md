@@ -792,6 +792,28 @@ No native Mac artifact was built by the agent. The user must build on macOS and
 validate from Applications before moving to clean-install/sharing preparation.
 See the [5F-3 build guide](docs/milestone-5f-3-macos-build.md).
 
+### Milestone 5F preview preparation (build 5002; native refresh pending)
+
+The user validated the first Intel DMG/app on their existing Mac: launch from
+Applications, live evaluation, Reports/Compare, stop/restart, keyboard/speech,
+report persistence, and Ollama unavailable/recovery. Their suite passed 702 tests
+in 13.75 seconds. Evidence for build 5001 is recorded in the native checkpoint.
+
+Build 5002 adds a checked-in original ICNS, shared version metadata and visible
+preview label, icon/version verification, package inventory and native dependency
+checks before DMG creation, plus clearer install/update/privacy instructions and
+an unpublished release draft. **724 agent tests passed on Linux/Python 3.12.14**,
+including 22 additional regression cases over the previous 702 baseline. Native
+build and same-Mac installed-app rechecks for build 5002 are pending.
+
+The user explicitly declined extra hardware/testers, fresh accounts and virtual
+machines. They are not required tasks. The tested scope remains one Intel Mac
+running macOS 15.7.9; broader configuration and downloaded-app behavior remain
+unverified. Paid Developer ID signing/notarization is deferred; no enrollment,
+credentials, charge, upload, tag, CI workflow or merge was performed. Remaining
+distribution/license review and exact-artifact validation precede publication.
+See the [preview guide](docs/macos-preview-guide.md).
+
 ### Architecture and scope rules
 
 - Preserve all **155 baseline tests** and previously implemented Milestone 1–4 behavior.
